@@ -1,4 +1,4 @@
-package com.example.bluetooth_test
+package com.example.climify
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity

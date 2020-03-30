@@ -1,6 +1,6 @@
 {
-    "name": "bluetooth_test",
-    "short_name": "bluetooth_test",
+    "name": "climify",
+    "short_name": "climify",
     "start_url": ".",
     "display": "minimal-ui",
     "background_color": "#0175C2",
