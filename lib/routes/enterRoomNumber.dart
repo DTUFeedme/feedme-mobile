@@ -14,10 +14,15 @@ class EnterRoomNumber extends StatelessWidget {
             "Enter Room Number",
             style: TextStyles.titleStyle,
           ),
-          TextField(
-            autocorrect: false,
-            style: TextStyles.bodyStyle,
-            onChanged: (String text) => onTextInput(text),
+          Container(
+            margin: EdgeInsets.symmetric(
+              horizontal: 32,
+            ),
+            child: TextField(
+              autocorrect: false,
+              style: TextStyles.bodyStyle,
+              onChanged: (String text) => onTextInput(text),
+            ),
           ),
         ],
       ),
