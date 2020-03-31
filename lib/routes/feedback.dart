@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 class FeedbackWidget extends StatefulWidget {
   final FeedbackQuestion question;
   final String room;
-  final Function(String) setTestText;
+  final Function(FeedbackQuestion question, int option) returnFeedback;
 
   const FeedbackWidget({
     Key key,
     @required this.question,
     @required this.room,
-    @required this.setTestText,
+    @required this.returnFeedback,
   }) : super(key: key);
 
   @override
@@ -30,8 +30,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
   void _sendFeedback() {
     if (_chosenOption != null && (widget.room != "" || widget.room == null)) {
-      widget.setTestText(
-          "Answered: ${widget.question.options[_chosenOption]}. Room number is ${widget.room}");
+      widget.returnFeedback(widget.question, _chosenOption);
     }
   }
 

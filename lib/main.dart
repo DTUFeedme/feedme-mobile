@@ -1,3 +1,4 @@
+import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/routes/enterRoomNumber.dart';
 import 'package:climify/routes/feedback.dart';
 import 'package:climify/test/testQuestion.dart';
@@ -43,6 +44,11 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void _receiveFeedback(FeedbackQuestion question, int option) {
+    _setTestText(
+        "Answered: ${question.options[option]}. Room number is $_room");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,7 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
               child: FeedbackWidget(
                 question: testQuestion,
                 room: _room,
-                setTestText: _setTestText,
+                returnFeedback: _receiveFeedback,
               ),
               flex: 10,
             ),
