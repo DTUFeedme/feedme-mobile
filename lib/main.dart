@@ -4,8 +4,6 @@ import 'package:climify/routes/feedback.dart';
 import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
 
-import 'package:async/async.dart';
-
 
 void main() => runApp(MyApp());
 
@@ -49,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _receiveFeedback(FeedbackQuestion question, int option) {
     _setTestText(
-        "Answered: ${question.options[option]}. Room number is $_room");
+        "Answered: ${question.answerOptions[option]}. Room number is $_room");
   }
 
   @override

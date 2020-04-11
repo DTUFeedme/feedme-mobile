@@ -16,7 +16,7 @@ packages:
     source: hosted
     version: "1.5.2"
   async:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: async
       url: "https://pub.dartlang.org"
@@ -44,7 +44,7 @@ packages:
     source: hosted
     version: "1.14.11"
   convert:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: convert
       url: "https://pub.dartlang.org"

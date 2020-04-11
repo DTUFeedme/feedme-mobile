@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import 'package:climify/models/feedbackQuestion2.dart';
+import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 
@@ -36,8 +36,8 @@ class RestService {
     .catchError((_) => APIResponse<FeedbackQuestion>(error: true, errorMessage: 'An error occured'));
   }
 
-  Future<APIResponse<List<AnswerOption>>> getAnswerOptionsByRoom(String room) {
-      return http.get(API + '/answer/fromQuestion/' + room, headers: headers).then((data) {
+  Future<APIResponse<List<AnswerOption>>> getAnswerOptionsByRoom(String questionId) {
+      return http.get(API + '/answer/fromQuestion/' + questionId, headers: headers).then((data) {
       if (data.statusCode == 200) {
         //returns json object
         final jsonData = json.decode(data.body);

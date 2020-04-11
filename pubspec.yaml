@@ -18,7 +18,7 @@ environment:
 
 dependencies:
   convert: ^2.1.1
-  async: ^2.4.1
+  async: ^2.4.0
   http: ^0.12.0+4
   flutter:
     sdk: flutter

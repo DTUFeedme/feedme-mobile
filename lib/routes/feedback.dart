@@ -1,7 +1,14 @@
-import 'package:climify/models/feedbackQuestion.dart';
+import 'dart:developer';
+
+import 'package:climify/models/answerOption.dart';
+import 'package:climify/models/api_response.dart';
+//import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/styles/textStyles.dart';
 import 'package:climify/widgets/roundedBox.dart';
 import 'package:flutter/material.dart';
+import 'package:climify/models/feedbackQuestion.dart';
+
+import 'package:climify/services/rest_service.dart';
 
 class FeedbackWidget extends StatefulWidget {
   final FeedbackQuestion question;
@@ -28,8 +35,32 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     });
   }
 
-  void _sendFeedback() {
+  void _sendFeedback() async {
+    print("hej");
     if (_chosenOption != null && (widget.room != "" || widget.room == null)) {
+      final restService = RestService();
+
+      APIResponse<FeedbackQuestion> question = await restService.getQuestionByRoom(widget.room);
+      APIResponse<List<AnswerOption>> answerOptionList;
+      APIResponse<bool> status;
+
+      if (question.error != true) {
+        answerOptionList = await restService.getAnswerOptionsByRoom(question.data.sId);
+      } else {
+        print(question.errorMessage);
+      }
+
+      if (answerOptionList.error != true) {
+        status = await restService.putFeedback(answerOptionList.data[_chosenOption].sId);
+      } 
+
+      if (status.data == true) {
+        print("Answer has been added");
+      } else {
+        print(status.errorMessage);
+      }
+
+      //Seb, skal den her stadig være der?
       widget.returnFeedback(widget.question, _chosenOption);
     }
   }
@@ -43,13 +74,14 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
         children: <Widget>[
           Container(
             child: Text(
-              widget.question.title,
+              widget.question.question,
               style: TextStyles.titleStyle,
             ),
             margin: EdgeInsets.only(bottom: 8),
           ),
           Column(
-            children: widget.question.options
+            //Det kan være det skal laves om her
+            children: widget.question.answerOptions
                 .asMap()
                 .map(
                   (int i, String option) {
