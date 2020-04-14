@@ -1,5 +1,5 @@
-import 'package:climify/models/feedbackQuestion.dart';
-
+//import 'package:climify/models/feedbackQuestion.dart';
+/*
 FeedbackQuestion testQuestion = FeedbackQuestion(
   "How is the temperature?",
   [
@@ -9,3 +9,4 @@ FeedbackQuestion testQuestion = FeedbackQuestion(
     "Way too cold",
   ],
 );
+*/

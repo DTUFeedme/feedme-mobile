@@ -12,21 +12,26 @@ class RestService {
   };
 
       Future<APIResponse<FeedbackQuestion>> getQuestionByRoom(String room) {
-      return http.get(API + '/question/room/' + room, headers: headers).then((data) {
+      return http.get(API + '/question/room/' + room, headers: headers).then((data) async {
       if (data.statusCode == 200) {
         //returns json object
         //Kan man være sikker på at denne liste altid er en lang?
+        List<String> answerOptionsId;
         final jsonData = json.decode(data.body);
         final FeedbackQuestion feedbackQuestion = null;
         for (var e in jsonData) {
-          feedbackQuestion.answerOptions = e['answerOptions'];
+          answerOptionsId = e['answerOptions'];
           feedbackQuestion.sId = e['_id'];
           feedbackQuestion.question = e['question'];
           feedbackQuestion.room = e['room'];
           feedbackQuestion.iV = int.parse(e['__v']);
         }
         if (feedbackQuestion != null) {
-          return APIResponse<FeedbackQuestion>(data: feedbackQuestion);
+          APIResponse<List<AnswerOption>> temp = await getAnswerOptionsByIdList(answerOptionsId);
+          if (temp.error != true) {
+            feedbackQuestion.answerOptions = temp.data;
+            return APIResponse<FeedbackQuestion>(data: feedbackQuestion);
+          }
         } else {
           return APIResponse<FeedbackQuestion>(error: true, errorMessage: 'No questions found');
         }
@@ -35,6 +40,33 @@ class RestService {
     })
     .catchError((_) => APIResponse<FeedbackQuestion>(error: true, errorMessage: 'An error occured'));
   }
+
+   Future<APIResponse<List<AnswerOption>>> getAnswerOptionsByIdList(List<String> answerIdList) {
+      return http.get(API + '/answer/fromQuestion/' + answerIdList.toString(), headers: headers).then((data) {
+      if (data.statusCode == 200) {
+        //returns json object
+        final jsonData = json.decode(data.body);
+        final answerOptionList = <AnswerOption>[];
+        for (var e in jsonData) {
+          final answerOption = AnswerOption(
+            timesAnswered: e['timesAnswered'],
+            sId: e['_id'],
+            answer: e['answer'],
+            iV: e['__v']
+          );
+          answerOptionList.add(answerOption);
+        }
+        if (answerOptionList != null) {
+          return APIResponse<List<AnswerOption>>(data: answerOptionList);
+        } else {
+          return APIResponse<List<AnswerOption>>(error: true, errorMessage: 'No answers were found');
+        }
+      }
+      return APIResponse<List<AnswerOption>>(error: true, errorMessage: 'An error occured');
+    })
+    .catchError((_) => APIResponse<List<AnswerOption>>(error: true, errorMessage: 'An error occured'));
+  }
+
 
   Future<APIResponse<List<AnswerOption>>> getAnswerOptionsByRoom(String questionId) {
       return http.get(API + '/answer/fromQuestion/' + questionId, headers: headers).then((data) {

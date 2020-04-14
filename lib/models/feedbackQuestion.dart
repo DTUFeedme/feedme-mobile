@@ -1,5 +1,8 @@
+import 'package:climify/models/answerOption.dart';
+
 class FeedbackQuestion {
-  List<String> answerOptions;
+  //List<String> answerOptions;
+  List<AnswerOption> answerOptions;
   String sId;
   String question;
   String room;
@@ -9,7 +12,7 @@ class FeedbackQuestion {
       {this.answerOptions, this.sId, this.question, this.room, this.iV});
 
   FeedbackQuestion.fromJson(Map<String, dynamic> json) {
-    answerOptions = json['answerOptions'].cast<String>();
+    //answerOptions = json['answerOptions'].cast<String>();
     sId = json['_id'];
     question = json['question'];
     room = json['room'];
