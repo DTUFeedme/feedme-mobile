@@ -11,34 +11,48 @@ class RestService {
     'Content-Type': 'application/json'
   };
 
-      Future<APIResponse<FeedbackQuestion>> getQuestionByRoom(String room) {
+      Future<APIResponse<List<FeedbackQuestion>>> getQuestionByRoom(String room) {
+      print(room);
       return http.get(API + '/question/room/' + room, headers: headers).then((data) async {
+      print("Hej");
       if (data.statusCode == 200) {
-        //returns json object
-        //Kan man være sikker på at denne liste altid er en lang?
+        print("Hej1");
         List<String> answerOptionsId;
         final jsonData = json.decode(data.body);
-        final FeedbackQuestion feedbackQuestion = null;
+        print(jsonData.toString());
+        final questionList = <FeedbackQuestion>[];
+        print("Hej2");
         for (var e in jsonData) {
-          answerOptionsId = e['answerOptions'];
-          feedbackQuestion.sId = e['_id'];
-          feedbackQuestion.question = e['question'];
-          feedbackQuestion.room = e['room'];
-          feedbackQuestion.iV = int.parse(e['__v']);
-        }
-        if (feedbackQuestion != null) {
-          APIResponse<List<AnswerOption>> temp = await getAnswerOptionsByIdList(answerOptionsId);
+          print("HejHej");
+          final feedbackQuestion = FeedbackQuestion(
+            sId: e['_id'],
+            question: e['question'],
+            room: e['room'],
+            iV: e['__v']
+          );
+          print("HejHejHej");
+          print(e['answerOptions'].toString());
+          answerOptionsId = List.from(e['answerOptions']);
+          print("1");
+          print(answerOptionsId.toString());
+          APIResponse<List<AnswerOption>> temp;
+          if (answerOptionsId.length > 0) {
+            //temp = await getAnswerOptionsByIdList(answerOptionsId);
+          }/*
           if (temp.error != true) {
+            print("Betta");
             feedbackQuestion.answerOptions = temp.data;
-            return APIResponse<FeedbackQuestion>(data: feedbackQuestion);
-          }
-        } else {
-          return APIResponse<FeedbackQuestion>(error: true, errorMessage: 'No questions found');
+          } else {
+            return APIResponse<List<FeedbackQuestion>>(error: true, errorMessage: 'No questions found');
+          }*/
+          questionList.add(feedbackQuestion);
         }
+        print("Hej3");
+        return APIResponse<List<FeedbackQuestion>>(data: questionList);
       }
-      return APIResponse<FeedbackQuestion>(error: true, errorMessage: 'An error occured');
+      return APIResponse<List<FeedbackQuestion>>(error: true, errorMessage: 'An error occured1');
     })
-    .catchError((_) => APIResponse<FeedbackQuestion>(error: true, errorMessage: 'An error occured'));
+    .catchError((_) => APIResponse<List<FeedbackQuestion>>(error: true, errorMessage: 'An error occured2'));
   }
 
    Future<APIResponse<List<AnswerOption>>> getAnswerOptionsByIdList(List<String> answerIdList) {
@@ -62,9 +76,9 @@ class RestService {
           return APIResponse<List<AnswerOption>>(error: true, errorMessage: 'No answers were found');
         }
       }
-      return APIResponse<List<AnswerOption>>(error: true, errorMessage: 'An error occured');
+      return APIResponse<List<AnswerOption>>(error: true, errorMessage: 'An error occured3');
     })
-    .catchError((_) => APIResponse<List<AnswerOption>>(error: true, errorMessage: 'An error occured'));
+    .catchError((_) => APIResponse<List<AnswerOption>>(error: true, errorMessage: 'An error occured4'));
   }
 
 

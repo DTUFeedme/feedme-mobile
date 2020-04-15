@@ -12,13 +12,12 @@ import 'package:climify/services/rest_service.dart';
 
 class FeedbackWidget extends StatefulWidget {
   final FeedbackQuestion question;
-  final String room;
-  final Function(FeedbackQuestion question, int option) returnFeedback;
+  //final String room;
+  final Function(FeedbackQuestion question) returnFeedback;
 
   const FeedbackWidget({
     Key key,
     @required this.question,
-    @required this.room,
     @required this.returnFeedback,
   }) : super(key: key);
 
@@ -37,22 +36,10 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
   void _sendFeedback() async {
     print("hej");
-    if (_chosenOption != null && (widget.room != "" || widget.room == null)) {
+    if (_chosenOption != null && (widget.question != null)) {
       final restService = RestService();
 
-      APIResponse<FeedbackQuestion> question = await restService.getQuestionByRoom(widget.room);
-      APIResponse<List<AnswerOption>> answerOptionList;
-      APIResponse<bool> status;
-
-      if (question.error != true) {
-        answerOptionList = await restService.getAnswerOptionsByRoom(question.data.sId);
-      } else {
-        print(question.errorMessage);
-      }
-
-      if (answerOptionList.error != true) {
-        status = await restService.putFeedback(answerOptionList.data[_chosenOption].sId);
-      } 
+      APIResponse<bool> status = await restService.putFeedback(widget.question.answerOptions[_chosenOption].sId);
 
       if (status.data == true) {
         print("Answer has been added");
@@ -60,8 +47,11 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
         print(status.errorMessage);
       }
 
+      widget.returnFeedback(widget.question);
+      Navigator.pop(context);
+
       //Seb, skal den her stadig være der?
-      widget.returnFeedback(widget.question, _chosenOption);
+      //widget.returnFeedback(widget.question);
     }
   }
 
@@ -80,11 +70,10 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
             margin: EdgeInsets.only(bottom: 8),
           ),
           Column(
-            //Det kan være det skal laves om her
             children: widget.question.answerOptions
                 .asMap()
                 .map(
-                  (int i, String option) {
+                  (int i, dynamic option) {
                     return MapEntry(
                       i,
                       Container(
@@ -102,7 +91,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
                           child: Container(
                             child: Center(
                               child: Text(
-                                option,
+                                option.answer,
                                 style: TextStyles.optionStyle,
                               ),
                             ),
