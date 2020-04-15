@@ -13,12 +13,11 @@ import 'package:climify/services/rest_service.dart';
 class FeedbackWidget extends StatefulWidget {
   final FeedbackQuestion question;
   //final String room;
-  final Function(FeedbackQuestion question) returnFeedback;
+  //final Function(FeedbackQuestion question) returnFeedback;
 
   const FeedbackWidget({
     Key key,
     @required this.question,
-    @required this.returnFeedback,
   }) : super(key: key);
 
   @override
@@ -47,7 +46,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
         print(status.errorMessage);
       }
 
-      widget.returnFeedback(widget.question);
+      //widget.returnFeedback(widget.question);
       Navigator.pop(context);
 
       //Seb, skal den her stadig være der?
@@ -57,72 +56,78 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: <Widget>[
-          Container(
-            child: Text(
-              widget.question.question,
-              style: TextStyles.titleStyle,
+    return 
+    Scaffold(
+        appBar: AppBar(
+        title: Text('Answer the question'),
+        ),
+        body: Container(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            Container(
+              child: Text(
+                widget.question.question,
+                style: TextStyles.titleStyle,
+              ),
+              margin: EdgeInsets.only(bottom: 8),
             ),
-            margin: EdgeInsets.only(bottom: 8),
-          ),
-          Column(
-            children: widget.question.answerOptions
-                .asMap()
-                .map(
-                  (int i, dynamic option) {
-                    return MapEntry(
-                      i,
-                      Container(
-                        margin: EdgeInsets.symmetric(
-                          vertical: 6,
-                          horizontal: 40,
-                        ),
-                        child: RoundedBox(
-                          onTap: () => _setChosenOption(i),
-                          decoration: BoxDecoration(
-                            color: i == _chosenOption
-                                ? Colors.grey
-                                : Colors.transparent,
+            Column(
+              children: widget.question.answerOptions
+                  .asMap()
+                  .map(
+                    (int i, dynamic option) {
+                      return MapEntry(
+                        i,
+                        Container(
+                          margin: EdgeInsets.symmetric(
+                            vertical: 6,
+                            horizontal: 40,
                           ),
-                          child: Container(
-                            child: Center(
-                              child: Text(
-                                option.answer,
-                                style: TextStyles.optionStyle,
+                          child: RoundedBox(
+                            onTap: () => _setChosenOption(i),
+                            decoration: BoxDecoration(
+                              color: i == _chosenOption
+                                  ? Colors.grey
+                                  : Colors.transparent,
+                            ),
+                            child: Container(
+                              child: Center(
+                                child: Text(
+                                  option.answer,
+                                  style: TextStyles.optionStyle,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                )
-                .values
-                .toList(),
-          ),
-          Container(
-            margin: EdgeInsets.symmetric(
-              vertical: 10,
-              horizontal: 96,
+                      );
+                    },
+                  )
+                  .values
+                  .toList(),
             ),
-            child: RoundedBox(
-              onTap: _sendFeedback,
-              decoration: BoxDecoration(
-                color: _chosenOption == null ? Colors.blue : Colors.lightBlue,
+            Container(
+              margin: EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 96,
               ),
-              child: Center(
-                child: Text(
-                  "Send feedback",
-                  style: TextStyles.bodyStyle.copyWith(color: Colors.white),
+              child: RoundedBox(
+                onTap: _sendFeedback,
+                decoration: BoxDecoration(
+                  color: _chosenOption == null ? Colors.blue : Colors.lightBlue,
+                ),
+                child: Center(
+                  child: Text(
+                    "Send feedback",
+                    style: TextStyles.bodyStyle.copyWith(color: Colors.white),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
