@@ -163,6 +163,7 @@ class RestService {
   }
 
   Future<APIResponse<UserModel>> postUser(String email, String password) {
+    print("creating user");
     final String body = json.encode({'email': email, 'password': password});
     return http.post(api + '/users', headers: headers, body: body).then((data) {
       if (data.statusCode == 200) {
@@ -177,11 +178,9 @@ class RestService {
           ),
         );
       } else {
-        print(data.statusCode);
-        final errorMessage = getErrorMessage(data);
         return APIResponse<UserModel>(
           error: true,
-          errorMessage: errorMessage,
+          errorMessage: data.body,
         );
       }
     }).catchError(
@@ -204,11 +203,11 @@ class RestService {
           statusCode: data.statusCode,
         );
       } else {
-        final errorMessage = getErrorMessage(data);
         return APIResponse<UserModel>(
-            error: true,
-            errorMessage: errorMessage,
-            statusCode: data.statusCode);
+          error: true,
+          errorMessage: data.body,
+          statusCode: data.statusCode,
+        );
       }
     }).catchError((_) =>
         APIResponse<UserModel>(error: true, errorMessage: 'Login failed'));
@@ -238,7 +237,8 @@ class RestService {
           }
           buildings.add(BuildingModel(buildingId, buildingName, rooms));
         }
-        return APIResponse<List<BuildingModel>>(data: buildings, statusCode: 200);
+        return APIResponse<List<BuildingModel>>(
+            data: buildings, statusCode: 200);
       } else {
         final errorMessage = getErrorMessage(data);
         return APIResponse<List<BuildingModel>>(

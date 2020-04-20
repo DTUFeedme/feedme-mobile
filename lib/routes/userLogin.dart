@@ -25,6 +25,13 @@ class _UserLoginState extends State<UserLogin> {
 
   Future<void> _authUser({bool create = false}) async {
     if (!_buttonsActive) return;
+    if (create &&
+        _newEmailController.text.trim() == "" &&
+        _newPasswordController.text.trim() == "" &&
+        _newPasswordConfirmController.text.trim() == "") return;
+    if (!create &&
+        _emailController.text.trim() == "" &&
+        _passwordController.text.trim() == "") return;
     setState(() {
       _buttonsActive = false;
     });
@@ -34,7 +41,7 @@ class _UserLoginState extends State<UserLogin> {
         apiResponse = await _restService.postUser(
             _newEmailController.text, _newPasswordController.text);
       } else {
-        SnackBarError.showErrorSnackBar("Passwords do not match", _scaffoldKey);
+        apiResponse = APIResponse(error: true, errorMessage: "Passwords do not match");
       }
     } else {
       apiResponse = await _restService.loginUser(
@@ -67,7 +74,7 @@ class _UserLoginState extends State<UserLogin> {
     _newPasswordConfirmController.text = "test1234";
   }
 
-  void _setupDev2(){
+  void _setupDev2() {
     _emailController.text = "test@test.com";
     _passwordController.text = "test1234";
   }
