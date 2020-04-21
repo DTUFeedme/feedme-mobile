@@ -2,7 +2,8 @@ import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/routes/answerQuestion.dart';
-import 'package:climify/routes/buildingsRoute.dart';
+import 'package:climify/routes/buildingManager.dart';
+import 'package:climify/routes/buildingsList.dart';
 import 'package:climify/routes/enterRoomNumber.dart';
 import 'package:climify/routes/feedback.dart';
 import 'package:climify/routes/selectQuestion.dart';
@@ -49,7 +50,8 @@ class _MyHomePageState extends State<MyHomePage> {
         home: UserLogin(),
         routes: {
           "login": (context) => UserLogin(),
-          "buildings": (context) => BuildingsPage(),
+          "buildings": (context) => BuildingsList(),
+          "buildingManager": (context) => BuildingManager(),
         },
       ),
     );

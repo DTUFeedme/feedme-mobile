@@ -5,12 +5,12 @@ import 'package:climify/services/rest_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class BuildingsPage extends StatefulWidget {
+class BuildingsList extends StatefulWidget {
   @override
-  _BuildingsPageState createState() => _BuildingsPageState();
+  _BuildingsListState createState() => _BuildingsListState();
 }
 
-class _BuildingsPageState extends State<BuildingsPage> {
+class _BuildingsListState extends State<BuildingsList> {
   RestService _restService = RestService();
   List<BuildingModel> _buildings = [];
 
@@ -29,14 +29,18 @@ class _BuildingsPageState extends State<BuildingsPage> {
     setState(() {
       _buildings = buildingsResponse.data;
     });
-    print(_buildings);
+  }
+
+  void _focusBuilding(BuildingModel building) {
+    Provider.of<GlobalState>(context).updateBuilding(building);
+    Navigator.of(context).pushNamed("buildingManager");
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Test"),
+        title: Text("Buildings"),
       ),
       body: Container(
         child: ListView.builder(
@@ -49,11 +53,26 @@ class _BuildingsPageState extends State<BuildingsPage> {
 
   Widget _buildingRow(BuildingModel building) {
     List<Widget> columnChildren = [];
-    columnChildren.add(Text(building.name));
-    columnChildren
-        .addAll(building.rooms.map((room) => Text(room.name)).toList());
-    return Column(
-      children: columnChildren,
+    columnChildren.add(
+      Text(building.name),
+    );
+    columnChildren.add(
+      Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: 8,
+        ),
+      ),
+    );
+    columnChildren.addAll(
+      building.rooms.map((room) {
+        return Text(room.name);
+      }).toList(),
+    );
+    return InkWell(
+      onTap: () => _focusBuilding(building),
+      child: Column(
+        children: columnChildren,
+      ),
     );
   }
 }
