@@ -1,5 +1,5 @@
 import 'package:climify/models/api_response.dart';
-import 'package:climify/models/userData.dart';
+import 'package:climify/models/globalState.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
@@ -41,7 +41,8 @@ class _UserLoginState extends State<UserLogin> {
         apiResponse = await _restService.postUser(
             _newEmailController.text, _newPasswordController.text);
       } else {
-        apiResponse = APIResponse(error: true, errorMessage: "Passwords do not match");
+        apiResponse =
+            APIResponse(error: true, errorMessage: "Passwords do not match");
       }
     } else {
       apiResponse = await _restService.loginUser(
@@ -50,10 +51,8 @@ class _UserLoginState extends State<UserLogin> {
     if (apiResponse.error) {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     } else {
-      Provider.of<UserData>(context).updateAccount({
-        'email': apiResponse.data.email,
-        'token': apiResponse.data.authToken,
-      });
+      Provider.of<GlobalState>(context)
+          .updateAccount(apiResponse.data.email, apiResponse.data.authToken);
       Navigator.of(context).pushReplacementNamed("buildings");
     }
     setState(() {

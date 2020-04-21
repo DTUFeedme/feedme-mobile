@@ -1,4 +1,5 @@
 import 'package:climify/models/feedbackQuestion.dart';
+import 'package:climify/models/globalState.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/routes/answerQuestion.dart';
 import 'package:climify/routes/buildingsRoute.dart';
@@ -14,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'models/api_response.dart';
-import 'models/userData.dart';
 
 void main() => runApp(MyApp());
 
@@ -43,8 +43,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<UserData>(
-      create: (context) => UserData(),
+    return ChangeNotifierProvider<GlobalState>(
+      create: (context) => GlobalState(),
       child: MaterialApp(
         home: UserLogin(),
         routes: {

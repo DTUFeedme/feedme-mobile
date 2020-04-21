@@ -1,6 +1,6 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
-import 'package:climify/models/userData.dart';
+import 'package:climify/models/globalState.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +22,7 @@ class _BuildingsPageState extends State<BuildingsPage> {
 
   void _getBuildings() async {
     await Future.delayed(Duration.zero);
-    String token = Provider.of<UserData>(context).userData['token'];
+    String token = Provider.of<GlobalState>(context).globalState['token'];
     APIResponse<List<BuildingModel>> buildingsResponse =
         await _restService.getBuildingsWithAdminRights(token);
     if (buildingsResponse.error) return;
