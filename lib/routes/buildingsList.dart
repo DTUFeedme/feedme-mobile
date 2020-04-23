@@ -52,26 +52,14 @@ class _BuildingsListState extends State<BuildingsList> {
   }
 
   Widget _buildingRow(BuildingModel building) {
-    List<Widget> columnChildren = [];
-    columnChildren.add(
-      Text(building.name),
-    );
-    columnChildren.add(
-      Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: 8,
-        ),
-      ),
-    );
-    columnChildren.addAll(
-      building.rooms.map((room) {
-        return Text(room.name);
-      }).toList(),
-    );
     return InkWell(
       onTap: () => _focusBuilding(building),
-      child: Column(
-        children: columnChildren,
+      child: SizedBox(
+        width: double.infinity,
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Text(building.name),
+        ),
       ),
     );
   }

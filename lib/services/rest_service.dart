@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/roomModel.dart';
+import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:http/http.dart' as http;
 
@@ -11,7 +13,8 @@ import 'package:http/http.dart';
 
 class RestService {
   static const api = 'http://climify-spe.compute.dtu.dk:8080/api-dev';
-  static const headers = {'Content-Type': 'application/json'};
+  Map<String, String> headers({String token = ""}) =>
+      {'Content-Type': 'application/json', 'x-auth-token': token};
 
   String getErrorMessage(Response response) {
     switch (response.statusCode) {
@@ -31,7 +34,7 @@ class RestService {
   Future<APIResponse<List<FeedbackQuestion>>> getQuestionByRoom(String room) {
     print(room);
     return http
-        .get(api + '/question/room/' + room, headers: headers)
+        .get(api + '/question/room/' + room, headers: headers())
         .then((data) async {
       print("Hej");
       if (data.statusCode == 200) {
@@ -79,7 +82,7 @@ class RestService {
       List<String> answerIdList) {
     return http
         .get(api + '/answer/fromQuestion/' + answerIdList.toString(),
-            headers: headers)
+            headers: headers())
         .then((data) {
       if (data.statusCode == 200) {
         //returns json object
@@ -109,7 +112,7 @@ class RestService {
   Future<APIResponse<List<AnswerOption>>> getAnswerOptionsByRoom(
       String questionId) {
     return http
-        .get(api + '/answer/fromQuestion/' + questionId, headers: headers)
+        .get(api + '/answer/fromQuestion/' + questionId, headers: headers())
         .then((data) {
       if (data.statusCode == 200) {
         //returns json object
@@ -138,7 +141,7 @@ class RestService {
 
   Future<APIResponse<bool>> putFeedback(String answerId) {
     return http
-        .put(api + '/answer/up/' + answerId, headers: headers)
+        .put(api + '/answer/up/' + answerId, headers: headers())
         .then((data) {
       if (data.statusCode == 200) {
         //returns json object
@@ -165,7 +168,9 @@ class RestService {
   Future<APIResponse<UserModel>> postUser(String email, String password) {
     print("creating user");
     final String body = json.encode({'email': email, 'password': password});
-    return http.post(api + '/users', headers: headers, body: body).then((data) {
+    return http
+        .post(api + '/users', headers: headers(), body: body)
+        .then((data) {
       if (data.statusCode == 200) {
         final responseBody = json.decode(data.body);
         final responseEmail = responseBody['email'];
@@ -191,7 +196,9 @@ class RestService {
 
   Future<APIResponse<UserModel>> loginUser(String email, String password) {
     final String body = json.encode({'email': email, 'password': password});
-    return http.post(api + '/auth', headers: headers, body: body).then((data) {
+    return http
+        .post(api + '/auth', headers: headers(), body: body)
+        .then((data) {
       if (data.statusCode == 200) {
         final responseHeaders = data.headers;
         final token = responseHeaders['x-auth-token'];
@@ -210,16 +217,24 @@ class RestService {
         );
       }
     }).catchError((_) =>
-        APIResponse<UserModel>(error: true, errorMessage: 'Login failed'));
+            APIResponse<UserModel>(error: true, errorMessage: 'Login failed'));
+  }
+
+  List<RoomModel> _extractRooms(dynamic responseBuilding) {
+    List<RoomModel> rooms = [];
+    for (int j = 0; j < responseBuilding['rooms'].length; j++) {
+      dynamic responseRoom = responseBuilding['rooms'][j];
+      String roomName = responseRoom['name'];
+      String roomId = responseRoom['_id'];
+      rooms.add(RoomModel(roomId, roomName));
+    }
+    return rooms;
   }
 
   Future<APIResponse<List<BuildingModel>>> getBuildingsWithAdminRights(
       String token) {
-    Map<String, String> newHeaders = {};
-    newHeaders.addAll(headers);
-    newHeaders.addAll({'x-auth-token': token});
     return http
-        .get(api + '/buildings?admin=me', headers: newHeaders)
+        .get(api + '/buildings?admin=me', headers: headers(token: token))
         .then((data) {
       if (data.statusCode == 200) {
         final responseBody = json.decode(data.body);
@@ -228,13 +243,7 @@ class RestService {
           dynamic responseBuilding = responseBody[i];
           String buildingName = responseBuilding['name'];
           String buildingId = responseBuilding['_id'];
-          List<RoomModel> rooms = [];
-          for (int j = 0; j < responseBuilding['rooms'].length; j++) {
-            dynamic responseRoom = responseBuilding['rooms'][j];
-            String roomName = responseRoom['name'];
-            String roomId = responseRoom['_id'];
-            rooms.add(RoomModel(roomId, roomName));
-          }
+          List<RoomModel> rooms = _extractRooms(responseBuilding);
           buildings.add(BuildingModel(buildingId, buildingName, rooms));
         }
         return APIResponse<List<BuildingModel>>(
@@ -248,5 +257,142 @@ class RestService {
       }
     }).catchError((_) => APIResponse<List<BuildingModel>>(
             error: true, errorMessage: 'Get Buildings failed'));
+  }
+
+  Future<APIResponse<List<Beacon>>> getBeaconsOfBuilding(
+    String token,
+    BuildingModel building,
+  ) {
+    return http
+        .get(api + '/beacons?building=' + building.id,
+            headers: headers(token: token))
+        .then((data) {
+      if (data.statusCode == 200) {
+        List<Beacon> beacons = [];
+        final responseBody = json.decode(data.body);
+        for (int i = 0; i < responseBody.length; i++) {
+          String id = responseBody[i]['_id'];
+          String name = responseBody[i]['name'];
+          String uuid = responseBody[i]['uuid'];
+          Beacon beacon = Beacon(id, name, building, uuid);
+          beacons.add(beacon);
+        }
+        return APIResponse<List<Beacon>>(data: beacons);
+      } else {
+        return APIResponse<List<Beacon>>(
+            error: true, errorMessage: data.body ?? "");
+      }
+    }).catchError((e) {
+      print(e);
+      return APIResponse<List<Beacon>>(
+          error: true, errorMessage: "Getting beacons failed");
+    });
+  }
+
+  Future<APIResponse<BuildingModel>> getBuilding(
+    String token,
+    String buildingId,
+  ) {
+    return http
+        .get(api + '/buildings/' + buildingId, headers: headers(token: token))
+        .then((data) {
+      if (data.statusCode == 200) {
+        dynamic resultBody = json.decode(data.body);
+        List<RoomModel> rooms = _extractRooms(resultBody);
+        BuildingModel building = BuildingModel(
+          resultBody['_id'],
+          resultBody['name'],
+          rooms,
+        );
+        return APIResponse<BuildingModel>(data: building);
+      } else {
+        return APIResponse<BuildingModel>(
+            error: true, errorMessage: data.body ?? "");
+      }
+    }).catchError((e) => APIResponse<BuildingModel>(
+              error: true,
+              errorMessage: "Get Building Failed",
+            ));
+  }
+
+  Future<APIResponse<RoomModel>> addRoom(
+    String token,
+    String roomName,
+    BuildingModel building,
+  ) {
+    final String body =
+        json.encode({'name': roomName, 'buildingId': building.id});
+    return http
+        .post(api + '/rooms', headers: headers(token: token), body: body)
+        .then((roomData) {
+      if (roomData.statusCode == 200) {
+        dynamic resultBody = json.decode(roomData.body);
+        RoomModel room = RoomModel(
+          resultBody['_id'],
+          resultBody['name'],
+        );
+        return APIResponse<RoomModel>(data: room);
+      } else {
+        return APIResponse<RoomModel>(
+            error: true, errorMessage: roomData.body ?? "");
+      }
+    }).catchError((e) {
+      return APIResponse<RoomModel>(
+          error: true, errorMessage: "Add room failed");
+    });
+  }
+
+  Future<APIResponse<String>> addSignalMap(
+    String token,
+    SignalMap signalMap,
+    String roomId,
+  ) {
+    final String signalBody = json.encode({
+      "beacons": signalMap.beacons,
+      "roomId": roomId,
+      "buildingId": signalMap.buildingId
+    });
+    return http
+        .post(api + '/signalMaps',
+            headers: headers(token: token), body: signalBody)
+        .then((signalMapData) {
+      if (signalMapData.statusCode == 200) {
+        return APIResponse<String>(data: "Add room complete");
+      } else {
+        return APIResponse<String>(
+            error: true, errorMessage: signalMapData.body ?? "");
+      }
+    }).catchError((e) {
+      return APIResponse<String>(
+          error: true, errorMessage: "Add signal map failed");
+    });
+  }
+
+  Future<APIResponse<RoomModel>> getRoomFromSignalMap(
+    String token,
+    SignalMap signalMap,
+  ) {
+    final String signalBody = json.encode({
+      "beacons": signalMap.beacons,
+      "buildingId": signalMap.buildingId,
+    });
+    print(signalBody);
+    return http
+        .post(api + '/signalMaps',
+            headers: headers(token: token), body: signalBody)
+        .then((data) {
+      if (data.statusCode == 200) {
+        dynamic responseBody = json.decode(data.body);
+        RoomModel room = RoomModel(
+          responseBody['room']['_id'] ?? "error",
+          responseBody['room']['name'] ?? "error",
+        );
+        return APIResponse<RoomModel>(data: room);
+      } else {
+        return APIResponse<RoomModel>(
+            error: true, errorMessage: data.body ?? "");
+      }
+    }).catchError((e) => APIResponse<RoomModel>(
+            error: true, errorMessage: e.toString()));
   }
 }
