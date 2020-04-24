@@ -34,7 +34,7 @@ class BluetoothServices {
     });
 
     flutterBlue.stopScan();
-    await Future.delayed(Duration(seconds: timeoutms));
+    await Future.delayed(Duration(milliseconds: timeoutms));
     return finalResults;
   }
 
