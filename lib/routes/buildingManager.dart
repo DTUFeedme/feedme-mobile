@@ -88,11 +88,15 @@ class _BuildingManagerState extends State<BuildingManager> {
           builder: (context, setState) {
             void _scan() async {
               if (!mounted) return;
+              if (await _bluetooth.isOn == false) return;
 
               setState(() {
                 _scanningSignalMap = true;
               });
-              List<ScanResult> scanResults = await _bluetooth.scanForDevices(4000);
+              SignalMap tempSignalMap = _signalMap;
+              int beaconsScanned = 0;
+              List<ScanResult> scanResults =
+                  await _bluetooth.scanForDevices(4000);
               scanResults.forEach((result) {
                 String beaconName = _bluetooth.getBeaconName(result);
                 if (_beacons
@@ -101,12 +105,21 @@ class _BuildingManagerState extends State<BuildingManager> {
                   String beaconId = _beacons
                       .firstWhere((element) => element.name == beaconName)
                       .id;
-                  _signalMap.addBeaconReading(
+                  tempSignalMap.addBeaconReading(
                       beaconId, _bluetooth.getRSSI(result));
+                  beaconsScanned++;
                 }
               });
+              if (beaconsScanned > 0) {
+                setState(() {
+                  _signalMap = tempSignalMap;
+                  _signalMapScans++;
+                });
+              } else {
+                SnackBarError.showErrorSnackBar(
+                    "No beacons scanned", _scaffoldKey);
+              }
               setState(() {
-                _signalMapScans++;
                 _scanningSignalMap = false;
               });
             }
@@ -188,6 +201,10 @@ class _BuildingManagerState extends State<BuildingManager> {
 
   void _getRoom() async {
     if (_gettingRoom) return;
+    if (!await _bluetooth.isOn) {
+      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
+      return;
+    }
     setState(() {
       _gettingRoom = true;
       _signalMap = SignalMap(_building.id);
@@ -245,9 +262,18 @@ class _BuildingManagerState extends State<BuildingManager> {
                 );
               }).toList(),
             ),
-            RaisedButton(
-              child: Text("Where am I?"),
-              onPressed: () => _getRoom(),
+            Row(
+              children: <Widget>[
+                RaisedButton(
+                  child: Text("Where am I?"),
+                  onPressed: () => _getRoom(),
+                ),
+                _gettingRoom
+                    ? CircularProgressIndicator(
+                        value: null,
+                      )
+                    : Container(),
+              ],
             ),
             Text(
               "Current Room: $_currentRoom",

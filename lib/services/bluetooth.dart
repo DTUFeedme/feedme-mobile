@@ -22,6 +22,9 @@ class BluetoothServices {
   // }
 
   Future<List<ScanResult>> scanForDevices(int timeoutms) async {
+    if (await flutterBlue.isOn == false) {
+      return [];
+    }
     List<ScanResult> finalResults = [];
     flutterBlue.startScan(timeout: Duration(milliseconds: timeoutms));
 
