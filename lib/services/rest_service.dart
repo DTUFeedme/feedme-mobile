@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
+import 'package:climify/models/questionModel.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
@@ -395,4 +396,95 @@ class RestService {
     }).catchError((e) => APIResponse<RoomModel>(
             error: true, errorMessage: e.toString()));
   }
+
+  Future<APIResponse<Beacon>> addBeacon(
+    String token,
+    String id,
+    String name,
+    BuildingModel building,
+    String uuid,
+  ) {
+    final String body =
+        json.encode({'id': id, 'name': name, 'buildingId': building.id, 'uuid': uuid});
+    return http
+        .post(api + '/beacons', headers: headers(token: token), body: body)
+        .then((beaconData) {
+      if (beaconData.statusCode == 200) {
+        dynamic resultBody = json.decode(beaconData.body);
+        Beacon beacon = Beacon(
+          resultBody['_id'],
+          resultBody['name'],
+          resultBody['bulding'],
+          resultBody['uuid'],
+        );
+        return APIResponse<Beacon>(data: beacon);
+      } else {
+        return APIResponse<Beacon>(
+            error: true, errorMessage: beaconData.body ?? "");
+      }
+    }).catchError((e) {
+      return APIResponse<Beacon>(
+          error: true, errorMessage: "Adding beacon failed");
+    });
+  }
+/* 
+  Future<APIResponse<Question>> addQuestion(
+    String token,
+    String id,
+    RoomModel rooms,
+    String value,
+    bool isActive,
+    List<AnswerOption> answerOptions,
+  ) {
+    final String body =
+        json.encode({'id': id, 'rooms': rooms, 'value': value, 'answerOptions': answerOptions});
+    return http
+        .post(api + '/questions', headers: headers(token: token), body: body)
+        .then((questionData) {
+      if (questionData.statusCode == 200) {
+        dynamic resultBody = json.decode(questionData.body);
+        Question question = Question(
+          resultBody['_id'],
+          resultBody['rooms'],
+          resultBody['value'],
+          resultBody['isActive'],
+          resultBody['answerOptions'],
+        );
+        return APIResponse<Question>(data: question);
+      } else {
+        return APIResponse<Question>(
+            error: true, errorMessage: questionData.body ?? "");
+      }
+    }).catchError((e) {
+      return APIResponse<Question>(
+          error: true, errorMessage: "Adding question failed");
+    });
+  }
+  
+  Future<APIResponse<UserModel>> makeUserAdmin(
+    String token,
+    String userId,
+    BuildingModel building,
+  ) {
+    final String body =
+        json.encode({'userId': userId, 'buildingId': building.id});
+    return http
+        .patch(api + '/users/makeBuildingAdmin', headers: headers(token: token), body: body)
+        .then((adminData) {
+      if (adminData.statusCode == 200) {
+        dynamic resultBody = json.decode(adminData.body);
+        UserModel userModel = UserModel(
+          resultBody['userId'],
+          resultBody['bulding'],
+        );
+        return APIResponse<UserModel>(data: userModel);
+      } else {
+        return APIResponse<UserModel>(
+            error: true, errorMessage: adminData.body ?? "");
+      }
+    }).catchError((e) {
+      return APIResponse<UserModel>(
+          error: true, errorMessage: "Making user admin failed");
+    });
+  } */
 }
