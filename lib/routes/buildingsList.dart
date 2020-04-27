@@ -15,7 +15,7 @@ class _BuildingsListState extends State<BuildingsList> {
   RestService _restService = RestService();
   List<BuildingModel> _buildings = [];
   int _visibleIndex = 0;
-  List<DropdownMenuItem<BuildingModel>> _dropdownMenuItems;
+  List<DropdownMenuItem<BuildingModel>> _dropdownMenuItems = [];
   BuildingModel _selectedBuilding;
 
   @override
@@ -24,12 +24,13 @@ class _BuildingsListState extends State<BuildingsList> {
     _getBuildings();
   }
 
-  List<DropdownMenuItem<BuildingModel>> buildDropdownMenuItems(List<BuildingModel> buildings) {
+  List<DropdownMenuItem<BuildingModel>> buildDropdownMenuItems(
+      List<BuildingModel> buildings) {
     List<DropdownMenuItem<BuildingModel>> items = List();
     for (BuildingModel building in buildings) {
       items.add(
         DropdownMenuItem(
-          value: building, 
+          value: building,
           child: Text(building.name),
         ),
       );
@@ -44,7 +45,7 @@ class _BuildingsListState extends State<BuildingsList> {
   }
 
   Future<void> _getBuildings() async {
-    //await Future.delayed(Duration.zero);
+    await Future.delayed(Duration.zero);
     String token = Provider.of<GlobalState>(context).globalState['token'];
     APIResponse<List<BuildingModel>> buildingsResponse =
         await _restService.getBuildingsWithAdminRights(token);
@@ -59,13 +60,13 @@ class _BuildingsListState extends State<BuildingsList> {
     Navigator.of(context).pushNamed("buildingManager");
   }
 
-  onChangeDropdownItem(BuildingModel selectedBuilding){
+  onChangeDropdownItem(BuildingModel selectedBuilding) {
     setState(() {
       _selectedBuilding = selectedBuilding;
     });
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -80,8 +81,7 @@ class _BuildingsListState extends State<BuildingsList> {
             title: Text("Buildings"),
           ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle_outline), 
-              title: Text("Add beacon"))
+              icon: Icon(Icons.add_circle_outline), title: Text("Add beacon"))
         ],
         onTap: (int index) => _changeWindow(index),
         currentIndex: _visibleIndex,
@@ -95,7 +95,8 @@ class _BuildingsListState extends State<BuildingsList> {
               child: Container(
                 child: ListView.builder(
                   itemCount: _buildings.length,
-                  itemBuilder: (context, index) => _buildingRow(_buildings[index]),
+                  itemBuilder: (context, index) =>
+                      _buildingRow(_buildings[index]),
                 ),
               ),
             ),
@@ -104,14 +105,20 @@ class _BuildingsListState extends State<BuildingsList> {
               child: Column(
                 children: <Widget>[
                   Text("Select building"),
-                  SizedBox(height: 20.0,),
+                  SizedBox(
+                    height: 20.0,
+                  ),
                   DropdownButton(
-                    value: _dropdownMenuItems[0].value,
+                    value: (_dropdownMenuItems.length != 0)
+                        ? _dropdownMenuItems[0].value
+                        : null,
                     items: buildDropdownMenuItems(_buildings),
                     onChanged: onChangeDropdownItem,
                   ),
-                  SizedBox(height: 20.0,),
-                  Text('Selected: ${_selectedBuilding.name}')
+                  SizedBox(
+                    height: 20.0,
+                  ),
+                  Text('Selected: ${_selectedBuilding?.name}')
                 ],
               ),
             ),
