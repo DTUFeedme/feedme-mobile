@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/questionModel.dart';
@@ -399,13 +400,12 @@ class RestService {
 
   Future<APIResponse<Beacon>> addBeacon(
     String token,
-    String id,
     String name,
     BuildingModel building,
     String uuid,
   ) {
     final String body =
-        json.encode({'id': id, 'name': name, 'buildingId': building.id, 'uuid': uuid});
+        json.encode({'name': name, 'buildingId': building.id, 'uuid': uuid});
     return http
         .post(api + '/beacons', headers: headers(token: token), body: body)
         .then((beaconData) {
@@ -427,17 +427,15 @@ class RestService {
           error: true, errorMessage: "Adding beacon failed");
     });
   }
-/* 
+
   Future<APIResponse<Question>> addQuestion(
     String token,
-    String id,
-    RoomModel rooms,
+    List<RoomModel> rooms,
     String value,
-    bool isActive,
     List<AnswerOption> answerOptions,
   ) {
     final String body =
-        json.encode({'id': id, 'rooms': rooms, 'value': value, 'answerOptions': answerOptions});
+        json.encode({'rooms': rooms, 'value': value, 'answerOptions': answerOptions});
     return http
         .post(api + '/questions', headers: headers(token: token), body: body)
         .then((questionData) {
@@ -460,8 +458,8 @@ class RestService {
           error: true, errorMessage: "Adding question failed");
     });
   }
-  
-  Future<APIResponse<UserModel>> makeUserAdmin(
+   
+/*   Future<APIResponse<BuildingModel>> makeUserAdmin(
     String token,
     String userId,
     BuildingModel building,
@@ -477,14 +475,14 @@ class RestService {
           resultBody['userId'],
           resultBody['bulding'],
         );
-        return APIResponse<UserModel>(data: userModel);
+        return APIResponse<Void>(data: userModel);
       } else {
-        return APIResponse<UserModel>(
+        return APIResponse<Void>(
             error: true, errorMessage: adminData.body ?? "");
       }
     }).catchError((e) {
-      return APIResponse<UserModel>(
+      return APIResponse<Void>(
           error: true, errorMessage: "Making user admin failed");
     });
-  } */
+  }  */
 }
