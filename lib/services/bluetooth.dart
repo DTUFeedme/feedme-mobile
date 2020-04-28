@@ -52,8 +52,7 @@ class BluetoothServices {
             scanResult.advertisementData.serviceData[firstKey][i]);
         name = name + character;
       }
-      return "ABCD";
-      //return name;
+      return name;
     } catch (e) {
       return "";
     }
