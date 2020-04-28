@@ -11,6 +11,7 @@ import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:http/http.dart';
+import 'package:tuple/tuple.dart';
 
 class RestService {
   static const api = 'http://climify-spe.compute.dtu.dk:8080/api-dev';
@@ -397,33 +398,30 @@ class RestService {
             error: true, errorMessage: e.toString()));
   }
 
-  Future<APIResponse<Beacon>> addBeacon(
+  Future<APIResponse<bool>> addBeacon(
     String token,
-    String id,
-    String name,
+    Tuple2<String,String> beacon,
     BuildingModel building,
-    String uuid,
   ) {
     final String body =
-        json.encode({'id': id, 'name': name, 'buildingId': building.id, 'uuid': uuid});
+        json.encode({'buildingId': building.id, 'name': beacon.item1, 'uuid': beacon.item2});
     return http
         .post(api + '/beacons', headers: headers(token: token), body: body)
-        .then((beaconData) {
-      if (beaconData.statusCode == 200) {
-        dynamic resultBody = json.decode(beaconData.body);
-        Beacon beacon = Beacon(
-          resultBody['_id'],
-          resultBody['name'],
-          resultBody['bulding'],
-          resultBody['uuid'],
-        );
-        return APIResponse<Beacon>(data: beacon);
+        .then((data) {
+      if (data.statusCode == 200) {
+        dynamic responseBody = json.decode(data.body);
+        String answer = responseBody['name'];
+        if (answer == beacon.item1) {
+          return APIResponse<bool>(data: true);
+        } 
+        return APIResponse<bool>(
+            error: true, errorMessage: "Adding beacon failed");
       } else {
-        return APIResponse<Beacon>(
-            error: true, errorMessage: beaconData.body ?? "");
+        return APIResponse<bool>(
+            error: true, errorMessage: "Adding beacon failed");
       }
     }).catchError((e) {
-      return APIResponse<Beacon>(
+      return APIResponse<bool>(
           error: true, errorMessage: "Adding beacon failed");
     });
   }

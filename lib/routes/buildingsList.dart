@@ -9,6 +9,7 @@ import 'package:direct_select/direct_select.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:provider/provider.dart';
+import 'package:tuple/tuple.dart';
 
 class BuildingsList extends StatefulWidget {
   @override
@@ -21,19 +22,18 @@ class _BuildingsListState extends State<BuildingsList> {
   RestService _restService = RestService();
   List<BuildingModel> _buildings = [];
   int _visibleIndex = 0;
-  List<DropdownMenuItem<BuildingModel>> _dropdownMenuItems1 = [];
-  List<DropdownMenuItem<String>> _dropdownMenuItems2 = [];
   BuildingModel _selectedBuilding;
-  String _selectedBeacon;
-  List<String> _beaconNameList = [];
+  Tuple2<String,String> _selectedBeacon;
+  List<Tuple2<String,String>> _beaconList = [];
+  int scaned = 0;
 
   @override
   void initState() {
     super.initState();
     _getBuildings();
-    _dropdownMenuItems1 = buildDropdownMenuItems1(_buildings);
+    _selectedBuilding = (_buildings.length > 0) ? _buildings[0] : null;
     _getBLEDevicesList();
-    _dropdownMenuItems2 = buildDropdownMenuItems2(_beaconNameList);
+    _selectedBeacon = (_beaconList.length > 0) ? _beaconList[0] : null;
   }
 
   List<DropdownMenuItem<BuildingModel>> buildDropdownMenuItems1(
@@ -50,14 +50,14 @@ class _BuildingsListState extends State<BuildingsList> {
     return items;
   }
 
-    List<DropdownMenuItem<String>> buildDropdownMenuItems2(
-      List<String> beacons) {
-    List<DropdownMenuItem<String>> items = List();
-    for (String beacon in beacons) {
+    List<DropdownMenuItem<Tuple2<String,String>>> buildDropdownMenuItems2(
+      List<Tuple2<String,String>> beacons) {
+    List<DropdownMenuItem<Tuple2<String,String>>> items = List();
+    for (Tuple2<String,String> beacon in beacons) {
       items.add(
         DropdownMenuItem(
           value: beacon,
-          child: Text(beacon),
+          child: Text(beacon.item1),
         ),
       );
     }
@@ -100,20 +100,30 @@ class _BuildingsListState extends State<BuildingsList> {
     List<ScanResult> scanResults =
       await _bluetooth.scanForDevices(4000);
     scanResults.forEach((result) {
+    scaned++;
     String beaconName = _bluetooth.getBeaconName(result);
+    String beaconId = result.advertisementData.serviceUuids[0];
     if (beaconName != "") {
-      _beaconNameList.add(beaconName);
+      Tuple2<String,String> item = new Tuple2<String,String>(beaconName,beaconId);
+      _beaconList.add(item);
     }
-    });/*
-    if (_beaconNameList.length > 0) {
+    });
+  }
+
+  void _createBecon() async {
+    if (_selectedBeacon == null || _selectedBuilding == null) return;
+    String _token = Provider.of<GlobalState>(context).globalState['token'];
+    APIResponse<bool> apiResponse =
+      await _restService.addBeacon(_token,_selectedBeacon,_selectedBuilding);
+    if (apiResponse.data == true) {
       setState(() {
-        //Noget med at lave dropDown
+        _selectedBuilding = null;
+        _selectedBeacon = null;
+        _changeWindow(0);
       });
     } else {
-        //DowpDown med null?
-        SnackBarError.showErrorSnackBar(
-            "No beacons scanned", _scaffoldKey);
-    }*/
+      SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
+    }
   }
 
   onChangeDropdownItem1(BuildingModel selectedBuilding) {
@@ -122,7 +132,7 @@ class _BuildingsListState extends State<BuildingsList> {
     });
   }
 
-  onChangeDropdownItem2(String selectedBeacon) {
+  onChangeDropdownItem2(Tuple2<String,String> selectedBeacon) {
     setState(() {
       _selectedBeacon = selectedBeacon;
     });
@@ -172,10 +182,8 @@ class _BuildingsListState extends State<BuildingsList> {
                     height: 20.0,
                   ),
                   DropdownButton(
-                    value: (_dropdownMenuItems1.length == 0)
-                        ? _selectedBuilding
-                        : null,
-                    items: _dropdownMenuItems1,
+                    value: _selectedBuilding,
+                    items: buildDropdownMenuItems1(_buildings),
                     onChanged: onChangeDropdownItem1,
                   ),
                   SizedBox(
@@ -187,16 +195,23 @@ class _BuildingsListState extends State<BuildingsList> {
                     height: 20.0,
                   ),
                   DropdownButton(
-                    value: (_dropdownMenuItems2.length != 0)
-                        ? _selectedBeacon
-                        : null,
-                    items: _dropdownMenuItems2,
+                    value: _selectedBeacon,
+                    items: buildDropdownMenuItems2(_beaconList),
                     onChanged: onChangeDropdownItem2,
                   ),
                   SizedBox(
                     height: 20.0,
                   ),
-                  Text("Selected: $_selectedBeacon"),
+                  Text("Selected: ${_selectedBeacon?.item1}"),
+                  SizedBox(
+                    height: 20.0,
+                  ),
+                  RaisedButton(
+                    child: Text(
+                      "Create Beacon",
+                    ),
+                    onPressed: () => _createBecon(),
+                  ),
                 ],
               ),
             ),
