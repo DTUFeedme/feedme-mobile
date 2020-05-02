@@ -75,6 +75,7 @@ class _BuildingsListState extends State<BuildingsList> {
     String token = Provider.of<GlobalState>(context).globalState['token'];
     APIResponse<List<BuildingModel>> buildingsResponse =
         await _restService.getBuildingsWithAdminRights(token);
+        print(token);
     if (buildingsResponse.error) return;
     setState(() {
       _buildings = buildingsResponse.data;
