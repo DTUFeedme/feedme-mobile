@@ -23,17 +23,15 @@ class _BuildingsListState extends State<BuildingsList> {
   List<BuildingModel> _buildings = [];
   int _visibleIndex = 0;
   BuildingModel _selectedBuilding;
-  Tuple2<String,String> _selectedBeacon;
-  List<Tuple2<String,String>> _beaconList = [];
-  int scaned = 0;
+  Tuple2<String, String> _selectedBeacon;
+  List<Tuple2<String, String>> _beaconList = [];
+  int _scanned = 0;
 
   @override
   void initState() {
     super.initState();
     _getBuildings();
-    _selectedBuilding = (_buildings.length > 0) ? _buildings[0] : null;
     _getBLEDevicesList();
-    _selectedBeacon = (_beaconList.length > 0) ? _beaconList[0] : null;
   }
 
   List<DropdownMenuItem<BuildingModel>> buildDropdownMenuItems1(
@@ -50,10 +48,10 @@ class _BuildingsListState extends State<BuildingsList> {
     return items;
   }
 
-    List<DropdownMenuItem<Tuple2<String,String>>> buildDropdownMenuItems2(
-      List<Tuple2<String,String>> beacons) {
-    List<DropdownMenuItem<Tuple2<String,String>>> items = List();
-    for (Tuple2<String,String> beacon in beacons) {
+  List<DropdownMenuItem<Tuple2<String, String>>> buildDropdownMenuItems2(
+      List<Tuple2<String, String>> beacons) {
+    List<DropdownMenuItem<Tuple2<String, String>>> items = List();
+    for (Tuple2<String, String> beacon in beacons) {
       items.add(
         DropdownMenuItem(
           value: beacon,
@@ -75,10 +73,11 @@ class _BuildingsListState extends State<BuildingsList> {
     String token = Provider.of<GlobalState>(context).globalState['token'];
     APIResponse<List<BuildingModel>> buildingsResponse =
         await _restService.getBuildingsWithAdminRights(token);
-        print(token);
+    print(token);
     if (buildingsResponse.error) return;
     setState(() {
       _buildings = buildingsResponse.data;
+      _selectedBuilding = (_buildings.length > 0) ? _buildings[0] : null;
     });
   }
 
@@ -87,35 +86,43 @@ class _BuildingsListState extends State<BuildingsList> {
     Navigator.of(context).pushNamed("buildingManager");
   }
 
-  void _getBLEDevicesList() async{
+  void _getBLEDevicesList() async {
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
       return;
     }
     _scan();
-
   }
 
   void _scan() async {
     if (await _bluetooth.isOn == false) return;
-    List<ScanResult> scanResults =
-      await _bluetooth.scanForDevices(4000);
+    List<Tuple2<String, String>> beaconList = [];
+    List<ScanResult> scanResults = await _bluetooth.scanForDevices(4000);
     scanResults.forEach((result) {
-    scaned++;
-    String beaconName = _bluetooth.getBeaconName(result);
-    String beaconId = result.advertisementData.serviceUuids[0];
-    if (beaconName != "") {
-      Tuple2<String,String> item = new Tuple2<String,String>(beaconName,beaconId);
-      _beaconList.add(item);
-    }
+      setState(() {
+        _scanned++;
+      });
+      String beaconName = _bluetooth.getBeaconName(result);
+      List<String> serviceUuids = result.advertisementData.serviceUuids;
+      String beaconId = serviceUuids.isNotEmpty ? serviceUuids[0] : "";
+      RegExp regex = RegExp(r'^[a-zA-Z0-9]{4,6}$');
+      if (beaconName != "" && regex.hasMatch(beaconName)) {
+        Tuple2<String, String> item =
+            new Tuple2<String, String>(beaconName, beaconId);
+        beaconList.add(item);
+      }
+    });
+    setState(() {
+      _beaconList = beaconList;
+      _selectedBeacon = (_beaconList.length > 0) ? _beaconList[0] : null;
     });
   }
 
   void _createBecon() async {
     if (_selectedBeacon == null || _selectedBuilding == null) return;
     String _token = Provider.of<GlobalState>(context).globalState['token'];
-    APIResponse<bool> apiResponse =
-      await _restService.addBeacon(_token,_selectedBeacon,_selectedBuilding);
+    APIResponse<bool> apiResponse = await _restService.addBeacon(
+        _token, _selectedBeacon, _selectedBuilding);
     if (apiResponse.data == true) {
       setState(() {
         _selectedBuilding = null;
@@ -133,7 +140,7 @@ class _BuildingsListState extends State<BuildingsList> {
     });
   }
 
-  onChangeDropdownItem2(Tuple2<String,String> selectedBeacon) {
+  onChangeDropdownItem2(Tuple2<String, String> selectedBeacon) {
     setState(() {
       _selectedBeacon = selectedBeacon;
     });
