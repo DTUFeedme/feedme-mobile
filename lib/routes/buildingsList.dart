@@ -175,6 +175,10 @@ class _BuildingsListState extends State<BuildingsList> {
               visible: _visibleIndex == 0,
               child: Container(
                 child: ListView.builder(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   itemCount: _buildings.length,
                   itemBuilder: (context, index) =>
                       _buildingRow(_buildings[index]),
@@ -246,13 +250,29 @@ class _BuildingsListState extends State<BuildingsList> {
   }
 */
   Widget _buildingRow(BuildingModel building) {
-    return InkWell(
-      onTap: () => _focusBuilding(building),
-      child: SizedBox(
-        width: double.infinity,
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: Text(building.name),
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(),
+        ),
+      ),
+      child: Material(
+        child: InkWell(
+          onTap: () => _focusBuilding(building),
+          child: SizedBox(
+            width: double.infinity,
+            child: Center(
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  building.name,
+                  style: TextStyle(
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

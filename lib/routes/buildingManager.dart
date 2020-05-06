@@ -250,6 +250,7 @@ class _BuildingManagerState extends State<BuildingManager> {
         child: Column(
           children: <Widget>[
             Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: _building.rooms.map((room) {
                 return Container(
                   child: Text(
