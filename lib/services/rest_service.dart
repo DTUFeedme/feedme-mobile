@@ -168,7 +168,6 @@ class RestService {
   }
 
   Future<APIResponse<UserModel>> postUser(String email, String password) {
-    print("creating user");
     final String body = json.encode({'email': email, 'password': password});
     return http
         .post(api + '/users', headers: headers(), body: body)
@@ -394,17 +393,20 @@ class RestService {
         return APIResponse<RoomModel>(
             error: true, errorMessage: data.body ?? "");
       }
-    }).catchError((e) => APIResponse<RoomModel>(
-            error: true, errorMessage: e.toString()));
+    }).catchError((e) =>
+            APIResponse<RoomModel>(error: true, errorMessage: e.toString()));
   }
 
   Future<APIResponse<bool>> addBeacon(
     String token,
-    Tuple2<String,String> beacon,
+    Tuple2<String, String> beacon,
     BuildingModel building,
   ) {
-    final String body =
-        json.encode({'buildingId': building.id, 'name': beacon.item1, 'uuid': beacon.item2});
+    final String body = json.encode({
+      'buildingId': building.id,
+      'name': beacon.item1,
+      'uuid': beacon.item2
+    });
     return http
         .post(api + '/beacons', headers: headers(token: token), body: body)
         .then((data) {
@@ -432,8 +434,8 @@ class RestService {
     String value,
     List<AnswerOption> answerOptions,
   ) {
-    final String body =
-        json.encode({'rooms': rooms, 'value': value, 'answerOptions': answerOptions});
+    final String body = json.encode(
+        {'rooms': rooms, 'value': value, 'answerOptions': answerOptions});
     return http
         .post(api + '/questions', headers: headers(token: token), body: body)
         .then((questionData) {
@@ -455,6 +457,31 @@ class RestService {
       return APIResponse<Question>(
           error: true, errorMessage: "Adding question failed");
     });
+  }
+
+  Future<APIResponse<UserModel>> createUnauthorizedUser() {
+    return http
+        .post(api + '/users', headers: headers())
+        .then((data) {
+      if (data.statusCode == 200) {
+        final responseHeaders = data.headers;
+        final token = responseHeaders['x-auth-token'];
+        return APIResponse<UserModel>(
+          data: UserModel(
+            "",
+            token,
+          ),
+        );
+      } else {
+        return APIResponse<UserModel>(
+          error: true,
+          errorMessage: data.body,
+        );
+      }
+    }).catchError(
+      (_) => APIResponse<UserModel>(
+          error: true, errorMessage: 'Check your internet connection'),
+    );
   }
 
 /*   Future<APIResponse<BuildingModel>> makeUserAdmin(
