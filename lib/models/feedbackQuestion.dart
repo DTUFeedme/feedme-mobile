@@ -1,31 +1,35 @@
 import 'package:climify/models/answerOption.dart';
 
 class FeedbackQuestion {
-  //List<String> answerOptions;
+  String id;
+  String value;
+  List<String> roomIds;
+  bool isActive;
   List<AnswerOption> answerOptions;
-  String sId;
-  String question;
-  String room;
-  int iV;
+  List<String> usersAnswered;
 
   FeedbackQuestion(
-      {this.answerOptions, this.sId, this.question, this.room, this.iV});
+    this.id,
+    this.value,
+    this.roomIds,
+    this.isActive,
+    this.answerOptions,
+    this.usersAnswered,
+  );
 
-  FeedbackQuestion.fromJson(Map<String, dynamic> json) {
-    //answerOptions = json['answerOptions'].cast<String>();
-    sId = json['_id'];
-    question = json['question'];
-    room = json['room'];
-    iV = json['__v'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['answerOptions'] = this.answerOptions;
-    data['_id'] = this.sId;
-    data['question'] = this.question;
-    data['room'] = this.room;
-    data['__v'] = this.iV;
-    return data;
+  factory FeedbackQuestion.fromJson(json) {
+    var answerOptionsJson = json['answerOptions'];
+    List<AnswerOption> answerOptions = [];
+    answerOptionsJson.forEach((element) {
+      answerOptions.add(AnswerOption.fromJson(element));
+    });
+    return FeedbackQuestion(
+      json['_id'],
+      json['value'],
+      json['rooms'].cast<String>().toList(),
+      json['isActive'],
+      answerOptions,
+      json['usersAnswered'].cast<String>().toList(),
+    );
   }
 }

@@ -1,7 +1,15 @@
 import 'dart:convert';
 
+import 'package:climify/models/api_response.dart';
+import 'package:climify/models/buildingModel.dart';
+import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
+import 'package:climify/models/questionModel.dart';
+import 'package:climify/models/roomModel.dart';
+import 'package:climify/services/bluetooth.dart';
+import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/sharedPreferences.dart';
+import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,10 +20,13 @@ class UnregisteredUserScreen extends StatefulWidget {
 
 class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   SharedPrefsHelper _sharedPrefsHelper = SharedPrefsHelper();
-  String _authToken;
+  RestService _restService = RestService();
+  String _token;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _visibleIndex = 0;
   String _userId;
+  BuildingModel _building;
+  List<FeedbackQuestion> _questions = [];
 
   @override
   void initState() {
@@ -28,18 +39,66 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     if (alreadyUser) {
       _gotoLogin();
     } else {
-      String token = await _sharedPrefsHelper.getUnauthorizedUserToken();
-      String user = token.split('.')[1];
-      List<int> res = base64.decode(base64.normalize(user));
-      String s = utf8.decode(res);
-      Map map = json.decode(s);
-      String userId = map['_id'];
-      setState(() {
-        _authToken = token;
-        _userId = userId;
-      });
-      Provider.of<GlobalState>(context).updateAccount("", token);
+      _setupState();
     }
+  }
+
+  void _setupState() async {
+    String token = await _sharedPrefsHelper.getUnauthorizedUserToken();
+    String user = token.split('.')[1];
+    List<int> res = base64.decode(base64.normalize(user));
+    String s = utf8.decode(res);
+    Map map = json.decode(s);
+    String userId = map['_id'];
+
+    setState(() {
+      _token = token;
+      _userId = userId;
+    });
+
+    // temp solution
+    APIResponse<BuildingModel> apiResponse =
+        await _restService.getBuilding(_token, "5ea1c600cd42d414a535e2b5");
+    if (!apiResponse.error) {
+      setState(() {
+        _building = apiResponse.data;
+      });
+    }
+
+    Provider.of<GlobalState>(context).updateAccount("", token);
+    Provider.of<GlobalState>(context).updateBuilding(_building);
+  }
+
+  void _getActiveQuestions() async {
+    RoomModel room;
+    BluetoothServices bluetooth = BluetoothServices();
+
+    APIResponse<RoomModel> apiResponseRoom =
+        await bluetooth.getRoomFromBuilding(_building, _token);
+    if (apiResponseRoom.error) {
+      SnackBarError.showErrorSnackBar(
+        apiResponseRoom.errorMessage,
+        _scaffoldKey,
+      );
+      return;
+    }
+
+    room = apiResponseRoom.data;
+
+    APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
+        await _restService.getActiveQuestionsByRoom(room.id, _token);
+    if (apiResponseQuestions.error) {
+      SnackBarError.showErrorSnackBar(
+        apiResponseQuestions.errorMessage,
+        _scaffoldKey,
+      );
+      return;
+    }
+
+    setState(() {
+      _questions = apiResponseQuestions.data;
+    });
+    print(_questions);
   }
 
   void _gotoLogin() {
@@ -87,8 +146,22 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
             Visibility(
               visible: _visibleIndex == 0,
               child: Container(
-                child: Text(
-                  "Give Feedback. Token: $_authToken",
+                child: Column(
+                  children: <Widget>[
+                    RaisedButton(
+                      onPressed: () => _getActiveQuestions(),
+                      child: Text(
+                        "Give Feedback. Token: $_token",
+                      ),
+                    ),
+                    Container(
+                      child: _questions.isNotEmpty
+                          ? Text(
+                              _questions[0].value,
+                            )
+                          : Container(),
+                    ),
+                  ],
                 ),
               ),
             ),

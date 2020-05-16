@@ -15,8 +15,11 @@ import 'package:tuple/tuple.dart';
 
 class RestService {
   static const api = 'http://climify-spe.compute.dtu.dk:8080/api-dev';
-  Map<String, String> headers({String token = ""}) =>
-      {'Content-Type': 'application/json', 'x-auth-token': token};
+  Map<String, String> headers({String token = "", String roomId = ""}) => {
+        'Content-Type': 'application/json',
+        'x-auth-token': token,
+        'roomId': roomId,
+      };
 
   String getErrorMessage(Response response) {
     switch (response.statusCode) {
@@ -33,112 +36,33 @@ class RestService {
     }
   }
 
-  Future<APIResponse<List<FeedbackQuestion>>> getQuestionByRoom(String room) {
-    print(room);
+  Future<APIResponse<List<FeedbackQuestion>>> getActiveQuestionsByRoom(
+      String roomId, String token) {
     return http
-        .get(api + '/question/room/' + room, headers: headers())
-        .then((data) async {
-      print("Hej");
+        .get(api + '/questions/active',
+            headers: headers(token: token, roomId: roomId))
+        .then((data) {
       if (data.statusCode == 200) {
-        print("Hej1");
-        List<String> answerOptionsId;
-        final jsonData = json.decode(data.body);
-        print(jsonData.toString());
-        final questionList = <FeedbackQuestion>[];
-        print("Hej2");
-        for (var e in jsonData) {
-          print("HejHej");
-          final feedbackQuestion = FeedbackQuestion(
-              sId: e['_id'],
-              question: e['question'],
-              room: e['room'],
-              iV: e['__v']);
-          print("HejHejHej");
-          print(e['answerOptions'].toString());
-          answerOptionsId = List.from(e['answerOptions']);
-          print("1");
-          print(answerOptionsId.toString());
-          APIResponse<List<AnswerOption>> temp;
-          if (answerOptionsId.length > 0) {
-            //temp = await getAnswerOptionsByIdList(answerOptionsId);
-          }
-          /*
-          if (temp.error != true) {
-            print("Betta");
-            feedbackQuestion.answerOptions = temp.data;
-          } else {
-            return APIResponse<List<FeedbackQuestion>>(error: true, errorMessage: 'No questions found');
-          }*/
-          questionList.add(feedbackQuestion);
-        }
-        print("Hej3");
-        return APIResponse<List<FeedbackQuestion>>(data: questionList);
+        List<FeedbackQuestion> questions = [];
+        var jsonData = json.decode(data.body);
+
+        jsonData.forEach(
+            (element) => questions.add(FeedbackQuestion.fromJson(element)));
+
+        return APIResponse<List<FeedbackQuestion>>(data: questions);
+      } else {
+        return APIResponse<List<FeedbackQuestion>>(
+          error: true,
+          errorMessage: data.body,
+        );
       }
+    }).catchError((e) {
+      print(e);
       return APIResponse<List<FeedbackQuestion>>(
-          error: true, errorMessage: 'An error occured1');
-    }).catchError((_) => APIResponse<List<FeedbackQuestion>>(
-            error: true, errorMessage: 'An error occured2'));
-  }
-
-  Future<APIResponse<List<AnswerOption>>> getAnswerOptionsByIdList(
-      List<String> answerIdList) {
-    return http
-        .get(api + '/answer/fromQuestion/' + answerIdList.toString(),
-            headers: headers())
-        .then((data) {
-      if (data.statusCode == 200) {
-        //returns json object
-        final jsonData = json.decode(data.body);
-        final answerOptionList = <AnswerOption>[];
-        for (var e in jsonData) {
-          final answerOption = AnswerOption(
-              timesAnswered: e['timesAnswered'],
-              sId: e['_id'],
-              answer: e['answer'],
-              iV: e['__v']);
-          answerOptionList.add(answerOption);
-        }
-        if (answerOptionList != null) {
-          return APIResponse<List<AnswerOption>>(data: answerOptionList);
-        } else {
-          return APIResponse<List<AnswerOption>>(
-              error: true, errorMessage: 'No answers were found');
-        }
-      }
-      return APIResponse<List<AnswerOption>>(
-          error: true, errorMessage: 'An error occured3');
-    }).catchError((_) => APIResponse<List<AnswerOption>>(
-            error: true, errorMessage: 'An error occured4'));
-  }
-
-  Future<APIResponse<List<AnswerOption>>> getAnswerOptionsByRoom(
-      String questionId) {
-    return http
-        .get(api + '/answer/fromQuestion/' + questionId, headers: headers())
-        .then((data) {
-      if (data.statusCode == 200) {
-        //returns json object
-        final jsonData = json.decode(data.body);
-        final answerOptionList = <AnswerOption>[];
-        for (var e in jsonData) {
-          final answerOption = AnswerOption(
-              timesAnswered: e['timesAnswered'],
-              sId: e['_id'],
-              answer: e['answer'],
-              iV: e['__v']);
-          answerOptionList.add(answerOption);
-        }
-        if (answerOptionList != null) {
-          return APIResponse<List<AnswerOption>>(data: answerOptionList);
-        } else {
-          return APIResponse<List<AnswerOption>>(
-              error: true, errorMessage: 'No answers were found');
-        }
-      }
-      return APIResponse<List<AnswerOption>>(
-          error: true, errorMessage: 'An error occured');
-    }).catchError((_) => APIResponse<List<AnswerOption>>(
-            error: true, errorMessage: 'An error occured'));
+        error: true,
+        errorMessage: "Getting active questions failed",
+      );
+    });
   }
 
   Future<APIResponse<bool>> putFeedback(String answerId) {
@@ -460,9 +384,7 @@ class RestService {
   }
 
   Future<APIResponse<UserModel>> createUnauthorizedUser() {
-    return http
-        .post(api + '/users', headers: headers())
-        .then((data) {
+    return http.post(api + '/users', headers: headers()).then((data) {
       if (data.statusCode == 200) {
         final responseHeaders = data.headers;
         final token = responseHeaders['x-auth-token'];
