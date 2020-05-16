@@ -200,44 +200,26 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _getRoom() async {
-    if (_gettingRoom) return;
-    if (!await _bluetooth.isOn) {
-      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
-      return;
-    }
     setState(() {
       _gettingRoom = true;
-      _signalMap = SignalMap(_building.id);
-      _currentRoom = "";
     });
-    List<ScanResult> scanResults = await _bluetooth.scanForDevices(1250);
-    scanResults.addAll(await _bluetooth.scanForDevices(750));
-    scanResults.forEach((result) {
-      String beaconName = _bluetooth.getBeaconName(result);
-      if (_beacons.where((element) => element.name == beaconName).isNotEmpty) {
-        String beaconId =
-            _beacons.firstWhere((element) => element.name == beaconName).id;
-        _signalMap.addBeaconReading(beaconId, _bluetooth.getRSSI(result));
-      }
-    });
-    print(_signalMap.beacons);
-    APIResponse<RoomModel> apiResponseRoom =
-        await _restService.getRoomFromSignalMap(_token, _signalMap);
-    if (apiResponseRoom.error == false) {
-      RoomModel room = apiResponseRoom.data;
-      setState(() {
-        _currentRoom = room.name;
-      });
+    RoomModel room;
+    APIResponse<RoomModel> apiResponse =
+        await _bluetooth.getRoomFromBuilding(_building, _token);
+    if (apiResponse.error) {
+      SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     } else {
-      print(apiResponseRoom.errorMessage);
+      room = apiResponse.data;
     }
     setState(() {
+      _currentRoom = room?.name ?? "unknown";
       _gettingRoom = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    BluetoothServices bluetoothServices = BluetoothServices();
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(

@@ -1,9 +1,16 @@
 import 'dart:async';
 
+import 'package:climify/models/api_response.dart';
+import 'package:climify/models/beacon.dart';
+import 'package:climify/models/buildingModel.dart';
+import 'package:climify/models/roomModel.dart';
+import 'package:climify/models/signalMap.dart';
+import 'package:climify/services/rest_service.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 
 class BluetoothServices {
   final FlutterBlue flutterBlue = FlutterBlue.instance;
+  bool _gettingRoom = false;
 
   // Future<Stream<List<ScanResult>>> scanForDevices() async {
   //   Future<void> _delayedStopScan() async {
@@ -39,6 +46,70 @@ class BluetoothServices {
     flutterBlue.stopScan();
     await Future.delayed(Duration(milliseconds: timeoutms));
     return finalResults;
+  }
+
+  Future<APIResponse<RoomModel>> getRoomFromBuilding(
+      BuildingModel building, String token) async {
+    RestService restService = RestService();
+    SignalMap signalMap = SignalMap(building.id);
+    List<Beacon> beacons = [];
+
+    if (_gettingRoom)
+      return APIResponse<RoomModel>(
+        error: true,
+        errorMessage: "Already getting room",
+      );
+
+    _gettingRoom = true;
+
+    if (!await isOn) {
+      return APIResponse<RoomModel>(
+        error: true,
+        errorMessage: "Bluetooth is not on",
+      );
+    }
+
+    APIResponse<List<Beacon>> apiResponseBeacons =
+        await restService.getBeaconsOfBuilding(token, building);
+    if (!apiResponseBeacons.error) {
+      beacons = apiResponseBeacons.data;
+    } else {
+      return APIResponse<RoomModel>(
+        error: true,
+        errorMessage: "Couldn't get beacons of building",
+      );
+    }
+
+    print("beacons: $beacons");
+
+    List<ScanResult> scanResults = [];
+    scanForDevices(2200).then((results) => scanResults.addAll(results));
+    await Future.delayed(Duration(milliseconds: 250));
+    scanForDevices(2000).then((results) => scanResults.addAll(results));
+    await Future.delayed(Duration(milliseconds: 250));
+    scanForDevices(1900).then((results) => scanResults.addAll(results));
+    await Future.delayed(Duration(milliseconds: 2000));
+
+    scanResults.forEach((result) {
+      String beaconName = getBeaconName(result);
+      if (beacons.where((element) => element.name == beaconName).isNotEmpty) {
+        String beaconId =
+            beacons.firstWhere((element) => element.name == beaconName).id;
+        signalMap.addBeaconReading(beaconId, getRSSI(result));
+      }
+    });
+
+    APIResponse<RoomModel> apiResponseRoom =
+        await restService.getRoomFromSignalMap(token, signalMap);
+    if (apiResponseRoom.error == false) {
+      RoomModel room = apiResponseRoom.data;
+      _gettingRoom = false;
+      return APIResponse<RoomModel>(data: room);
+    } else {
+      _gettingRoom = false;
+      return APIResponse<RoomModel>(
+          error: true, errorMessage: "Failed to assess room based on readings");
+    }
   }
 
   Future<bool> get isOn async => await flutterBlue.isOn;
