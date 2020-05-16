@@ -211,8 +211,7 @@ class _BuildingManagerState extends State<BuildingManager> {
       _currentRoom = "";
     });
     List<ScanResult> scanResults = await _bluetooth.scanForDevices(1250);
-    scanResults.addAll(await _bluetooth.scanForDevices(1750));
-    scanResults.addAll(await _bluetooth.scanForDevices(1500));
+    scanResults.addAll(await _bluetooth.scanForDevices(750));
     scanResults.forEach((result) {
       String beaconName = _bluetooth.getBeaconName(result);
       if (_beacons.where((element) => element.name == beaconName).isNotEmpty) {
