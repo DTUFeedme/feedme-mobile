@@ -87,8 +87,19 @@ class _BuildingManagerState extends State<BuildingManager> {
         return StatefulBuilder(
           builder: (context, setState) {
             void _scan() async {
-              if (!mounted) return;
-              if (await _bluetooth.isOn == false) return;
+              if (!mounted) {
+                setState(() {
+                  _scanningSignalMap = false;
+                });
+                return;
+              }
+
+              if (await _bluetooth.isOn == false) {
+                setState(() {
+                  _scanningSignalMap = false;
+                });
+                return;
+              }
 
               setState(() {
                 _scanningSignalMap = true;
@@ -96,7 +107,7 @@ class _BuildingManagerState extends State<BuildingManager> {
               SignalMap tempSignalMap = _signalMap;
               int beaconsScanned = 0;
               List<ScanResult> scanResults =
-                  await _bluetooth.scanForDevices(4000);
+                  await _bluetooth.scanForDevices(3000);
               scanResults.forEach((result) {
                 String beaconName = _bluetooth.getBeaconName(result);
                 if (_beacons
