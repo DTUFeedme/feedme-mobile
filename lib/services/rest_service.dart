@@ -267,6 +267,25 @@ class RestService {
     });
   }
 
+  Future<APIResponse<String>> deleteRoom(
+    String token,
+    String roomId,
+  ) {
+    return http
+        .delete(api + '/rooms/$roomId', headers: headers(token: token))
+        .then((deleteRoomData) {
+      if (deleteRoomData.statusCode == 200) {
+        return APIResponse<String>(data: "Room deleted");
+      } else {
+        return APIResponse<String>(
+            error: true, errorMessage: deleteRoomData.body);
+      }
+    }).catchError((e) {
+      return APIResponse<String>(
+          error: true, errorMessage: "Failed to delete room");
+    });
+  }
+
   Future<APIResponse<String>> addSignalMap(
     String token,
     SignalMap signalMap,
@@ -282,7 +301,7 @@ class RestService {
             headers: headers(token: token), body: signalBody)
         .then((signalMapData) {
       if (signalMapData.statusCode == 200) {
-        return APIResponse<String>(data: "Add room complete");
+        return APIResponse<String>(data: "Scan added");
       } else {
         return APIResponse<String>(
             error: true, errorMessage: signalMapData.body ?? "");
@@ -290,6 +309,26 @@ class RestService {
     }).catchError((e) {
       return APIResponse<String>(
           error: true, errorMessage: "Add signal map failed");
+    });
+  }
+
+  Future<APIResponse<String>> deleteSignalMapsOfRoom(
+    String token,
+    String roomId,
+  ) {
+    return http
+        .delete(api + '/signalMaps/room/$roomId',
+            headers: headers(token: token))
+        .then((signalMapDeleteData) {
+      if (signalMapDeleteData.statusCode == 200) {
+        return APIResponse<String>(data: "Scans Deleted");
+      } else {
+        return APIResponse<String>(
+            error: true, errorMessage: signalMapDeleteData.body ?? "");
+      }
+    }).catchError((e) {
+      return APIResponse<String>(
+          error: true, errorMessage: "Delete signal maps of room failed");
     });
   }
 

@@ -82,15 +82,15 @@ class BluetoothServices {
 
     // print("beacons: $beacons");
 
-    List<ScanResult> scanResults = [];
-    scanForDevices(2200).then((results) => scanResults.addAll(results));
-    await Future.delayed(Duration(milliseconds: 250));
-    scanForDevices(2000).then((results) => scanResults.addAll(results));
-    await Future.delayed(Duration(milliseconds: 250));
-    scanForDevices(1900).then((results) => scanResults.addAll(results));
-    await Future.delayed(Duration(milliseconds: 2000));
+    // List<ScanResult> scanResults = [];
+    // scanForDevices(2200).then((results) => scanResults.addAll(results));
+    // await Future.delayed(Duration(milliseconds: 250));
+    // scanForDevices(2000).then((results) => scanResults.addAll(results));
+    // await Future.delayed(Duration(milliseconds: 250));
+    // scanForDevices(1900).then((results) => scanResults.addAll(results));
+    // await Future.delayed(Duration(milliseconds: 2000));
 
-    // List<ScanResult> scanResults = await scanForDevices(2200);
+    List<ScanResult> scanResults = await scanForDevices(2200);
 
     scanResults.forEach((result) {
       String beaconName = getBeaconName(result);

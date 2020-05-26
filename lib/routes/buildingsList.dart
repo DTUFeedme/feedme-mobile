@@ -83,7 +83,7 @@ class _BuildingsListState extends State<BuildingsList> {
 
   void _focusBuilding(BuildingModel building) {
     Provider.of<GlobalState>(context).updateBuilding(building);
-    Navigator.of(context).pushNamed("buildingManager");
+    Navigator.of(context).pushNamed("buildingManager").then((value) => _getBuildings());
   }
 
   void _getBLEDevicesList() async {
@@ -173,15 +173,18 @@ class _BuildingsListState extends State<BuildingsList> {
           children: <Widget>[
             Visibility(
               visible: _visibleIndex == 0,
-              child: Container(
-                child: ListView.builder(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+              child: RefreshIndicator(
+                onRefresh: () => _getBuildings(),
+                child: Container(
+                  child: ListView.builder(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    itemCount: _buildings.length,
+                    itemBuilder: (context, index) =>
+                        _buildingRow(_buildings[index]),
                   ),
-                  itemCount: _buildings.length,
-                  itemBuilder: (context, index) =>
-                      _buildingRow(_buildings[index]),
                 ),
               ),
             ),
