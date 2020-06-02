@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/questionModel.dart';
+import 'package:climify/models/questionStatistics.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
@@ -443,6 +444,32 @@ class RestService {
       (_) => APIResponse<UserModel>(
           error: true, errorMessage: 'Check your internet connection'),
     );
+  }
+
+  Future<APIResponse<QuestionStatisticsModel>> getQuestionStatistics(
+    String token,
+    FeedbackQuestion question,
+  ) {
+    FeedbackQuestion q = question;
+
+    return http
+        .get(api + '/feedback/questionStatistics/' + q.id,
+            headers: headers(token: token))
+        .then((data) {
+      if (data.statusCode == 200) {
+        return APIResponse<QuestionStatisticsModel>(
+          data: QuestionStatisticsModel.fromJson(
+            q,
+            data.body,
+          ),
+        );
+      } else {
+        return APIResponse<QuestionStatisticsModel>(
+          error: true,
+          errorMessage: "Check your internet connection",
+        );
+      }
+    });
   }
 
 /*   Future<APIResponse<BuildingModel>> makeUserAdmin(
