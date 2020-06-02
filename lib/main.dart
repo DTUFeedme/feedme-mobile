@@ -1,23 +1,12 @@
-import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
-import 'package:climify/models/userModel.dart';
-import 'package:climify/routes/answerQuestion.dart';
 import 'package:climify/routes/buildingManager.dart';
 import 'package:climify/routes/buildingsList.dart';
-import 'package:climify/routes/enterRoomNumber.dart';
-import 'package:climify/routes/feedback.dart';
-import 'package:climify/routes/selectQuestion.dart';
 import 'package:climify/routes/unregisteredUserRoute.dart';
 import 'package:climify/routes/userLogin.dart';
-import 'package:climify/services/rest_service.dart';
-import 'package:climify/services/sharedPreferences.dart';
-import 'package:climify/styles/textStyles.dart';
-import 'package:climify/widgets/roundedBox.dart';
 //import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'models/api_response.dart';
 
 void main() => runApp(MyApp());
 

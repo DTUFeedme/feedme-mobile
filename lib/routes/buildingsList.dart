@@ -1,11 +1,9 @@
 import 'package:climify/models/api_response.dart';
-import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
-import 'package:direct_select/direct_select.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:provider/provider.dart';
@@ -25,7 +23,6 @@ class _BuildingsListState extends State<BuildingsList> {
   BuildingModel _selectedBuilding;
   Tuple2<String, String> _selectedBeacon;
   List<Tuple2<String, String>> _beaconList = [];
-  int _scanned = 0;
 
   @override
   void initState() {
@@ -100,7 +97,6 @@ class _BuildingsListState extends State<BuildingsList> {
     List<ScanResult> scanResults = await _bluetooth.scanForDevices(4000);
     scanResults.forEach((result) {
       setState(() {
-        _scanned++;
       });
       String beaconName = _bluetooth.getBeaconName(result);
       List<String> serviceUuids = result.advertisementData.serviceUuids;

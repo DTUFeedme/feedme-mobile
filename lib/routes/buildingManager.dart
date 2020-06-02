@@ -6,12 +6,16 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
+import 'package:climify/routes/dialogues/addRoom.dart';
+import 'package:climify/routes/dialogues/roomMenu.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:provider/provider.dart';
+
+import 'dialogues/scanRoom.dart';
 
 class BuildingManager extends StatefulWidget {
   @override
@@ -59,7 +63,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     _updateBuilding();
   }
 
-  void _updateBuilding() async {
+  Future<void> _updateBuilding() async {
     APIResponse<BuildingModel> apiResponseBuilding =
         await _restService.getBuilding(_token, _building.id);
     if (apiResponseBuilding.error == false) {
@@ -68,63 +72,33 @@ class _BuildingManagerState extends State<BuildingManager> {
         _building = building;
       });
     }
+    return;
+  }
+
+  void _updateBuildingAndAddScan() async {
+    await _updateBuilding();
+    _addScans(_building.rooms.last);
   }
 
   void _addRoom() async {
-    if (!await _bluetooth.isOn) {
-      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
-      return;
-    }
     await showDialog<bool>(
       barrierColor: Colors.black12,
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            void _submitRoom() async {
-              APIResponse<RoomModel> apiResponse = await _restService.addRoom(
-                _token,
-                _newRoomNameController.text.trim(),
-                _building,
-              );
-              if (apiResponse.error == false) {
-                SnackBarError.showErrorSnackBar(
-                    "Room ${apiResponse.data.name} added", _scaffoldKey);
-                Navigator.of(context).pop(true);
-              } else {
-                SnackBarError.showErrorSnackBar(
-                    apiResponse.errorMessage, _scaffoldKey);
-                Navigator.of(context).pop(false);
-              }
-            }
-
-            bool submitEnabled = _newRoomNameController.text.trim() != "";
-
-            return SimpleDialog(
-              title: Text("Add Room"),
-              children: <Widget>[
-                Text(
-                  "Room Name",
-                ),
-                TextField(
-                  controller: _newRoomNameController,
-                  onChanged: (value) => setState(() {}),
-                ),
-                RaisedButton(
-                  color: submitEnabled ? Colors.green : Colors.red,
-                  child: Text("Submit"),
-                  onPressed: () => submitEnabled ? _submitRoom() : null,
-                ),
-              ],
-            );
-          },
-        );
+        return AddRoom(
+          token: _token,
+          textEditingController: _newRoomNameController,
+          building: _building,
+          scaffoldKey: _scaffoldKey,
+        ).dialog;
       },
     ).then((value) {
       setState(() {
         _newRoomNameController.text = "";
       });
-      _updateBuilding();
+      if (value ?? false) {
+        _updateBuildingAndAddScan();
+      }
     });
   }
 
@@ -145,216 +119,41 @@ class _BuildingManagerState extends State<BuildingManager> {
       barrierColor: Colors.black12,
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          key: _dialogKey,
-          builder: (context, setState) {
-            bool _dialogMounted() => _dialogKey?.currentState?.mounted ?? false;
-
-            void _scan() async {
-              if (!_dialogMounted()) {
-                return;
-              }
-
-              if (await _bluetooth.isOn == false) {
-                SnackBarError.showErrorSnackBar(
-                    "Bluetooth is not on", _scaffoldKey);
-                setState(() {
-                  _scanningSignalMap = false;
-                });
-                return;
-              }
-
-              setState(() {
-                _scanningSignalMap = true;
-              });
-
-              SignalMap signalMap = SignalMap(_building.id);
-              int beaconsScanned = 0;
-              List<ScanResult> scanResults =
-                  await _bluetooth.scanForDevices(3000);
-
-              if (!_dialogMounted()) {
-                return;
-              }
-
-              scanResults.forEach((result) {
-                String beaconName = _bluetooth.getBeaconName(result);
-                if (_beacons
-                    .where((element) => element.name == beaconName)
-                    .isNotEmpty) {
-                  String beaconId = _beacons
-                      .firstWhere((element) => element.name == beaconName)
-                      .id;
-                  signalMap.addBeaconReading(
-                      beaconId, _bluetooth.getRSSI(result));
-                  beaconsScanned++;
-                }
-              });
-
-              if (beaconsScanned > 0) {
-                APIResponse<String> apiResponse =
-                    await _restService.addSignalMap(_token, signalMap, room.id);
-                if (!apiResponse.error) {
-                  setState(() {
-                    _signalMapScans++;
-                  });
-                  SnackBarError.showErrorSnackBar(
-                      "Added scan to ${room.name}", _scaffoldKey);
-                } else {
-                  SnackBarError.showErrorSnackBar(
-                      apiResponse.errorMessage, _scaffoldKey);
-                }
-              } else {
-                SnackBarError.showErrorSnackBar(
-                    "No beacons scanned", _scaffoldKey);
-              }
-
-              if (_dialogMounted()) {
-                setState(() {
-                  _scanningSignalMap = false;
-                });
-              }
-            }
-
-            void _finishScanning() async {
-              if (!_scanningSignalMap) {
-                if (_signalMapScans > 0)
-                  SnackBarError.showErrorSnackBar(
-                      "$_signalMapScans scans added to ${room.name}",
-                      _scaffoldKey);
-                Navigator.of(context).pop();
-              }
-            }
-
-            return SimpleDialog(
-              title: Text("Scan Room"),
-              children: <Widget>[
-                Text(
-                  "Add bluetooth location data from the bluetooth beacons",
-                ),
-                Row(
-                  children: <Widget>[
-                    RaisedButton(
-                      child: Text(
-                        _scanningSignalMap
-                            ? "Adding location data"
-                            : "Add location data",
-                      ),
-                      onPressed: () =>
-                          _scanningSignalMap ? print("already") : _scan(),
-                    ),
-                    _scanningSignalMap
-                        ? CircularProgressIndicator(
-                            value: null,
-                          )
-                        : Container(),
-                  ],
-                ),
-                Text(
-                  "Additional scans completed: $_signalMapScans",
-                ),
-                RaisedButton(
-                  color: !_scanningSignalMap ? Colors.green : Colors.red,
-                  child: Text("Finish scanning"),
-                  onPressed: () =>
-                      !_scanningSignalMap ? _finishScanning() : null,
-                ),
-              ],
-            );
-          },
-        );
+        return ScanRoom(
+          room: room,
+          token: _token,
+          building: _building,
+          scaffoldKey: _scaffoldKey,
+          setScanning: (b) => setState(() {
+            _scanningSignalMap = b;
+          }),
+          incrementScans: () => setState(() {
+            _signalMapScans++;
+          }),
+          getScanning: () => _scanningSignalMap,
+          getNumberOfScans: () => _signalMapScans,
+          beacons: _beacons,
+        ).dialog;
       },
     );
   }
 
   void _roomMenu(RoomModel room) async {
-    Future<void> _deleteRoom() async {
-      APIResponse<String> deleteResponse =
-          await _restService.deleteRoom(_token, room.id);
-      if (!deleteResponse.error) {
-        SnackBarError.showErrorSnackBar(
-            "Room ${room.name} deleted", _scaffoldKey);
-      } else {
-        SnackBarError.showErrorSnackBar(
-            deleteResponse.errorMessage, _scaffoldKey);
-      }
-      return;
-    }
-
-    void _deleteScans() async {
-      APIResponse<String> deleteResponse =
-          await _restService.deleteSignalMapsOfRoom(_token, room.id);
-      if (!deleteResponse.error) {
-        SnackBarError.showErrorSnackBar(
-            "Scans of ${room.name} deleted", _scaffoldKey);
-      } else {
-        SnackBarError.showErrorSnackBar(
-            deleteResponse.errorMessage, _scaffoldKey);
-      }
-    }
-
     await showDialog(
       barrierColor: Colors.black12,
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return SimpleDialog(
-              title: Text("${room.name}"),
-              children: <Widget>[
-                RaisedButton(
-                  child: Text("Add Scans"),
-                  onPressed: () {
-                    setState(() {
-                      _currentlyConfirming = "";
-                    });
-                    _addScans(room);
-                  },
-                ),
-                _currentlyConfirming == "scans"
-                    ? RaisedButton(
-                        color: Colors.red,
-                        child: Text("Confirm"),
-                        onPressed: () {
-                          _deleteScans();
-                          setState(() {
-                            _currentlyConfirming = "";
-                          });
-                        },
-                      )
-                    : RaisedButton(
-                        child: Text("Delete Scans"),
-                        onPressed: () {
-                          setState(() {
-                            _currentlyConfirming = "scans";
-                          });
-                        },
-                      ),
-                _currentlyConfirming == "delete"
-                    ? RaisedButton(
-                        color: Colors.red,
-                        child: Text("Confirm"),
-                        onPressed: () async {
-                          await _deleteRoom();
-                          Navigator.of(context).pop();
-                        },
-                      )
-                    : RaisedButton(
-                        child: Text("Delete Room"),
-                        onPressed: () {
-                          setState(() {
-                            _currentlyConfirming = "delete";
-                          });
-                        },
-                      ),
-                RaisedButton(
-                  child: Text("Exit"),
-                  onPressed: () => Navigator.of(context).pop(),
-                )
-              ],
-            );
-          },
-        );
+        return RoomMenu(
+          room: room,
+          token: _token,
+          building: _building,
+          scaffoldKey: _scaffoldKey,
+          addScans: _addScans,
+          setCurrentlyConfirming: (s) => setState(() {
+            _currentlyConfirming = s;
+          }),
+          getCurrentlyConfirming: () => _currentlyConfirming,
+        ).dialog;
       },
     ).then((value) {
       setState(() {
