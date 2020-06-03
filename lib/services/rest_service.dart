@@ -215,6 +215,39 @@ class RestService {
     });
   }
 
+  Future<APIResponse<List<Beacon>>> getAllBeacons(
+    String token,
+  ) {
+    return http
+        .get(api + '/beacons', headers: headers(token: token))
+        .then((data) {
+      if (data.statusCode == 200) {
+        List<Beacon> beacons = [];
+        final responseBody = json.decode(data.body);
+        for (int i = 0; i < responseBody.length; i++) {
+          String id = responseBody[i]['_id'];
+          String name = responseBody[i]['name'];
+          String uuid = responseBody[i]['uuid'];
+          BuildingModel building = BuildingModel(
+            responseBody[i]['building']['_id'],
+            responseBody[i]['building']['name'],
+            [],
+          );
+          Beacon beacon = Beacon(id, name, building, uuid);
+          beacons.add(beacon);
+        }
+        return APIResponse<List<Beacon>>(data: beacons);
+      } else {
+        return APIResponse<List<Beacon>>(
+            error: true, errorMessage: data.body ?? "");
+      }
+    }).catchError((e) {
+      print(e);
+      return APIResponse<List<Beacon>>(
+          error: true, errorMessage: "Getting all beacons failed");
+    });
+  }
+
   Future<APIResponse<BuildingModel>> getBuilding(
     String token,
     String buildingId,

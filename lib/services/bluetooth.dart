@@ -48,8 +48,63 @@ class BluetoothServices {
     return finalResults;
   }
 
+  Future<APIResponse<String>> getBuildingIdFromScan(
+    String token,
+  ) async {
+    if (!await isOn) {
+      return APIResponse<String>(
+          error: true, errorMessage: "Bluetooth is not on");
+    }
+
+    RestService restService = RestService();
+    APIResponse<List<Beacon>> allBeaconsResponse =
+        await restService.getAllBeacons(token);
+    if (!allBeaconsResponse.error) {
+      List<Beacon> allBeacons = allBeaconsResponse.data;
+      Map<String, int> scannedBuildings = {};
+      List<ScanResult> scanResults = await scanForDevices(2000);
+      scanResults.forEach((result) {
+        String beaconName = getBeaconName(result);
+        if (allBeacons
+            .where((element) => element.name == beaconName)
+            .isNotEmpty) {
+          String beaconBuilding = allBeacons
+              .firstWhere((element) => element.name == beaconName)
+              .building
+              .id;
+          scannedBuildings[beaconBuilding] =
+              scannedBuildings[beaconBuilding] == null
+                  ? 1
+                  : scannedBuildings[beaconBuilding] + 1;
+        }
+      });
+      String buildingIdMostScans = "";
+      int highestVal = 0;
+      scannedBuildings.forEach((key, value) {
+        if (value > highestVal) {
+          buildingIdMostScans = key;
+          highestVal = value;
+        }
+      });
+      if (buildingIdMostScans != "") {
+        return APIResponse<String>(data: buildingIdMostScans);
+      } else {
+        return APIResponse<String>(
+            error: true, errorMessage: "Failed getting building based on scan");
+      }
+    } else {
+      return APIResponse<String>(
+          error: true, errorMessage: "Failed getting beacons from database");
+    }
+  }
+
+  List<dynamic> compareScansToBeacons(
+      List<ScanResult> scanResults, List<Beacon> beacons) {}
+
   Future<APIResponse<RoomModel>> getRoomFromBuilding(
-      BuildingModel building, String token) async {
+    BuildingModel building,
+    String token,
+  ) async {
     RestService restService = RestService();
     SignalMap signalMap = SignalMap(building.id);
     List<Beacon> beacons = [];

@@ -23,6 +23,7 @@ class _BuildingsListState extends State<BuildingsList> {
   BuildingModel _selectedBuilding;
   Tuple2<String, String> _selectedBeacon;
   List<Tuple2<String, String>> _beaconList = [];
+  String buildingId = "";
 
   @override
   void initState() {
@@ -80,7 +81,9 @@ class _BuildingsListState extends State<BuildingsList> {
 
   void _focusBuilding(BuildingModel building) {
     Provider.of<GlobalState>(context).updateBuilding(building);
-    Navigator.of(context).pushNamed("buildingManager").then((value) => _getBuildings());
+    Navigator.of(context)
+        .pushNamed("buildingManager")
+        .then((value) => _getBuildings());
   }
 
   void _getBLEDevicesList() async {
@@ -96,8 +99,7 @@ class _BuildingsListState extends State<BuildingsList> {
     List<Tuple2<String, String>> beaconList = [];
     List<ScanResult> scanResults = await _bluetooth.scanForDevices(4000);
     scanResults.forEach((result) {
-      setState(() {
-      });
+      setState(() {});
       String beaconName = _bluetooth.getBeaconName(result);
       List<String> serviceUuids = result.advertisementData.serviceUuids;
       String beaconId = serviceUuids.isNotEmpty ? serviceUuids[0] : "";
@@ -127,6 +129,27 @@ class _BuildingsListState extends State<BuildingsList> {
       });
     } else {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
+    }
+  }
+
+  void _getBuildingScan() async {
+    String _token = Provider.of<GlobalState>(context).globalState['token'];
+    APIResponse<String> idResponse =
+        await _bluetooth.getBuildingIdFromScan(_token);
+    if (!idResponse.error) {
+      APIResponse<BuildingModel> buildingResponse =
+          await _restService.getBuilding(_token, idResponse.data);
+      if (!buildingResponse.error) {
+        setState(() {
+          buildingId = buildingResponse.data.name;
+        });
+      } else {
+        SnackBarError.showErrorSnackBar(
+            "Failed getting building", _scaffoldKey);
+      }
+    } else {
+      SnackBarError.showErrorSnackBar(
+          "Failed getting building id", _scaffoldKey);
     }
   }
 
@@ -222,6 +245,15 @@ class _BuildingsListState extends State<BuildingsList> {
                       "Create Beacon",
                     ),
                     onPressed: () => _createBecon(),
+                  ),
+                  RaisedButton(
+                    child: Text(
+                      "What building?",
+                    ),
+                    onPressed: () => _getBuildingScan(),
+                  ),
+                  Text(
+                    buildingId,
                   ),
                 ],
               ),
