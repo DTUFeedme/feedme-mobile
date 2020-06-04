@@ -55,7 +55,7 @@ class _UserLoginState extends State<UserLogin> {
     } else {
       Provider.of<GlobalState>(context)
           .updateAccount(apiResponse.data.email, apiResponse.data.authToken);
-      Navigator.of(context).pushReplacementNamed("buildings");
+      Navigator.of(context).pushReplacementNamed("registered");
     }
     setState(() {
       _buttonsActive = true;

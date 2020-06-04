@@ -1,12 +1,12 @@
 import 'package:climify/models/globalState.dart';
 import 'package:climify/routes/buildingManager.dart';
-import 'package:climify/routes/buildingsList.dart';
+import 'package:climify/routes/registeredUserRoute/registeredUserRoute.dart';
 import 'package:climify/routes/unregisteredUserRoute.dart';
 import 'package:climify/routes/userLogin.dart';
+import 'package:climify/services/bluetooth.dart';
 //import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 
 void main() => runApp(MyApp());
 
@@ -42,7 +42,7 @@ class _MyHomePageState extends State<MyHomePage> {
         routes: {
           "unregistered": (context) => UnregisteredUserScreen(),
           "login": (context) => UserLogin(),
-          "buildings": (context) => BuildingsList(),
+          "registered": (context) => RegisteredUserScreen(),
           "buildingManager": (context) => BuildingManager(),
         },
       ),

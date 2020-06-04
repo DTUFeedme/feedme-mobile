@@ -98,9 +98,6 @@ class BluetoothServices {
     }
   }
 
-  List<dynamic> compareScansToBeacons(
-      List<ScanResult> scanResults, List<Beacon> beacons) {}
-
   Future<APIResponse<RoomModel>> getRoomFromBuilding(
     BuildingModel building,
     String token,

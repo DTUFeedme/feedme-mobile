@@ -12,7 +12,6 @@ import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
 import 'package:provider/provider.dart';
 
 import 'dialogues/scanRoom.dart';
@@ -57,6 +56,7 @@ class _BuildingManagerState extends State<BuildingManager> {
       setState(() {
         _beacons = apiResponseBeacons.data;
       });
+      print("beacons of the deep: $_beacons");
     } else {
       print(apiResponseBeacons.errorMessage);
     }
@@ -106,9 +106,9 @@ class _BuildingManagerState extends State<BuildingManager> {
     setState(() {
       _scanningSignalMap = false;
       _signalMapScans = 0;
-      Map<String, List<int>> beacons = {};
-      beacons.addEntries(
-          _beacons.map((b) => MapEntry<String, List<int>>(b.id, [])));
+      // Map<String, List<int>> beacons = {};
+      // beacons.addEntries(
+      //     _beacons.map((b) => MapEntry<String, List<int>>(b.id, [])));
       // _signalMap = SignalMap(_building.id);
     });
     if (!await _bluetooth.isOn) {

@@ -13,6 +13,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class UnregisteredUserScreen extends StatefulWidget {
+  const UnregisteredUserScreen({
+    Key key,
+  }) : super(key: key);
+
   @override
   _UnregisteredUserScreenState createState() => _UnregisteredUserScreenState();
 }
@@ -21,7 +25,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   SharedPrefsHelper _sharedPrefsHelper = SharedPrefsHelper();
   RestService _restService = RestService();
   String _token;
-  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  GlobalKey<ScaffoldState> _scaffoldKey;
   int _visibleIndex = 0;
   String _userId;
   BuildingModel _building;

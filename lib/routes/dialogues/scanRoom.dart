@@ -64,8 +64,10 @@ class ScanRoom {
             return;
           }
 
+          print(beacons);
           scanResults.forEach((result) {
             String beaconName = _bluetooth.getBeaconName(result);
+            print(beaconName);
             if (beacons
                 .where((element) => element.name == beaconName)
                 .isNotEmpty) {

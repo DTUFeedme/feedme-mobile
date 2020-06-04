@@ -493,7 +493,7 @@ class RestService {
         return APIResponse<QuestionStatisticsModel>(
           data: QuestionStatisticsModel.fromJson(
             q,
-            data.body,
+            json.decode(data.body),
           ),
         );
       } else {
