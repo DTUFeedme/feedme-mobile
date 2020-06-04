@@ -94,6 +94,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
 
   Future<void> _getAndSetRoomFeedbackStats() async {
     List<FeedbackQuestion> questionsOfRoom = [];
+    setState(() {
+      _roomQuestionStatistics = [];
+    });
     APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
         await _restService.getActiveQuestionsByRoom(_room.id, _token);
     if (!apiResponseQuestionsOfRoom.error) {
