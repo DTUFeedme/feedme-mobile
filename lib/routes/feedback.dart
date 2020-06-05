@@ -1,6 +1,3 @@
-import 'dart:developer';
-
-import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 //import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/styles/textStyles.dart';
@@ -38,7 +35,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     if (_chosenOption != null && (widget.question != null)) {
       final restService = RestService();
 
-      APIResponse<bool> status = await restService.putFeedback(widget.question.answerOptions[_chosenOption].sId);
+      APIResponse<bool> status = await restService.putFeedback(widget.question.answerOptions[_chosenOption].id);
 
       if (status.data == true) {
         print("Answer has been added");
@@ -68,7 +65,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
           children: <Widget>[
             Container(
               child: Text(
-                widget.question.question,
+                widget.question.value,
                 style: TextStyles.titleStyle,
               ),
               margin: EdgeInsets.only(bottom: 8),

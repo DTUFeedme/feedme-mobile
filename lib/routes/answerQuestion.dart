@@ -13,11 +13,11 @@ class AnswerQuestion extends StatelessWidget {
     // Use the Todo to create the UI.
     return Scaffold(
       appBar: AppBar(
-        title: Text(question.question),
+        title: Text(question.value),
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
-        child: Text(question.question),
+        child: Text(question.value),
       ),
     );
   }

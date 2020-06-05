@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/questionModel.dart';
+import 'package:climify/models/questionStatistics.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
@@ -12,11 +12,15 @@ import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:http/http.dart';
+import 'package:tuple/tuple.dart';
 
 class RestService {
   static const api = 'http://climify-spe.compute.dtu.dk:8080/api-dev';
-  Map<String, String> headers({String token = ""}) =>
-      {'Content-Type': 'application/json', 'x-auth-token': token};
+  Map<String, String> headers({String token = "", String roomId = ""}) => {
+        'Content-Type': 'application/json',
+        'x-auth-token': token,
+        'roomId': roomId,
+      };
 
   String getErrorMessage(Response response) {
     switch (response.statusCode) {
@@ -33,112 +37,33 @@ class RestService {
     }
   }
 
-  Future<APIResponse<List<FeedbackQuestion>>> getQuestionByRoom(String room) {
-    print(room);
+  Future<APIResponse<List<FeedbackQuestion>>> getActiveQuestionsByRoom(
+      String roomId, String token) {
     return http
-        .get(api + '/question/room/' + room, headers: headers())
-        .then((data) async {
-      print("Hej");
+        .get(api + '/questions/active',
+            headers: headers(token: token, roomId: roomId))
+        .then((data) {
       if (data.statusCode == 200) {
-        print("Hej1");
-        List<String> answerOptionsId;
-        final jsonData = json.decode(data.body);
-        print(jsonData.toString());
-        final questionList = <FeedbackQuestion>[];
-        print("Hej2");
-        for (var e in jsonData) {
-          print("HejHej");
-          final feedbackQuestion = FeedbackQuestion(
-              sId: e['_id'],
-              question: e['question'],
-              room: e['room'],
-              iV: e['__v']);
-          print("HejHejHej");
-          print(e['answerOptions'].toString());
-          answerOptionsId = List.from(e['answerOptions']);
-          print("1");
-          print(answerOptionsId.toString());
-          APIResponse<List<AnswerOption>> temp;
-          if (answerOptionsId.length > 0) {
-            //temp = await getAnswerOptionsByIdList(answerOptionsId);
-          }
-          /*
-          if (temp.error != true) {
-            print("Betta");
-            feedbackQuestion.answerOptions = temp.data;
-          } else {
-            return APIResponse<List<FeedbackQuestion>>(error: true, errorMessage: 'No questions found');
-          }*/
-          questionList.add(feedbackQuestion);
-        }
-        print("Hej3");
-        return APIResponse<List<FeedbackQuestion>>(data: questionList);
+        List<FeedbackQuestion> questions = [];
+        var jsonData = json.decode(data.body);
+
+        jsonData.forEach(
+            (element) => questions.add(FeedbackQuestion.fromJson(element)));
+
+        return APIResponse<List<FeedbackQuestion>>(data: questions);
+      } else {
+        return APIResponse<List<FeedbackQuestion>>(
+          error: true,
+          errorMessage: data.body,
+        );
       }
+    }).catchError((e) {
+      print(e);
       return APIResponse<List<FeedbackQuestion>>(
-          error: true, errorMessage: 'An error occured1');
-    }).catchError((_) => APIResponse<List<FeedbackQuestion>>(
-            error: true, errorMessage: 'An error occured2'));
-  }
-
-  Future<APIResponse<List<AnswerOption>>> getAnswerOptionsByIdList(
-      List<String> answerIdList) {
-    return http
-        .get(api + '/answer/fromQuestion/' + answerIdList.toString(),
-            headers: headers())
-        .then((data) {
-      if (data.statusCode == 200) {
-        //returns json object
-        final jsonData = json.decode(data.body);
-        final answerOptionList = <AnswerOption>[];
-        for (var e in jsonData) {
-          final answerOption = AnswerOption(
-              timesAnswered: e['timesAnswered'],
-              sId: e['_id'],
-              answer: e['answer'],
-              iV: e['__v']);
-          answerOptionList.add(answerOption);
-        }
-        if (answerOptionList != null) {
-          return APIResponse<List<AnswerOption>>(data: answerOptionList);
-        } else {
-          return APIResponse<List<AnswerOption>>(
-              error: true, errorMessage: 'No answers were found');
-        }
-      }
-      return APIResponse<List<AnswerOption>>(
-          error: true, errorMessage: 'An error occured3');
-    }).catchError((_) => APIResponse<List<AnswerOption>>(
-            error: true, errorMessage: 'An error occured4'));
-  }
-
-  Future<APIResponse<List<AnswerOption>>> getAnswerOptionsByRoom(
-      String questionId) {
-    return http
-        .get(api + '/answer/fromQuestion/' + questionId, headers: headers())
-        .then((data) {
-      if (data.statusCode == 200) {
-        //returns json object
-        final jsonData = json.decode(data.body);
-        final answerOptionList = <AnswerOption>[];
-        for (var e in jsonData) {
-          final answerOption = AnswerOption(
-              timesAnswered: e['timesAnswered'],
-              sId: e['_id'],
-              answer: e['answer'],
-              iV: e['__v']);
-          answerOptionList.add(answerOption);
-        }
-        if (answerOptionList != null) {
-          return APIResponse<List<AnswerOption>>(data: answerOptionList);
-        } else {
-          return APIResponse<List<AnswerOption>>(
-              error: true, errorMessage: 'No answers were found');
-        }
-      }
-      return APIResponse<List<AnswerOption>>(
-          error: true, errorMessage: 'An error occured');
-    }).catchError((_) => APIResponse<List<AnswerOption>>(
-            error: true, errorMessage: 'An error occured'));
+        error: true,
+        errorMessage: "Getting active questions failed",
+      );
+    });
   }
 
   Future<APIResponse<bool>> putFeedback(String answerId) {
@@ -168,7 +93,6 @@ class RestService {
   }
 
   Future<APIResponse<UserModel>> postUser(String email, String password) {
-    print("creating user");
     final String body = json.encode({'email': email, 'password': password});
     return http
         .post(api + '/users', headers: headers(), body: body)
@@ -291,6 +215,39 @@ class RestService {
     });
   }
 
+  Future<APIResponse<List<Beacon>>> getAllBeacons(
+    String token,
+  ) {
+    return http
+        .get(api + '/beacons', headers: headers(token: token))
+        .then((data) {
+      if (data.statusCode == 200) {
+        List<Beacon> beacons = [];
+        final responseBody = json.decode(data.body);
+        for (int i = 0; i < responseBody.length; i++) {
+          String id = responseBody[i]['_id'];
+          String name = responseBody[i]['name'];
+          String uuid = responseBody[i]['uuid'];
+          BuildingModel building = BuildingModel(
+            responseBody[i]['building']['_id'],
+            responseBody[i]['building']['name'],
+            [],
+          );
+          Beacon beacon = Beacon(id, name, building, uuid);
+          beacons.add(beacon);
+        }
+        return APIResponse<List<Beacon>>(data: beacons);
+      } else {
+        return APIResponse<List<Beacon>>(
+            error: true, errorMessage: data.body ?? "");
+      }
+    }).catchError((e) {
+      print(e);
+      return APIResponse<List<Beacon>>(
+          error: true, errorMessage: "Getting all beacons failed");
+    });
+  }
+
   Future<APIResponse<BuildingModel>> getBuilding(
     String token,
     String buildingId,
@@ -344,6 +301,25 @@ class RestService {
     });
   }
 
+  Future<APIResponse<String>> deleteRoom(
+    String token,
+    String roomId,
+  ) {
+    return http
+        .delete(api + '/rooms/$roomId', headers: headers(token: token))
+        .then((deleteRoomData) {
+      if (deleteRoomData.statusCode == 200) {
+        return APIResponse<String>(data: "Room deleted");
+      } else {
+        return APIResponse<String>(
+            error: true, errorMessage: deleteRoomData.body);
+      }
+    }).catchError((e) {
+      return APIResponse<String>(
+          error: true, errorMessage: "Failed to delete room");
+    });
+  }
+
   Future<APIResponse<String>> addSignalMap(
     String token,
     SignalMap signalMap,
@@ -359,7 +335,7 @@ class RestService {
             headers: headers(token: token), body: signalBody)
         .then((signalMapData) {
       if (signalMapData.statusCode == 200) {
-        return APIResponse<String>(data: "Add room complete");
+        return APIResponse<String>(data: "Scan added");
       } else {
         return APIResponse<String>(
             error: true, errorMessage: signalMapData.body ?? "");
@@ -367,6 +343,26 @@ class RestService {
     }).catchError((e) {
       return APIResponse<String>(
           error: true, errorMessage: "Add signal map failed");
+    });
+  }
+
+  Future<APIResponse<String>> deleteSignalMapsOfRoom(
+    String token,
+    String roomId,
+  ) {
+    return http
+        .delete(api + '/signalMaps/room/$roomId',
+            headers: headers(token: token))
+        .then((signalMapDeleteData) {
+      if (signalMapDeleteData.statusCode == 200) {
+        return APIResponse<String>(data: "Scans Deleted");
+      } else {
+        return APIResponse<String>(
+            error: true, errorMessage: signalMapDeleteData.body ?? "");
+      }
+    }).catchError((e) {
+      return APIResponse<String>(
+          error: true, errorMessage: "Delete signal maps of room failed");
     });
   }
 
@@ -394,36 +390,37 @@ class RestService {
         return APIResponse<RoomModel>(
             error: true, errorMessage: data.body ?? "");
       }
-    }).catchError((e) => APIResponse<RoomModel>(
-            error: true, errorMessage: e.toString()));
+    }).catchError((e) =>
+            APIResponse<RoomModel>(error: true, errorMessage: e.toString()));
   }
 
-  Future<APIResponse<Beacon>> addBeacon(
+  Future<APIResponse<bool>> addBeacon(
     String token,
-    String name,
+    Tuple2<String, String> beacon,
     BuildingModel building,
-    String uuid,
   ) {
-    final String body =
-        json.encode({'name': name, 'buildingId': building.id, 'uuid': uuid});
+    final String body = json.encode({
+      'buildingId': building.id,
+      'name': beacon.item1,
+      'uuid': beacon.item2
+    });
     return http
         .post(api + '/beacons', headers: headers(token: token), body: body)
-        .then((beaconData) {
-      if (beaconData.statusCode == 200) {
-        dynamic resultBody = json.decode(beaconData.body);
-        Beacon beacon = Beacon(
-          resultBody['_id'],
-          resultBody['name'],
-          resultBody['bulding'],
-          resultBody['uuid'],
-        );
-        return APIResponse<Beacon>(data: beacon);
+        .then((data) {
+      if (data.statusCode == 200) {
+        dynamic responseBody = json.decode(data.body);
+        String answer = responseBody['name'];
+        if (answer == beacon.item1) {
+          return APIResponse<bool>(data: true);
+        }
+        return APIResponse<bool>(
+            error: true, errorMessage: "Adding beacon failed");
       } else {
-        return APIResponse<Beacon>(
-            error: true, errorMessage: beaconData.body ?? "");
+        return APIResponse<bool>(
+            error: true, errorMessage: "Adding beacon failed");
       }
     }).catchError((e) {
-      return APIResponse<Beacon>(
+      return APIResponse<bool>(
           error: true, errorMessage: "Adding beacon failed");
     });
   }
@@ -434,8 +431,8 @@ class RestService {
     String value,
     List<AnswerOption> answerOptions,
   ) {
-    final String body =
-        json.encode({'rooms': rooms, 'value': value, 'answerOptions': answerOptions});
+    final String body = json.encode(
+        {'rooms': rooms, 'value': value, 'answerOptions': answerOptions});
     return http
         .post(api + '/questions', headers: headers(token: token), body: body)
         .then((questionData) {
@@ -456,7 +453,56 @@ class RestService {
           error: true, errorMessage: "Adding question failed");
     });
   }
- 
+
+  Future<APIResponse<UserModel>> createUnauthorizedUser() {
+    return http.post(api + '/users', headers: headers()).then((data) {
+      if (data.statusCode == 200) {
+        final responseHeaders = data.headers;
+        final token = responseHeaders['x-auth-token'];
+        return APIResponse<UserModel>(
+          data: UserModel(
+            "",
+            token,
+          ),
+        );
+      } else {
+        return APIResponse<UserModel>(
+          error: true,
+          errorMessage: data.body,
+        );
+      }
+    }).catchError(
+      (_) => APIResponse<UserModel>(
+          error: true, errorMessage: 'Check your internet connection'),
+    );
+  }
+
+  Future<APIResponse<QuestionStatisticsModel>> getQuestionStatistics(
+    String token,
+    FeedbackQuestion question,
+  ) {
+    FeedbackQuestion q = question;
+
+    return http
+        .get(api + '/feedback/questionStatistics/' + q.id,
+            headers: headers(token: token))
+        .then((data) {
+      if (data.statusCode == 200) {
+        return APIResponse<QuestionStatisticsModel>(
+          data: QuestionStatisticsModel.fromJson(
+            q,
+            json.decode(data.body),
+          ),
+        );
+      } else {
+        return APIResponse<QuestionStatisticsModel>(
+          error: true,
+          errorMessage: "Check your internet connection",
+        );
+      }
+    });
+  }
+
   Future<APIResponse<UserModel>> makeUserAdmin(
     String token,
     String userId,

@@ -2,6 +2,7 @@ import 'package:climify/models/api_response.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/services/rest_service.dart';
+import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +17,7 @@ class _UserLoginState extends State<UserLogin> {
   RestService _restService = RestService();
   bool _buttonsActive = true;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  SharedPrefsHelper _sharedPrefsHelper = SharedPrefsHelper();
 
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
@@ -53,7 +55,7 @@ class _UserLoginState extends State<UserLogin> {
     } else {
       Provider.of<GlobalState>(context)
           .updateAccount(apiResponse.data.email, apiResponse.data.authToken);
-      Navigator.of(context).pushReplacementNamed("buildings");
+      Navigator.of(context).pushReplacementNamed("registered");
     }
     setState(() {
       _buttonsActive = true;
@@ -65,6 +67,11 @@ class _UserLoginState extends State<UserLogin> {
     setState(() {
       _visibleIndex = index;
     });
+  }
+
+  void _gotoUnregistered() {
+    _sharedPrefsHelper.setStartOnLogin(false);
+    Navigator.of(context).pushReplacementNamed("unregistered");
   }
 
   void _setupDev() {
@@ -94,9 +101,16 @@ class _UserLoginState extends State<UserLogin> {
             title: Text("Login"),
           ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle_outline), title: Text("Create User"))
+            icon: Icon(Icons.add_circle_outline),
+            title: Text("Create User"),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.arrow_forward),
+            title: Text("Skip login"),
+          ),
         ],
-        onTap: (int index) => _changeWindow(index),
+        onTap: (int index) =>
+            index == 2 ? _gotoUnregistered() : _changeWindow(index),
         currentIndex: _visibleIndex,
       ),
       body: Container(
