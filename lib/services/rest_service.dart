@@ -442,10 +442,8 @@ class RestService {
       if (questionData.statusCode == 200) {
         dynamic resultBody = json.decode(questionData.body);
         Question question = Question(
-          resultBody['_id'],
           resultBody['rooms'],
           resultBody['value'],
-          resultBody['isActive'],
           resultBody['answerOptions'],
         );
         return APIResponse<Question>(data: question);
@@ -458,8 +456,8 @@ class RestService {
           error: true, errorMessage: "Adding question failed");
     });
   }
-   
-/*   Future<APIResponse<BuildingModel>> makeUserAdmin(
+ 
+  Future<APIResponse<UserModel>> makeUserAdmin(
     String token,
     String userId,
     BuildingModel building,
@@ -475,14 +473,38 @@ class RestService {
           resultBody['userId'],
           resultBody['bulding'],
         );
-        return APIResponse<Void>(data: userModel);
+        return APIResponse<UserModel>(data: userModel);
       } else {
-        return APIResponse<Void>(
+        return APIResponse<UserModel>(
             error: true, errorMessage: adminData.body ?? "");
       }
     }).catchError((e) {
-      return APIResponse<Void>(
+      return APIResponse<UserModel>(
           error: true, errorMessage: "Making user admin failed");
     });
-  }  */
+  }
+
+  Future<APIResponse<UserModel>> getUserIdFromEmail(
+  String token,
+  String email,
+) {
+  return http
+      .get(api + '/users/getUserIdFromEmail/' + email, headers: headers(token: token))
+      .then((userData) {
+    if (userData.statusCode == 200) {
+      dynamic resultBody = json.decode(userData.body);
+      UserModel userModel = UserModel(
+        resultBody['_id'],
+        resultBody['email'],
+      );
+      return APIResponse<UserModel>(data: userModel);
+    } else {
+      return APIResponse<UserModel>(
+          error: true, errorMessage: userData.body ?? "");
+    }
+  }).catchError((e) => APIResponse<UserModel>(
+            error: true,
+            errorMessage: "Get userId Failed",
+          ));
+  }
 }
