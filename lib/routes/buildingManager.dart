@@ -12,6 +12,7 @@ import 'package:climify/routes/dialogues/roomMenu.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/customDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -94,8 +95,8 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _addRoom() async {
-    await showDialog<bool>(
-      //barrierColor: Colors.black12,
+    await showDialogModified<bool>(
+      barrierColor: Colors.black12,
       context: context,
       builder: (context) {
         return AddRoom(
@@ -128,8 +129,8 @@ class _BuildingManagerState extends State<BuildingManager> {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
       return;
     }
-    await showDialog(
-      //barrierColor: Colors.black12,
+    await showDialogModified(
+      barrierColor: Colors.black12,
       context: context,
       builder: (context) {
         return ScanRoom(
@@ -152,8 +153,8 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _roomMenu(RoomModel room) async {
-    await showDialog(
-      //barrierColor: Colors.black12,
+    await showDialogModified(
+      barrierColor: Colors.black12,
       context: context,
       builder: (context) {
         return RoomMenu(
