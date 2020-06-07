@@ -6,6 +6,7 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
+import 'package:climify/models/userModel.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
 import 'package:climify/routes/dialogues/roomMenu.dart';
 import 'package:climify/services/bluetooth.dart';
@@ -37,11 +38,23 @@ class _BuildingManagerState extends State<BuildingManager> {
   String _currentRoom = "";
   bool _gettingRoom = false;
   String _currentlyConfirming = "";
+  int _visibleIndex = 0;
+  String _title = "Managing";
+  bool _gettingUserId = false;
+  bool _makinguseradmin = false;
+  final myController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _setBuildingState();
+  }
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    myController.dispose();
+    super.dispose();
   }
 
   void _setBuildingState() async {
@@ -82,7 +95,7 @@ class _BuildingManagerState extends State<BuildingManager> {
 
   void _addRoom() async {
     await showDialog<bool>(
-      barrierColor: Colors.black12,
+      //barrierColor: Colors.black12,
       context: context,
       builder: (context) {
         return AddRoom(
@@ -116,7 +129,7 @@ class _BuildingManagerState extends State<BuildingManager> {
       return;
     }
     await showDialog(
-      barrierColor: Colors.black12,
+      //barrierColor: Colors.black12,
       context: context,
       builder: (context) {
         return ScanRoom(
@@ -140,7 +153,7 @@ class _BuildingManagerState extends State<BuildingManager> {
 
   void _roomMenu(RoomModel room) async {
     await showDialog(
-      barrierColor: Colors.black12,
+      //barrierColor: Colors.black12,
       context: context,
       builder: (context) {
         return RoomMenu(
@@ -181,67 +194,224 @@ class _BuildingManagerState extends State<BuildingManager> {
     });
   }
 
+  void _getUserIdFromEmailFunc(String _email) async {
+    print("user email" + _email);
+    setState(() {
+      _gettingUserId = true;
+    });
+    String userId;
+    APIResponse<String> apiResponse =
+        await _restService.getUserIdFromEmail(_token, _email);
+    if (apiResponse.error) {
+      SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
+    } else {
+      userId = apiResponse.data;
+    }
+    setState(() {
+      _gettingUserId = false;
+    });
+    print("user id" + userId);
+    _makeUserAdmin(userId, _email);
+  }
+
+    void _makeUserAdmin(String _userId, String _email) async {
+    print("hej");
+    setState(() {
+      _makinguseradmin = true;
+    });
+    UserModel userAdminData;
+    APIResponse<UserModel> apiResponse =
+        await _restService.makeUserAdmin(_token, _userId, _building);
+    if (apiResponse.error) {
+      SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
+    } else {
+      SnackBarError.showErrorSnackBar(_email + " is now admin of building: " + _building.name, _scaffoldKey);
+      userAdminData = apiResponse.data;
+    }
+    setState(() {
+      _makinguseradmin = false;
+    });
+    print(userAdminData);
+  }
+
+    void _changeWindow(int index) {
+    setState(() {
+      _visibleIndex = index;
+      //_setSubtitle();
+      switch (index) {
+        case 0:
+          _title = "Managing ${_building.name}";
+          break;
+        case 1:
+          _title = "Manage questions";
+          break;
+        case 2:
+          _title = "Manage beacons";
+          break;
+        case 3:
+          _title = "Make user admin";
+          break;
+        default:
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(
-          "Managing ${_building.name}",
+        title: InkWell(
+          onTap: () => _setBuildingState(),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _title,
+                    ),
+                  ],
+                ),
+              ),
+              // _loadingState
+              //     ? CircularProgressIndicator(
+              //         value: null,
+              //         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              //       )
+              //     : Container(),
+            ],
+          ),
         ),
       ),
-      body: Container(
-        child: Column(
-          children: <Widget>[
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _building.rooms.map((room) {
-                return InkWell(
-                  onTap: () => _roomMenu(room),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(),
-                      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        showUnselectedLabels: false,
+        showSelectedLabels: false,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.build),
+            title: Text("Manage building"),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_comment),
+            title: Text("Manage questions"),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bluetooth),
+            title: Text("Manage beacons"),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.supervisor_account),
+            title: Text("Make user admin"),
+          ),
+        ],
+        onTap: (int index) => _changeWindow(index),
+        currentIndex: _visibleIndex,
+      ),
+      body: Center(
+        child: Container(
+          child: Stack(
+            children: [
+              Visibility(
+                visible: _visibleIndex == 0,
+                child: Container(
+                    child: Column(
+                      children: <Widget>[
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: _building.rooms.map((room) {
+                            return InkWell(
+                              onTap: () => _roomMenu(room),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(),
+                                  ),
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: Center(
+                                    child: Container(
+                                      margin: EdgeInsets.symmetric(
+                                        vertical: 8,
+                                        horizontal: 8,
+                                      ),
+                                      child: Text(
+                                        room.name,
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Center(
-                        child: Container(
-                          margin: EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 8,
-                          ),
-                          child: Text(
-                            room.name,
-                            style: TextStyle(
-                              fontSize: 24,
-                            ),
-                          ),
+                ),
+              ),
+              Visibility(
+                visible: _visibleIndex == 1,
+                child: Container(
+                  child: Column(
+                    children: <Widget>[
+                      Text('Add question'),
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Enter question title'
                         ),
                       ),
-                    ),
+
+
+                      RaisedButton(onPressed: () {}, child: Text('Add question to the chosen rooms'))
+                    ],
                   ),
-                );
-              }).toList(),
-            ),
-            Row(
-              children: <Widget>[
-                RaisedButton(
-                  child: Text("Where am I?"),
-                  onPressed: () => _getRoom(),
                 ),
-                _gettingRoom
-                    ? CircularProgressIndicator(
-                        value: null,
-                      )
-                    : Container(),
-              ],
-            ),
-            Text(
-              "Current Room: $_currentRoom",
-            ),
-          ],
+              ),
+              Visibility(
+                visible: _visibleIndex == 2,
+                child: Container(
+                  child: Column(
+                    children: <Widget>[
+                      Text('Add beacon'),
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Enter beacon name'
+                        ),
+                      ),
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Enter uuid'
+                        ),
+                      ),
+                      RaisedButton(onPressed: () {}, child: Text('Add beacon to this building'))
+                    ],
+                  ),
+                ),
+              ),
+              Visibility(
+                visible: _visibleIndex == 3,
+                child: Container(
+                  child: Column(
+                    children: <Widget>[
+                      TextFormField(
+                        controller: myController,
+                        decoration: InputDecoration(
+                          labelText: 'Enter user email'
+                        ),
+                      ),
+                      RaisedButton(onPressed: () => _getUserIdFromEmailFunc(myController.text), child: Text('Make user admin for building: ' + _building.name))
+                  ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(

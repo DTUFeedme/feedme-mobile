@@ -530,25 +530,20 @@ class RestService {
     });
   }
 
-  Future<APIResponse<UserModel>> getUserIdFromEmail(
+  Future<APIResponse<String>> getUserIdFromEmail(
   String token,
-  String email,
+  String email, 
 ) {
   return http
       .get(api + '/users/getUserIdFromEmail/' + email, headers: headers(token: token))
       .then((userData) {
     if (userData.statusCode == 200) {
-      dynamic resultBody = json.decode(userData.body);
-      UserModel userModel = UserModel(
-        resultBody['_id'],
-        resultBody['email'],
-      );
-      return APIResponse<UserModel>(data: userModel);
+        return APIResponse<String>(data: userData.body);
     } else {
-      return APIResponse<UserModel>(
+      return APIResponse<String>(
           error: true, errorMessage: userData.body ?? "");
     }
-  }).catchError((e) => APIResponse<UserModel>(
+  }).catchError((e) => APIResponse<String>(
             error: true,
             errorMessage: "Get userId Failed",
           ));
