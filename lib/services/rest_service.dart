@@ -357,6 +357,26 @@ class RestService {
     });
   }
 
+    Future<APIResponse<String>> deleteBeacon(
+    String token,
+    String beaconId,
+    BuildingModel building,
+  ) {
+    return http
+        .delete(api + '/beacons/' + beaconId, headers: headers(token: token))
+        .then((deleteBeaconData) {
+      if (deleteBeaconData.statusCode == 200) {
+        return APIResponse<String>(data: "Beacon deleted");
+      } else {
+        return APIResponse<String>(
+            error: true, errorMessage: deleteBeaconData.body);
+      }
+    }).catchError((e) {
+      return APIResponse<String>(
+          error: true, errorMessage: "Failed to delete beacon");
+    });
+  }
+
   Future<APIResponse<String>> addSignalMap(
     String token,
     SignalMap signalMap,

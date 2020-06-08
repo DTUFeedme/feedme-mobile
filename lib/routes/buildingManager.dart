@@ -7,6 +7,7 @@ import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
+import 'package:climify/routes/dialogues/addBeacon.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
 import 'package:climify/routes/dialogues/roomMenu.dart';
 import 'package:climify/services/bluetooth.dart';
@@ -17,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'dialogues/scanRoom.dart';
+import 'dialogues/beaconMenu.dart';
 
 class BuildingManager extends StatefulWidget {
   @override
@@ -44,6 +46,8 @@ class _BuildingManagerState extends State<BuildingManager> {
   bool _gettingUserId = false;
   bool _makinguseradmin = false;
   final myController = TextEditingController();
+  final myControllerAddBeaconName = TextEditingController();
+  final myControllerAddBeaconUUID = TextEditingController();
 
   @override
   void initState() {
@@ -55,6 +59,9 @@ class _BuildingManagerState extends State<BuildingManager> {
   void dispose() {
     // Clean up the controller when the widget is disposed.
     myController.dispose();
+    myControllerAddBeaconName.dispose();
+    myControllerAddBeaconUUID.dispose();
+    _newRoomNameController.dispose();
     super.dispose();
   }
 
@@ -84,6 +91,18 @@ class _BuildingManagerState extends State<BuildingManager> {
       BuildingModel building = apiResponseBuilding.data;
       setState(() {
         _building = building;
+      });
+    }
+    return;
+  }
+
+    Future<void> _updateBeacon() async {
+    APIResponse<List<Beacon>> apiResponseBuilding =
+        await _restService.getBeaconsOfBuilding(_token, _building);
+    if (apiResponseBuilding.error == false) {
+      List<Beacon> beacons = apiResponseBuilding.data;
+      setState(() {
+        _beacons = beacons;
       });
     }
     return;
@@ -177,6 +196,30 @@ class _BuildingManagerState extends State<BuildingManager> {
     });
   }
 
+  void _beaconMenu(Beacon beacon) async {
+    await showDialogModified(
+      barrierColor: Colors.black12,
+      context: context,
+      builder: (context) {
+        return BeaconMenu(
+          beacon: beacon,
+          token: _token,
+          building: _building,
+          scaffoldKey: _scaffoldKey,
+          setCurrentlyConfirming: (s) => setState(() {
+            _currentlyConfirming = s;
+          }),
+          getCurrentlyConfirming: () => _currentlyConfirming,
+        ).dialog;
+      },
+    ).then((value) {
+      setState(() {
+        _currentlyConfirming = "";
+      });
+      _updateBeacon();
+    });
+  }
+
   void _getRoom() async {
     setState(() {
       _gettingRoom = true;
@@ -220,9 +263,6 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _makeUserAdmin(String _userId, String _email) async {
-    print("hej");
-    print(_userId);
-    print(_email);
     setState(() {
       _makinguseradmin = true;
     });
@@ -240,7 +280,30 @@ class _BuildingManagerState extends State<BuildingManager> {
     setState(() {
       _makinguseradmin = false;
     });
-    print(userAdminData);
+  }
+
+  void _addBeacon() async {
+    await showDialogModified<bool>(
+      barrierColor: Colors.black12,
+      context: context,
+      builder: (context) {
+        return AddBeacon(
+          token: _token,
+          textEditingController: myControllerAddBeaconName,
+          textEditingController2: myControllerAddBeaconUUID,
+          building: _building,
+          scaffoldKey: _scaffoldKey,
+        ).dialog;
+      },
+    ).then((value) {
+      setState(() {
+        myControllerAddBeaconName.text = "";
+        myControllerAddBeaconUUID.text = "";
+      });
+      if (value ?? false) {
+        _updateBeacon();
+      }
+    });
   }
 
   void _changeWindow(int index) {
@@ -377,17 +440,38 @@ class _BuildingManagerState extends State<BuildingManager> {
                 child: Container(
                   child: Column(
                     children: <Widget>[
-                      Text('Add beacon'),
-                      TextFormField(
-                        decoration:
-                            InputDecoration(labelText: 'Enter beacon name'),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: _beacons.map((beacon) {
+                          return InkWell(
+                            onTap: () => _beaconMenu(beacon),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(),
+                                ),
+                              ),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: Center(
+                                  child: Container(
+                                    margin: EdgeInsets.symmetric(
+                                      vertical: 8,
+                                      horizontal: 8,
+                                    ),
+                                    child: Text(
+                                      beacon.name,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                      TextFormField(
-                        decoration: InputDecoration(labelText: 'Enter uuid'),
-                      ),
-                      RaisedButton(
-                          onPressed: () {},
-                          child: Text('Add beacon to this building'))
                     ],
                   ),
                 ),
@@ -428,7 +512,7 @@ class _BuildingManagerState extends State<BuildingManager> {
                   case 1:
                     return print("pressed on addQuestion window");
                   case 2:
-                    return print("pressed on beacon window");
+                    return _addBeacon();
                   case 2:
                     return print("Impossible case as the button is hidden");
                   default:
