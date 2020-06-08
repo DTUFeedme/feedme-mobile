@@ -274,13 +274,50 @@ class RestService {
             ));
   }
 
+  Future<APIResponse<BuildingModel>> addBuilding(
+    String token,
+    String buildingName,
+  ) {
+    final String body = json.encode({
+      'name': buildingName,
+    });
+    return http
+        .post(api + '/buildings', headers: headers(token: token), body: body)
+        .then((buildingData) {
+      if (buildingData.statusCode == 200) {
+        dynamic resultBody = json.decode(buildingData.body);
+        BuildingModel building = BuildingModel(
+          resultBody['_id'],
+          resultBody['name'],
+          [],
+        );
+        return APIResponse<BuildingModel>(data: building);
+      } else {
+        return APIResponse<BuildingModel>(
+            error: true, errorMessage: buildingData.body ?? "");
+      }
+    }).catchError((e) {
+      return APIResponse<BuildingModel>(
+          error: true, errorMessage: "Add building failed");
+    });
+  }
+
+  Future<APIResponse<BuildingModel>> deleteBuilding(
+    String token,
+    String buildingId
+  ){
+
+  }
+
   Future<APIResponse<RoomModel>> addRoom(
     String token,
     String roomName,
     BuildingModel building,
   ) {
-    final String body =
-        json.encode({'name': roomName, 'buildingId': building.id});
+    final String body = json.encode({
+      'name': roomName,
+      'buildingId': building.id,
+    });
     return http
         .post(api + '/rooms', headers: headers(token: token), body: body)
         .then((roomData) {
@@ -511,7 +548,8 @@ class RestService {
     final String body =
         json.encode({'userId': userId, 'buildingId': building.id});
     return http
-        .patch(api + '/users/makeBuildingAdmin', headers: headers(token: token), body: body)
+        .patch(api + '/users/makeBuildingAdmin',
+            headers: headers(token: token), body: body)
         .then((adminData) {
       if (adminData.statusCode == 200) {
         dynamic resultBody = json.decode(adminData.body);
@@ -531,21 +569,22 @@ class RestService {
   }
 
   Future<APIResponse<String>> getUserIdFromEmail(
-  String token,
-  String email, 
-) {
-  return http
-      .get(api + '/users/getUserIdFromEmail/' + email, headers: headers(token: token))
-      .then((userData) {
-    if (userData.statusCode == 200) {
+    String token,
+    String email,
+  ) {
+    return http
+        .get(api + '/users/getUserIdFromEmail/' + email,
+            headers: headers(token: token))
+        .then((userData) {
+      if (userData.statusCode == 200) {
         return APIResponse<String>(data: userData.body);
-    } else {
-      return APIResponse<String>(
-          error: true, errorMessage: userData.body ?? "");
-    }
-  }).catchError((e) => APIResponse<String>(
-            error: true,
-            errorMessage: "Get userId Failed",
-          ));
+      } else {
+        return APIResponse<String>(
+            error: true, errorMessage: userData.body ?? "");
+      }
+    }).catchError((e) => APIResponse<String>(
+              error: true,
+              errorMessage: "Get userId Failed",
+            ));
   }
 }

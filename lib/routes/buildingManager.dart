@@ -40,7 +40,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   bool _gettingRoom = false;
   String _currentlyConfirming = "";
   int _visibleIndex = 0;
-  String _title = "Managing";
+  String _title = "Manage rooms";
   bool _gettingUserId = false;
   bool _makinguseradmin = false;
   final myController = TextEditingController();
@@ -211,12 +211,18 @@ class _BuildingManagerState extends State<BuildingManager> {
     setState(() {
       _gettingUserId = false;
     });
-    print("user id" + userId);
-    _makeUserAdmin(userId, _email);
+    if (userId != null) {
+      _makeUserAdmin(userId, _email);
+    } else {
+      SnackBarError.showErrorSnackBar(
+          "No user found with email: $_email", _scaffoldKey);
+    }
   }
 
-    void _makeUserAdmin(String _userId, String _email) async {
+  void _makeUserAdmin(String _userId, String _email) async {
     print("hej");
+    print(_userId);
+    print(_email);
     setState(() {
       _makinguseradmin = true;
     });
@@ -226,7 +232,9 @@ class _BuildingManagerState extends State<BuildingManager> {
     if (apiResponse.error) {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     } else {
-      SnackBarError.showErrorSnackBar(_email + " is now admin of building: " + _building.name, _scaffoldKey);
+      SnackBarError.showErrorSnackBar(
+          _email + " is now admin of building: " + _building.name,
+          _scaffoldKey);
       userAdminData = apiResponse.data;
     }
     setState(() {
@@ -235,13 +243,13 @@ class _BuildingManagerState extends State<BuildingManager> {
     print(userAdminData);
   }
 
-    void _changeWindow(int index) {
+  void _changeWindow(int index) {
     setState(() {
       _visibleIndex = index;
       //_setSubtitle();
       switch (index) {
         case 0:
-          _title = "Managing ${_building.name}";
+          _title = "Managing rooms";
           break;
         case 1:
           _title = "Manage questions";
@@ -262,28 +270,19 @@ class _BuildingManagerState extends State<BuildingManager> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: InkWell(
-          onTap: () => _setBuildingState(),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      _title,
-                    ),
-                  ],
-                ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              _title,
+            ),
+            Text(
+              "Building: ${_building.name}",
+              style: TextStyle(
+                fontSize: 14,
               ),
-              // _loadingState
-              //     ? CircularProgressIndicator(
-              //         value: null,
-              //         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              //       )
-              //     : Container(),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -318,42 +317,42 @@ class _BuildingManagerState extends State<BuildingManager> {
               Visibility(
                 visible: _visibleIndex == 0,
                 child: Container(
-                    child: Column(
-                      children: <Widget>[
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: _building.rooms.map((room) {
-                            return InkWell(
-                              onTap: () => _roomMenu(room),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide(),
-                                  ),
+                  child: Column(
+                    children: <Widget>[
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: _building.rooms.map((room) {
+                          return InkWell(
+                            onTap: () => _roomMenu(room),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(),
                                 ),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: Center(
-                                    child: Container(
-                                      margin: EdgeInsets.symmetric(
-                                        vertical: 8,
-                                        horizontal: 8,
-                                      ),
-                                      child: Text(
-                                        room.name,
-                                        style: TextStyle(
-                                          fontSize: 24,
-                                        ),
+                              ),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: Center(
+                                  child: Container(
+                                    margin: EdgeInsets.symmetric(
+                                      vertical: 8,
+                                      horizontal: 8,
+                                    ),
+                                    child: Text(
+                                      room.name,
+                                      style: TextStyle(
+                                        fontSize: 24,
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Visibility(
@@ -363,13 +362,12 @@ class _BuildingManagerState extends State<BuildingManager> {
                     children: <Widget>[
                       Text('Add question'),
                       TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Enter question title'
-                        ),
+                        decoration:
+                            InputDecoration(labelText: 'Enter question title'),
                       ),
-
-
-                      RaisedButton(onPressed: () {}, child: Text('Add question to the chosen rooms'))
+                      RaisedButton(
+                          onPressed: () {},
+                          child: Text('Add question to the chosen rooms'))
                     ],
                   ),
                 ),
@@ -381,16 +379,15 @@ class _BuildingManagerState extends State<BuildingManager> {
                     children: <Widget>[
                       Text('Add beacon'),
                       TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Enter beacon name'
-                        ),
+                        decoration:
+                            InputDecoration(labelText: 'Enter beacon name'),
                       ),
                       TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Enter uuid'
-                        ),
+                        decoration: InputDecoration(labelText: 'Enter uuid'),
                       ),
-                      RaisedButton(onPressed: () {}, child: Text('Add beacon to this building'))
+                      RaisedButton(
+                          onPressed: () {},
+                          child: Text('Add beacon to this building'))
                     ],
                   ),
                 ),
@@ -401,13 +398,17 @@ class _BuildingManagerState extends State<BuildingManager> {
                   child: Column(
                     children: <Widget>[
                       TextFormField(
+                        keyboardType: TextInputType.emailAddress,
                         controller: myController,
-                        decoration: InputDecoration(
-                          labelText: 'Enter user email'
-                        ),
+                        decoration:
+                            InputDecoration(labelText: 'Enter user email'),
                       ),
-                      RaisedButton(onPressed: () => _getUserIdFromEmailFunc(myController.text), child: Text('Make user admin for building: ' + _building.name))
-                  ],
+                      RaisedButton(
+                          onPressed: () =>
+                              _getUserIdFromEmailFunc(myController.text),
+                          child: Text('Make user admin for building: ' +
+                              _building.name))
+                    ],
                   ),
                 ),
               ),
@@ -415,12 +416,27 @@ class _BuildingManagerState extends State<BuildingManager> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(
-          Icons.add,
-        ),
-        onPressed: () => _addRoom(),
-      ),
+      floatingActionButton: _visibleIndex != 3
+          ? FloatingActionButton(
+              child: Icon(
+                Icons.add,
+              ),
+              onPressed: () {
+                switch (_visibleIndex) {
+                  case 0:
+                    return _addRoom();
+                  case 1:
+                    return print("pressed on addQuestion window");
+                  case 2:
+                    return print("pressed on beacon window");
+                  case 2:
+                    return print("Impossible case as the button is hidden");
+                  default:
+                    return print("default case");
+                }
+              },
+            )
+          : Container(),
     );
   }
 }

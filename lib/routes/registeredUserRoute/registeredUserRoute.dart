@@ -4,11 +4,13 @@ import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/questionStatistics.dart';
 import 'package:climify/models/roomModel.dart';
-import 'package:climify/routes/registeredUserRoute/buildingsList.dart';
+import 'package:climify/routes/dialogues/addBuilding.dart';
+import 'package:climify/routes/registeredUserRoute/buildingList.dart';
 import 'package:climify/routes/registeredUserRoute/viewRoomFeedback.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/customDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,10 +27,13 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   RoomModel _room;
   BuildingModel _building;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  GlobalKey<BuildingListState> _buildingListKey =
+      GlobalKey<BuildingListState>();
   BluetoothServices _bluetooth = BluetoothServices();
   RestService _restService = RestService();
   String _token;
   List<QuestionStatisticsModel> _roomQuestionStatistics = [];
+  TextEditingController _buildingNameTextController = TextEditingController();
 
   @override
   void initState() {
@@ -148,6 +153,27 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     });
   }
 
+  void _addBuilding() async {
+    await showDialogModified<bool>(
+      barrierColor: Colors.black12,
+      context: context,
+      builder: (context) {
+        return AddBuilding(
+          token: _token,
+          textEditingController: _buildingNameTextController,
+          scaffoldKey: _scaffoldKey,
+        ).dialog;
+      },
+    ).then((value) {
+      setState(() {
+        _buildingNameTextController.text = "";
+      });
+      if (value ?? false) {
+        _buildingListKey.currentState.getBuildings();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,8 +245,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                 maintainState: true,
                 visible: _visibleIndex == 3,
                 child: Container(
-                  child: BuildingsList(
+                  child: BuildingList(
                     scaffoldKey: _scaffoldKey,
+                    key: _buildingListKey,
                   ),
                 ),
               ),
@@ -253,6 +280,14 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
         onTap: (int index) => _changeWindow(index),
         currentIndex: _visibleIndex,
       ),
+      floatingActionButton: _visibleIndex == 3
+          ? FloatingActionButton(
+              child: Icon(
+                Icons.add,
+              ),
+              onPressed: () => _addBuilding(),
+            )
+          : Container(),
     );
   }
 }

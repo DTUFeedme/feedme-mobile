@@ -1,42 +1,42 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/globalState.dart';
+import 'package:climify/routes/dialogues/addBuilding.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/customDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
 
-class BuildingsList extends StatefulWidget {
+class BuildingList extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
 
-  const BuildingsList({
+  const BuildingList({
     Key key,
     @required this.scaffoldKey,
   }) : super(key: key);
 
   @override
-  _BuildingsListState createState() => _BuildingsListState();
+  BuildingListState createState() => BuildingListState();
 }
 
-class _BuildingsListState extends State<BuildingsList> {
+class BuildingListState extends State<BuildingList> {
   GlobalKey<ScaffoldState> _scaffoldKey;
   BluetoothServices _bluetooth = BluetoothServices();
   RestService _restService = RestService();
   List<BuildingModel> _buildings = [];
-  int _visibleIndex = 0;
-  BuildingModel _selectedBuilding;
-  Tuple2<String, String> _selectedBeacon;
   List<Tuple2<String, String>> _beaconList = [];
   String buildingId = "";
+  TextEditingController _buildingNameTextController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _scaffoldKey = widget.scaffoldKey;
-    _getBuildings();
+    getBuildings();
     _getBLEDevicesList();
   }
 
@@ -68,7 +68,7 @@ class _BuildingsListState extends State<BuildingsList> {
     return items;
   }
 
-  Future<void> _getBuildings() async {
+  Future<void> getBuildings() async {
     await Future.delayed(Duration.zero);
     String token = Provider.of<GlobalState>(context).globalState['token'];
     APIResponse<List<BuildingModel>> buildingsResponse =
@@ -76,7 +76,6 @@ class _BuildingsListState extends State<BuildingsList> {
     if (buildingsResponse.error) return;
     setState(() {
       _buildings = buildingsResponse.data;
-      _selectedBuilding = (_buildings.length > 0) ? _buildings[0] : null;
     });
   }
 
@@ -84,7 +83,7 @@ class _BuildingsListState extends State<BuildingsList> {
     Provider.of<GlobalState>(context).updateBuilding(building);
     Navigator.of(context)
         .pushNamed("buildingManager")
-        .then((value) => _getBuildings());
+        .then((value) => getBuildings());
   }
 
   void _getBLEDevicesList() async {
@@ -113,15 +112,18 @@ class _BuildingsListState extends State<BuildingsList> {
     });
     setState(() {
       _beaconList = beaconList;
-      _selectedBeacon = (_beaconList.length > 0) ? _beaconList[0] : null;
     });
+  }
+
+  void _deleteBuilding(){
+    
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       child: RefreshIndicator(
-        onRefresh: () => _getBuildings(),
+        onRefresh: () => getBuildings(),
         child: Container(
           child: ListView.builder(
             padding: EdgeInsets.symmetric(
