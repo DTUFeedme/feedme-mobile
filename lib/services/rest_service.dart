@@ -66,28 +66,34 @@ class RestService {
     });
   }
 
-  Future<APIResponse<bool>> putFeedback(String answerId) {
+  Future<APIResponse<bool>> postFeedback(FeedbackQuestion question, int choosenOption, RoomModel room) {
+    final String body = json.encode({'roomId': room.id, 'answerId': question.answerOptions[choosenOption].id, 'questionId': question.id});
+    print(body);
     return http
-        .put(api + '/answer/up/' + answerId, headers: headers())
+        .post(api + '/feedback', headers: headers(), body: body)
         .then((data) {
+      print(data.statusCode);
       if (data.statusCode == 200) {
-        //returns json object
         final jsonData = json.decode(data.body);
-        final jsonN = jsonData['n'];
-        final jsonNModified = jsonData['nModified'];
-        final jsonOk = jsonData['ok'];
-        if (jsonOk == 1) {
+        final jsonId = jsonData['id'];
+        final jsonUser = jsonData['user'];
+        final jsonRoom = jsonData['room'];
+        final jsonAnswer = jsonData['answer'];
+        final jsonQuestion = jsonData['question'];
+        if (jsonRoom == room.id && 
+              jsonAnswer == question.answerOptions[choosenOption].id &&
+                jsonQuestion == question.id) {
           return APIResponse<bool>(data: true);
-        } else if (jsonNModified < 1) {
-          return APIResponse<bool>(
-              error: true, errorMessage: '0 answers has been modified');
-        } else if (jsonN < 1) {
-          return APIResponse<bool>(
-              error: true, errorMessage: 'No answer was a match');
+        } else if (jsonAnswer != question.answerOptions[choosenOption].id) {
+          return APIResponse<bool>(error: true, errorMessage: 'No matching answer was found');
+        } else if (jsonQuestion != question.id) {
+          return APIResponse<bool>(error: true, errorMessage: 'No matching question was found');
+        } else if (jsonRoom != room.id) {
+          return APIResponse<bool>(error: true, errorMessage: 'No matching room was found');
         }
-        return APIResponse<bool>(error: true, errorMessage: 'An error occured');
+        return APIResponse<bool>(error: true, errorMessage: 'An error occured1');
       }
-      return APIResponse<bool>(error: true, errorMessage: 'An error occured');
+      return APIResponse<bool>(error: true, errorMessage: 'An error occured2');
     }).catchError((_) =>
             APIResponse<bool>(error: true, errorMessage: 'An error occured'));
   }

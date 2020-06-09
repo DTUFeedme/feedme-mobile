@@ -4,17 +4,19 @@ import 'package:climify/styles/textStyles.dart';
 import 'package:climify/widgets/roundedBox.dart';
 import 'package:flutter/material.dart';
 import 'package:climify/models/feedbackQuestion.dart';
+import 'package:climify/models/roomModel.dart';
 
 import 'package:climify/services/rest_service.dart';
 
 class FeedbackWidget extends StatefulWidget {
   final FeedbackQuestion question;
+  final RoomModel room;
   //final String room;
   //final Function(FeedbackQuestion question) returnFeedback;
 
   const FeedbackWidget({
     Key key,
-    @required this.question,
+    @required this.question, this.room,
   }) : super(key: key);
 
   @override
@@ -33,9 +35,9 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   void _sendFeedback() async {
     print("hej");
     if (_chosenOption != null && (widget.question != null)) {
-      final restService = RestService();
+      RestService restService = RestService();
 
-      APIResponse<bool> status = await restService.putFeedback(widget.question.answerOptions[_chosenOption].id);
+      APIResponse<bool> status = await restService.postFeedback(widget.question, _chosenOption, widget.room);
 
       if (status.data == true) {
         print("Answer has been added");
@@ -45,9 +47,6 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
       //widget.returnFeedback(widget.question);
       Navigator.pop(context);
-
-      //Seb, skal den her stadig være der?
-      //widget.returnFeedback(widget.question);
     }
   }
 
@@ -92,7 +91,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
                             child: Container(
                               child: Center(
                                 child: Text(
-                                  option.answer,
+                                  option.value,
                                   style: TextStyles.optionStyle,
                                 ),
                               ),

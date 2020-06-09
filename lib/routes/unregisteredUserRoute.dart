@@ -32,6 +32,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   String _userId;
   BuildingModel _building;
   List<FeedbackQuestion> _questions = [];
+  RoomModel room;
 
   @override
   void initState() {
@@ -90,7 +91,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
     room = apiResponseRoom.data;*/
 
-    RoomModel room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
+    room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
+
     
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, _token);
@@ -131,6 +133,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       //_questions = questionsList;
     });
     print(_questions);
+    print(_token);
   }
 
   void _gotoLogin() {
@@ -186,29 +189,42 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                         "Give Feedback. Token: $_token",
                       ),
                     ),
-                    Container(
-                      child: _questions.isNotEmpty
-                        ? /*Text(
-                              _questions[0].value,
-                          )*/
-                          Container(
-                            child: RefreshIndicator(
-                              onRefresh: () => _getActiveQuestions(),
-                              child: Container(
-                                child: ListView.builder(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                    Expanded(
+                      child: Container(
+                        child: _questions.isNotEmpty
+                          ? /*Text(
+                                _questions[0].value,
+                            )*/
+                            Container(
+                              child: RefreshIndicator(
+                                onRefresh: () => _getActiveQuestions(),
+                                child: Container(
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    itemCount: _questions.length,
+                                    itemBuilder: (_, index) {
+                                      //return Text("Hej");
+                                      return ListTile(
+                                        title: Text(_questions[index].value),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => FeedbackWidget (question: _questions[index], room: room)
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    }
                                   ),
-                                  itemCount: _questions.length,
-                                  itemBuilder: (_, index) {
-                                    return Text("Hej");
-                                  }
                                 ),
                               ),
-                            ),
-                          )
-                        : Container(),
+                            )
+                          : Container(),
+                      ),
                     ),
                   ],
                 ),
