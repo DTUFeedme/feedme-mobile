@@ -74,7 +74,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     Provider.of<GlobalState>(context).updateBuilding(_building);
   }
 
-  void _getActiveQuestions() async {
+  Future<void> _getActiveQuestions() async {
     /*RoomModel room;
     BluetoothServices bluetooth = BluetoothServices();
 
@@ -88,7 +88,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       return;
     }
 
-    room = apiResponseRoom.data;
+    room = apiResponseRoom.data;*/
+
+    RoomModel room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
     
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, _token);
@@ -99,8 +101,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       );
       return;
     }
-    */
-
+    
+/*
     List<FeedbackQuestion> questionsList = <FeedbackQuestion>[];
  
     FeedbackQuestion q1 = FeedbackQuestion( 
@@ -123,10 +125,10 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     
     questionsList.add(q1);
     questionsList.add(q2);
-
+*/
     setState(() {
-      //_questions = apiResponseQuestions.data;
-      _questions = questionsList;
+      _questions = apiResponseQuestions.data;
+      //_questions = questionsList;
     });
     print(_questions);
   }
@@ -186,40 +188,24 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                     ),
                     Container(
                       child: _questions.isNotEmpty
-                          ? /*Text(
-                                _questions[0].value,
-                            ),*/
-                          Expanded(
-                            child: Container(
-                              height: 200.0,
-                              child: new ListView.builder(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
+                        ? /*Text(
+                              _questions[0].value,
+                          )*/
+                          Container(
+                            child: RefreshIndicator(
+                              onRefresh: () => _getActiveQuestions(),
+                              child: Container(
+                                child: ListView.builder(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  itemCount: _questions.length,
+                                  itemBuilder: (_, index) {
+                                    return Text("Hej");
+                                  }
                                 ),
-                                itemCount: _questions.length,
-                                itemBuilder: (_, index){
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        bottom: BorderSide(),
-                                      ),
-                                    ),
-                                    child: Material(
-                                      child: InkWell(
-                                        onTap: () {
-                                            Navigator.push(
-                                              context, 
-                                              MaterialPageRoute(
-                                                builder: (context) => FeedbackWidget (question: _questions[index]),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                }
-                              )
+                              ),
                             ),
                           )
                         : Container(),
