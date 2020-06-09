@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
@@ -11,6 +12,7 @@ import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:climify/routes/feedback.dart';
 
 class UnregisteredUserScreen extends StatefulWidget {
   const UnregisteredUserScreen({
@@ -73,7 +75,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   }
 
   void _getActiveQuestions() async {
-    RoomModel room;
+    /*RoomModel room;
     BluetoothServices bluetooth = BluetoothServices();
 
     APIResponse<RoomModel> apiResponseRoom =
@@ -87,7 +89,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     }
 
     room = apiResponseRoom.data;
-
+    
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, _token);
     if (apiResponseQuestions.error) {
@@ -97,9 +99,34 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       );
       return;
     }
+    */
+
+    List<FeedbackQuestion> questionsList = <FeedbackQuestion>[];
+ 
+    FeedbackQuestion q1 = FeedbackQuestion( 
+      "5eda09834c4c3f0f3fff67bd",
+      "double",
+      ["5ecce66fcd42d414a535e509","5ecce5fecd42d414a535e4b9"],
+      true,
+      <AnswerOption>[],
+      []
+    );
+
+    FeedbackQuestion q2 = FeedbackQuestion( 
+      "5eda09b94c4c3f0f3fff67c5",
+      "spooky",
+      ["5ecce66fcd42d414a535e509","5ecce5fecd42d414a535e4b9"],
+      true,
+      <AnswerOption>[],
+      []
+    );
+    
+    questionsList.add(q1);
+    questionsList.add(q2);
 
     setState(() {
-      _questions = apiResponseQuestions.data;
+      //_questions = apiResponseQuestions.data;
+      _questions = questionsList;
     });
     print(_questions);
   }
@@ -159,10 +186,43 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                     ),
                     Container(
                       child: _questions.isNotEmpty
-                          ? Text(
-                              _questions[0].value,
-                            )
-                          : Container(),
+                          ? /*Text(
+                                _questions[0].value,
+                            ),*/
+                          Expanded(
+                            child: Container(
+                              height: 200.0,
+                              child: new ListView.builder(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                itemCount: _questions.length,
+                                itemBuilder: (_, index){
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        bottom: BorderSide(),
+                                      ),
+                                    ),
+                                    child: Material(
+                                      child: InkWell(
+                                        onTap: () {
+                                            Navigator.push(
+                                              context, 
+                                              MaterialPageRoute(
+                                                builder: (context) => FeedbackWidget (question: _questions[index]),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                }
+                              )
+                            ),
+                          )
+                        : Container(),
                     ),
                   ],
                 ),
