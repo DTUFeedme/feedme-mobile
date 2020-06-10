@@ -11,12 +11,14 @@ import 'package:climify/services/rest_service.dart';
 class FeedbackWidget extends StatefulWidget {
   final FeedbackQuestion question;
   final RoomModel room;
+  final String token;
+
   //final String room;
   //final Function(FeedbackQuestion question) returnFeedback;
 
   const FeedbackWidget({
     Key key,
-    @required this.question, this.room,
+    @required this.token, this.question, this.room,
   }) : super(key: key);
 
   @override
@@ -37,7 +39,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
     if (_chosenOption != null && (widget.question != null)) {
       RestService restService = RestService();
 
-      APIResponse<bool> status = await restService.postFeedback(widget.question, _chosenOption, widget.room);
+      APIResponse<bool> status = await restService.postFeedback(widget.token, widget.question, _chosenOption, widget.room);
 
       if (status.data == true) {
         print("Answer has been added");

@@ -66,11 +66,11 @@ class RestService {
     });
   }
 
-  Future<APIResponse<bool>> postFeedback(FeedbackQuestion question, int choosenOption, RoomModel room) {
+  Future<APIResponse<bool>> postFeedback(String token, FeedbackQuestion question, int choosenOption, RoomModel room) {
     final String body = json.encode({'roomId': room.id, 'answerId': question.answerOptions[choosenOption].id, 'questionId': question.id});
     print(body);
     return http
-        .post(api + '/feedback', headers: headers(), body: body)
+        .post(api + '/feedback', headers: headers(token: token), body: body)
         .then((data) {
       print(data.statusCode);
       if (data.statusCode == 200) {
@@ -91,9 +91,9 @@ class RestService {
         } else if (jsonRoom != room.id) {
           return APIResponse<bool>(error: true, errorMessage: 'No matching room was found');
         }
-        return APIResponse<bool>(error: true, errorMessage: 'An error occured1');
+        return APIResponse<bool>(error: true, errorMessage: 'An error occured');
       }
-      return APIResponse<bool>(error: true, errorMessage: 'An error occured2');
+      return APIResponse<bool>(error: true, errorMessage: 'An error occured');
     }).catchError((_) =>
             APIResponse<bool>(error: true, errorMessage: 'An error occured'));
   }

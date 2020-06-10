@@ -14,6 +14,8 @@ import 'package:climify/widgets/customDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../feedback.dart';
+
 class RegisteredUserScreen extends StatefulWidget {
   @override
   _RegisteredUserScreenState createState() => _RegisteredUserScreenState();
@@ -34,6 +36,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   String _token;
   List<QuestionStatisticsModel> _roomQuestionStatistics = [];
   TextEditingController _buildingNameTextController = TextEditingController();
+  List<FeedbackQuestion> _questions = [];
 
   @override
   void initState() {
@@ -95,6 +98,68 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     }
     return;
+  }
+
+  Future<void> _getActiveQuestions() async {
+    /*RoomModel room;
+    BluetoothServices bluetooth = BluetoothServices();
+
+    APIResponse<RoomModel> apiResponseRoom =
+        await bluetooth.getRoomFromBuilding(_building, _token);
+    if (apiResponseRoom.error) {
+      SnackBarError.showErrorSnackBar(
+        apiResponseRoom.errorMessage,
+        _scaffoldKey,
+      );
+      return;
+    }
+
+    room = apiResponseRoom.data;*/
+
+    RoomModel room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
+
+    
+    APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
+        await _restService.getActiveQuestionsByRoom(room.id, _token);
+    if (apiResponseQuestions.error) {
+      SnackBarError.showErrorSnackBar(
+        apiResponseQuestions.errorMessage,
+        _scaffoldKey,
+      );
+      return;
+    }
+    
+/*
+    List<FeedbackQuestion> questionsList = <FeedbackQuestion>[];
+ 
+    FeedbackQuestion q1 = FeedbackQuestion( 
+      "5eda09834c4c3f0f3fff67bd",
+      "double",
+      ["5ecce66fcd42d414a535e509","5ecce5fecd42d414a535e4b9"],
+      true,
+      <AnswerOption>[],
+      []
+    );
+
+    FeedbackQuestion q2 = FeedbackQuestion( 
+      "5eda09b94c4c3f0f3fff67c5",
+      "spooky",
+      ["5ecce66fcd42d414a535e509","5ecce5fecd42d414a535e4b9"],
+      true,
+      <AnswerOption>[],
+      []
+    );
+    
+    questionsList.add(q1);
+    questionsList.add(q2);
+*/
+    setState(() {
+      _room = room;
+      _questions = apiResponseQuestions.data;
+      //_questions = questionsList;
+    });
+    print(_questions);
+    print(_token);
   }
 
   Future<void> _getAndSetRoomFeedbackStats() async {
@@ -216,7 +281,54 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
               Visibility(
                 visible: _visibleIndex == 0,
                 child: Container(
-                  child: Text("Give feedback here"),
+                  //child: Text("Give feedback here"),
+                  child: Column(
+                  children: <Widget>[
+                    RaisedButton(
+                      onPressed: () => _getActiveQuestions(),
+                      child: Text(
+                        "Give Feedback. Token: $_token",
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        child: _questions.isNotEmpty
+                          ? /*Text(
+                                _questions[0].value,
+                            )*/
+                            Container(
+                              child: RefreshIndicator(
+                                onRefresh: () => _getActiveQuestions(),
+                                child: Container(
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    itemCount: _questions.length,
+                                    itemBuilder: (_, index) {
+                                      //return Text("Hej");
+                                      return ListTile(
+                                        title: Text(_questions[index].value),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => FeedbackWidget (token: _token, question: _questions[index], room: _room)
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    }
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(),
+                      ),
+                    ),
+                  ],
+                ),
                 ),
               ),
               Visibility(

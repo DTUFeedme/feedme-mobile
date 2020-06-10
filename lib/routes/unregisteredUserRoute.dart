@@ -213,7 +213,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => FeedbackWidget (question: _questions[index], room: room)
+                                              builder: (context) => FeedbackWidget (token: _token, question: _questions[index], room: room)
                                             ),
                                           );
                                         },
