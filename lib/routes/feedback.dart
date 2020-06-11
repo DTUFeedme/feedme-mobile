@@ -35,7 +35,6 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   }
 
   void _sendFeedback() async {
-    print("hej");
     if (_chosenOption != null && (widget.question != null)) {
       RestService restService = RestService();
 

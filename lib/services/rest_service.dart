@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
+import 'package:climify/models/questionAndFeedback.dart';
 import 'package:climify/models/questionModel.dart';
 import 'package:climify/models/questionStatistics.dart';
 import 'package:climify/models/roomModel.dart';
@@ -538,6 +539,52 @@ class RestService {
       (_) => APIResponse<UserModel>(
           error: true, errorMessage: 'Check your internet connection'),
     );
+  }
+
+  Future<APIResponse<List<QuestionAndFeedback>>> getFeedback(
+    String token,
+    String user,
+    String t
+  ) {
+    return http
+      .get(api + '/feedback?user=' + user + '&t=' + t, 
+        headers: headers(token: token)) 
+      .then((data) {
+        if (data.statusCode == 200) {
+          List<QuestionAndFeedback> feedbackList = <QuestionAndFeedback>[];
+          dynamic resultBody = json.decode(data.body);
+          if (resultBody == null || resultBody.lenght < 0) {
+            return APIResponse<QuestionAndFeedback>(
+              error: true,
+              errorMessage: "List of answered questions were empty",
+            );
+          } else {
+            for (var e in resultBody) {
+              QuestionAndFeedback qF = QuestionAndFeedback(
+                e["_id"],
+                e["user"],
+                e["room"],
+                AnswerOption.fromJson(
+                  e["answser"]
+                ),
+                FeedbackQuestion.fromJson(
+                  e["question"]
+                ),
+                e["createdAt"],
+                e["updatedAt"],
+                e["__v"],
+              );
+              feedbackList.add(qF);
+            }
+          }
+          return APIResponse<List<QuestionAndFeedback>>(
+            data: feedbackList,
+          );
+        }
+      }).catchError((e) {
+      return APIResponse<List<QuestionAndFeedback>>(
+          error: true, errorMessage: "Getting answered questions failed");
+    });
   }
 
   Future<APIResponse<QuestionStatisticsModel>> getQuestionStatistics(
