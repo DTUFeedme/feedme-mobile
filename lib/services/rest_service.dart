@@ -551,35 +551,43 @@ class RestService {
         headers: headers(token: token)) 
       .then((data) {
         if (data.statusCode == 200) {
+          print("Hej1");
           List<QuestionAndFeedback> feedbackList = <QuestionAndFeedback>[];
           dynamic resultBody = json.decode(data.body);
-          if (resultBody == null || resultBody.lenght < 0) {
-            return APIResponse<QuestionAndFeedback>(
+          //print(resultBody);
+          print(resultBody.length);
+          if (resultBody == null || resultBody.length < 1) {
+            print("Hva så?");
+            return APIResponse<List<QuestionAndFeedback>>(
               error: true,
               errorMessage: "List of answered questions were empty",
             );
-          } else {
-            for (var e in resultBody) {
-              QuestionAndFeedback qF = QuestionAndFeedback(
-                e["_id"],
-                e["user"],
-                e["room"],
-                AnswerOption.fromJson(
-                  e["answser"]
-                ),
-                FeedbackQuestion.fromJson(
-                  e["question"]
-                ),
-                e["createdAt"],
-                e["updatedAt"],
-                e["__v"],
-              );
-              feedbackList.add(qF);
-            }
           }
+          print("Hej2");
+          for (var e in resultBody) {
+            QuestionAndFeedback qF = QuestionAndFeedback(
+              e["_id"],
+              e["user"],
+              e["room"],
+              AnswerOption.fromJson(
+                e["answser"]
+              ),
+              FeedbackQuestion.fromJson(
+                e["question"]
+              ),
+              e["createdAt"],
+              e["updatedAt"],
+              e["__v"],
+            );
+            feedbackList.add(qF);
+          }
+          print(feedbackList);
           return APIResponse<List<QuestionAndFeedback>>(
             data: feedbackList,
           );
+        } else {
+          return APIResponse<List<QuestionAndFeedback>>(
+            error: true, errorMessage: "Getting answered questions failed");
         }
       }).catchError((e) {
       return APIResponse<List<QuestionAndFeedback>>(

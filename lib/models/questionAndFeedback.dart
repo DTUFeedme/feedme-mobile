@@ -1,5 +1,4 @@
 import 'package:climify/models/answerOption.dart';
-import 'package:climify/models/feedback.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 
 class QuestionAndFeedback {

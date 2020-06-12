@@ -6,6 +6,7 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
+import 'package:climify/routes/viewAnsweredQuestions.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/sharedPreferences.dart';
@@ -28,6 +29,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   RestService _restService = RestService();
   String _token;
   GlobalKey<ScaffoldState> _scaffoldKey;
+  GlobalKey<ViewAnsweredQuestionsWidgetState> _feedbackListKey =
+    GlobalKey<ViewAnsweredQuestionsWidgetState>();
   int _visibleIndex = 0;
   String _userId;
   BuildingModel _building;
@@ -57,7 +60,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     String s = utf8.decode(res);
     Map map = json.decode(s);
     String userId = map['_id'];
-
     setState(() {
       _token = token;
       _userId = userId;
@@ -78,7 +80,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
   Future<void> _getActiveQuestions() async {
     RoomModel room;
-    BluetoothServices bluetooth = BluetoothServices();
+    /*BluetoothServices bluetooth = BluetoothServices();
 
     APIResponse<RoomModel> apiResponseRoom =
         await bluetooth.getRoomFromBuilding(_building, _token);
@@ -90,9 +92,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       return;
     }
 
-    room = apiResponseRoom.data;
+    room = apiResponseRoom.data;*/
 
-    //room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
+    room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
     
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, _token);
@@ -195,11 +197,18 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
               ),
             ),
             Visibility(
+              maintainState: true,
               visible: _visibleIndex == 1,
               child: Container(
-                child: Text(
+                /*child: Text(
                   "See Feedback. User ID: $_userId",
-                ),
+                ),*/
+                child: _token != null ? 
+                  ViewAnsweredQuestionsWidget(
+                    scaffoldKey: _scaffoldKey,
+                    token: _token,
+                  )
+                : Container(),
               ),
             ),
           ],

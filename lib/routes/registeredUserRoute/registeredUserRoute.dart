@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../feedback.dart';
+import '../viewAnsweredQuestions.dart';
 
 class RegisteredUserScreen extends StatefulWidget {
   @override
@@ -30,6 +31,8 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   BuildingModel _building;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<BuildingListState> _buildingListKey =
+      GlobalKey<BuildingListState>();
+  GlobalKey<BuildingListState> _feedbackListKey =
       GlobalKey<BuildingListState>();
   BluetoothServices _bluetooth = BluetoothServices();
   RestService _restService = RestService();
@@ -319,7 +322,11 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
               Visibility(
                 visible: _visibleIndex == 2,
                 child: Container(
-                  child: Text("View your feedback here"),
+                  //child: Text("View your feedback here"),
+                    child: ViewAnsweredQuestionsWidget(
+                      scaffoldKey: _scaffoldKey,
+                      key: _buildingListKey, 
+                  ),
                 ),
               ),
               Visibility(
