@@ -69,7 +69,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   final myControllerAddBeaconName = TextEditingController();
   final myControllerAddBeaconUUID = TextEditingController();
   final _questionNameController = TextEditingController();
-  final _questionAnswerOptionsController= TextEditingController();
+  final _questionAnswerOptionsController = TextEditingController();
 
   @override
   void initState() {
@@ -118,7 +118,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     return;
   }
 
-    Future<void> _updateBeacon() async {
+  Future<void> _updateBeacon() async {
     APIResponse<List<Beacon>> apiResponseBeacons =
         await _restService.getBeaconsOfBuilding(_token, _building);
     if (apiResponseBeacons.error == false) {
@@ -278,7 +278,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     });
   }
 
-    void _questionMenu(Question question) async {
+  void _questionMenu(Question question) async {
     await showDialogModified(
       barrierColor: Colors.black12,
       context: context,
@@ -374,15 +374,15 @@ class _BuildingManagerState extends State<BuildingManager> {
     scanResults.forEach((result) {
       setState(() {});
       String beaconName = _bluetooth.getBeaconName(result);
-      //String beaconId = result.advertisementData.serviceData.keys.first;
-      List<String> serviceUuids = result.advertisementData.serviceUuids;
-      String beaconId = serviceUuids.isNotEmpty ? serviceUuids[0] : "";
+      // List<String> serviceUuids = result.advertisementData.serviceUuids;
+      // String beaconId = serviceUuids.isNotEmpty ? serviceUuids[0] : "";
       RegExp regex = RegExp(r'^[a-zA-Z0-9]{4,6}$');
       if (beaconName != "" && regex.hasMatch(beaconName)) {
+        String beaconId = result.advertisementData.serviceData.keys.first;
         Tuple2<String, String> item =
             new Tuple2<String, String>(beaconName, beaconId);
         beaconList.add(item);
-      print('beaconId' + beaconId);
+        print('beaconId' + beaconId);
       }
     });
     setState(() {
@@ -391,7 +391,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     // if (beaconList.isEmpty){
     //   SnackBarError.showErrorSnackBar("No beacons found", _scaffoldKey);
     //   return;
-    // } 
+    // }
     await showDialogModified<bool>(
       barrierColor: Colors.black12,
       context: context,
