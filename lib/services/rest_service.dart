@@ -69,7 +69,6 @@ class RestService {
 
   Future<APIResponse<bool>> postFeedback(String token, FeedbackQuestion question, int choosenOption, RoomModel room) {
     final String body = json.encode({'roomId': room.id, 'answerId': question.answerOptions[choosenOption].id, 'questionId': question.id});
-    print(body);
     return http
         .post(api + '/feedback', headers: headers(token: token), body: body)
         .then((data) {
@@ -551,26 +550,23 @@ class RestService {
         headers: headers(token: token)) 
       .then((data) {
         if (data.statusCode == 200) {
-          print("Hej1");
           List<QuestionAndFeedback> feedbackList = <QuestionAndFeedback>[];
           dynamic resultBody = json.decode(data.body);
           //print(resultBody);
           print(resultBody.length);
           if (resultBody == null || resultBody.length < 1) {
-            print("Hva så?");
             return APIResponse<List<QuestionAndFeedback>>(
               error: true,
               errorMessage: "List of answered questions were empty",
             );
           }
-          print("Hej2");
           for (var e in resultBody) {
             QuestionAndFeedback qF = QuestionAndFeedback(
               e["_id"],
               e["user"],
               e["room"],
               AnswerOption.fromJson(
-                e["answser"]
+                e["answer"]
               ),
               FeedbackQuestion.fromJson(
                 e["question"]

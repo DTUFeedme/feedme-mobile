@@ -120,7 +120,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
 
     room = apiResponseRoom.data;
 
-    //RoomModel room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
+    //room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
 
     
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =

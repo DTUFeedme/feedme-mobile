@@ -31,6 +31,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
   String _token;
   RestService _restService = RestService();
   List<QuestionAndFeedback> _feedbackList = <QuestionAndFeedback>[];
+  List<QuestionAndFeedback> _tempFeedbackList = <QuestionAndFeedback>[];
   String _t = "week";
   
   @override
@@ -43,10 +44,20 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
 
   Future<void> _getFeedback() async {
     await Future.delayed(Duration.zero);
-    //String token = Provider.of<GlobalState>(context).globalState['token'];
     APIResponse<List<QuestionAndFeedback>> response = 
       await _restService.getFeedback(_token, "me", _t);
     if (response.error) return;
+    response.data = response.data.reversed.toList();
+    _tempFeedbackList.add(response.data[0]);
+    for (int i = 0; i < response.data.length; i++) {
+      for (int j = 0; j < _tempFeedbackList.length; j++) {
+        if (_tempFeedbackList[j].question.id == response.data[i].question.id) {
+          break;
+        } else if (j == (_tempFeedbackList.length - 1)) {
+          _tempFeedbackList.add(response.data[i]);
+        }
+      }
+    }
     setState(() {
       _feedbackList = response.data;
     });
@@ -60,6 +71,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
         ViewFeedbackWidget(
           scaffoldKey: _scaffoldKey, 
           feedback: feedback,
+          feedbackList: _feedbackList,
         )
       ),
     );
@@ -77,8 +89,8 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
               horizontal: 8,
               vertical: 4,
             ),
-            itemCount: _feedbackList.length,
-            itemBuilder: (_, index) => _buildingRow(_feedbackList[index]),
+            itemCount: _tempFeedbackList.length,
+            itemBuilder: (_, index) => _buildingRow(_tempFeedbackList[index], index),
           ),
         ),
       ),
@@ -86,7 +98,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
   }
 
 
-  Widget _buildingRow(QuestionAndFeedback feedback) {
+  Widget _buildingRow(QuestionAndFeedback feedback, int index) {
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -96,14 +108,14 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
       child: Material(
         child: InkWell(
           onTap: () => _focusFeedback(feedback),
-          child: Center(
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                feedback.question.value,
-                style: TextStyle(
-                  fontSize: 24,
-                ),
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              feedback.question.value + "\n"
+              "Last answered: " + feedback.updatedAt
+              ,
+              style: TextStyle(
+                fontSize: 18,
               ),
             ),
           ),

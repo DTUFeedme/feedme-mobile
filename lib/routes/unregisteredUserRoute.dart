@@ -35,7 +35,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   String _userId;
   BuildingModel _building;
   List<FeedbackQuestion> _questions = [];
-  RoomModel room;
+  RoomModel _room;
 
   @override
   void initState() {
@@ -80,7 +80,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
   Future<void> _getActiveQuestions() async {
     RoomModel room;
-    /*BluetoothServices bluetooth = BluetoothServices();
+    BluetoothServices bluetooth = BluetoothServices();
 
     APIResponse<RoomModel> apiResponseRoom =
         await bluetooth.getRoomFromBuilding(_building, _token);
@@ -92,9 +92,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       return;
     }
 
-    room = apiResponseRoom.data;*/
+    room = apiResponseRoom.data;
 
-    room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
+    //room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
     
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, _token);
@@ -108,8 +108,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
     setState(() {
       _questions = apiResponseQuestions.data;
+      _room = room;
     });
-    print(_questions);
   }
 
   void _gotoLogin() {
@@ -173,16 +173,33 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                                     ),
                                     itemCount: _questions.length,
                                     itemBuilder: (_, index) {
-                                      return ListTile(
-                                        title: Text(_questions[index].value),
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => FeedbackWidget (token: _token, question: _questions[index], room: room)
+                                      return Container(
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            bottom: BorderSide(),
+                                          ),
+                                        ),
+                                        child: Material(
+                                          child: InkWell(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => FeedbackWidget(token: _token, question: _questions[index], room: _room)
+                                                ),
+                                              );
+                                            },
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(vertical: 12),
+                                              child: Text(
+                                                _questions[index].value,
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                ),
+                                              ),
                                             ),
-                                          );
-                                        },
+                                          ),
+                                        ),
                                       );
                                     }
                                   ),

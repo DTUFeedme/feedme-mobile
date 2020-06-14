@@ -15,10 +15,11 @@ import 'package:provider/provider.dart';
 class ViewFeedbackWidget extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final QuestionAndFeedback feedback;
+  final List<QuestionAndFeedback> feedbackList;
 
   const ViewFeedbackWidget({
     Key key,
-    @required this.scaffoldKey, this.feedback,
+    @required this.scaffoldKey, this.feedback, this.feedbackList,
   }) : super(key: key);
 
   @override
@@ -28,6 +29,7 @@ class ViewFeedbackWidget extends StatefulWidget {
 class ViewFeedbackWidgetState extends State<ViewFeedbackWidget> {
   GlobalKey<ScaffoldState> _scaffoldKey;
   QuestionAndFeedback _feedback;
+  List<QuestionAndFeedback> _feedbackList;
   String _token;
   
   @override
@@ -35,6 +37,7 @@ class ViewFeedbackWidgetState extends State<ViewFeedbackWidget> {
     super.initState();
     _scaffoldKey = widget.scaffoldKey;
     _feedback = widget.feedback;
+    _feedbackList = widget.feedbackList;
     _setupState();
 
   }
@@ -50,8 +53,21 @@ class ViewFeedbackWidgetState extends State<ViewFeedbackWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Text("Hej"),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Info about answer")
+      ),
+      body: Container(
+        child: Column(
+          children: <Widget>[
+            Container(
+              child: Text(
+                "Hej"
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
