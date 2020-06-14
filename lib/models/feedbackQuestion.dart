@@ -1,6 +1,11 @@
+import 'package:json_annotation/json_annotation.dart';
 import 'package:climify/models/answerOption.dart';
 
+part 'feedbackQuestion.g.dart';
+
+@JsonSerializable(explicitToJson: true)
 class FeedbackQuestion {
+  @JsonKey(name: '_id')
   String id;
   String value;
   List<String> roomIds;
@@ -17,19 +22,6 @@ class FeedbackQuestion {
     this.usersAnswered,
   );
 
-  factory FeedbackQuestion.fromJson(json) {
-    var answerOptionsJson = json['answerOptions'];
-    List<AnswerOption> answerOptions = [];
-    answerOptionsJson.forEach((element) {
-      answerOptions.add(AnswerOption.fromJson(element));
-    });
-    return FeedbackQuestion(
-      json['_id'],
-      json['value'],
-      json['rooms'].cast<String>().toList(),
-      json['isActive'],
-      answerOptions,
-      json['usersAnswered'].cast<String>().toList(),
-    );
-  }
+  factory FeedbackQuestion.fromJson(json) => _$FeedbackQuestionFromJson(json);
+  Map<String, dynamic> toJson() => _$FeedbackQuestionToJson(this);
 }

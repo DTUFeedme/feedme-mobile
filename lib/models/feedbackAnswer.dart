@@ -16,4 +16,12 @@ class FeedbackAnswer {
       json['timesAnswered'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'answer': {
+          '_id': this.id,
+          'value': this.value,
+        },
+        'timesAnswered': this.timesAnswered,
+      };
 }
