@@ -4,6 +4,7 @@ import 'package:climify/models/api_response.dart';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/globalState.dart';
+import 'package:climify/models/questionModel.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
@@ -16,9 +17,26 @@ import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tuple/tuple.dart';
+import 'package:climify/routes/registeredUserRoute/buildingList.dart';
+
+import 'package:climify/models/api_response.dart';
+import 'package:climify/models/buildingModel.dart';
+import 'package:climify/models/globalState.dart';
+import 'package:climify/routes/dialogues/addBuilding.dart';
+import 'package:climify/services/bluetooth.dart';
+import 'package:climify/services/rest_service.dart';
+import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/customDialog.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart';
+import 'package:provider/provider.dart';
+import 'package:tuple/tuple.dart';
 
 import 'dialogues/scanRoom.dart';
 import 'dialogues/beaconMenu.dart';
+import 'dialogues/addQuestion.dart';
+import 'dialogues/questionMenu.dart';
 
 class BuildingManager extends StatefulWidget {
   @override
@@ -32,8 +50,10 @@ class _BuildingManagerState extends State<BuildingManager> {
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<State> _dialogKey = GlobalKey<State>();
   BuildingModel _building = BuildingModel('', '', []);
+  List<Question> _questions = [];
   TextEditingController _newRoomNameController = TextEditingController();
   List<Beacon> _beacons = [];
+  List<Tuple2<String, String>> _beaconList = [];
   String _token = "";
   bool _scanningSignalMap = false;
   int _signalMapScans = 0;
@@ -48,6 +68,8 @@ class _BuildingManagerState extends State<BuildingManager> {
   final myController = TextEditingController();
   final myControllerAddBeaconName = TextEditingController();
   final myControllerAddBeaconUUID = TextEditingController();
+  final _questionNameController = TextEditingController();
+  final _questionAnswerOptionsController = TextEditingController();
 
   @override
   void initState() {
@@ -96,21 +118,57 @@ class _BuildingManagerState extends State<BuildingManager> {
     return;
   }
 
-    Future<void> _updateBeacon() async {
-    APIResponse<List<Beacon>> apiResponseBuilding =
+  Future<void> _updateBeacon() async {
+    APIResponse<List<Beacon>> apiResponseBeacons =
         await _restService.getBeaconsOfBuilding(_token, _building);
-    if (apiResponseBuilding.error == false) {
-      List<Beacon> beacons = apiResponseBuilding.data;
+    if (apiResponseBeacons.error == false) {
+      List<Beacon> beacon = apiResponseBeacons.data;
       setState(() {
-        _beacons = beacons;
+        _beacons = beacon;
       });
     }
     return;
   }
 
+  // Future<void> _updateQuestions() async {
+  //   APIResponse<List<Beacon>> apiResponseBuilding =
+  //       await _restService.getActiveQuestionsByRoom(roomId, _token);
+  //   if (apiResponseBuilding.error == false) {
+  //     List<Beacon> beacons = apiResponseBuilding.data;
+  //     setState(() {
+  //       _beacons = beacons;
+  //     });
+  //   }
+  //   return;
+  // }
+
   void _updateBuildingAndAddScan() async {
     await _updateBuilding();
     _addScans(_building.rooms.last);
+  }
+
+  void _addQuestion() async {
+    await showDialogModified<bool>(
+      barrierColor: Colors.black12,
+      context: context,
+      builder: (context) {
+        return AddQuestion(
+          token: _token,
+          textEditingController: _questionNameController,
+          textEditingController2: _questionAnswerOptionsController,
+          building: _building,
+          scaffoldKey: _scaffoldKey,
+        ).dialog;
+      },
+    ).then((value) {
+      setState(() {
+        _questionNameController.text = "";
+        _questionAnswerOptionsController.text = "";
+      });
+      if (value ?? false) {
+        //_updateQuestions();
+      }
+    });
   }
 
   void _addRoom() async {
@@ -220,6 +278,29 @@ class _BuildingManagerState extends State<BuildingManager> {
     });
   }
 
+  void _questionMenu(Question question) async {
+    await showDialogModified(
+      barrierColor: Colors.black12,
+      context: context,
+      builder: (context) {
+        return QuestionMenu(
+          question: question,
+          token: _token,
+          scaffoldKey: _scaffoldKey,
+          setCurrentlyConfirming: (s) => setState(() {
+            _currentlyConfirming = s;
+          }),
+          getCurrentlyConfirming: () => _currentlyConfirming,
+        ).dialog;
+      },
+    ).then((value) {
+      setState(() {
+        _currentlyConfirming = "";
+      });
+      //_updateQuestion();
+    });
+  }
+
   void _getRoom() async {
     setState(() {
       _gettingRoom = true;
@@ -283,22 +364,51 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _addBeacon() async {
+    if (!await _bluetooth.isOn) {
+      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
+      return;
+    }
+    if (await _bluetooth.isOn == false) return;
+    List<Tuple2<String, String>> beaconList = [];
+    List<ScanResult> scanResults = await _bluetooth.scanForDevices(4000);
+    scanResults.forEach((result) {
+      setState(() {});
+      String beaconName = _bluetooth.getBeaconName(result);
+      // List<String> serviceUuids = result.advertisementData.serviceUuids;
+      // String beaconId = serviceUuids.isNotEmpty ? serviceUuids[0] : "";
+      RegExp regex = RegExp(r'^[a-zA-Z0-9]{4,6}$');
+      if (beaconName != "" && regex.hasMatch(beaconName)) {
+        String beaconId = result.advertisementData.serviceData.keys.first;
+        Tuple2<String, String> item =
+            new Tuple2<String, String>(beaconName, beaconId);
+        beaconList.add(item);
+        print('beaconId' + beaconId);
+      }
+    });
+    setState(() {
+      _beaconList = beaconList;
+    });
+    // if (beaconList.isEmpty){
+    //   SnackBarError.showErrorSnackBar("No beacons found", _scaffoldKey);
+    //   return;
+    // }
     await showDialogModified<bool>(
       barrierColor: Colors.black12,
       context: context,
       builder: (context) {
         return AddBeacon(
           token: _token,
-          textEditingController: myControllerAddBeaconName,
-          textEditingController2: myControllerAddBeaconUUID,
+          beaconList: _beaconList,
+          // textEditingController: myControllerAddBeaconName,
+          // textEditingController2: myControllerAddBeaconUUID,
           building: _building,
           scaffoldKey: _scaffoldKey,
         ).dialog;
       },
     ).then((value) {
       setState(() {
-        myControllerAddBeaconName.text = "";
-        myControllerAddBeaconUUID.text = "";
+        // myControllerAddBeaconName.text = "";
+        // myControllerAddBeaconUUID.text = "";
       });
       if (value ?? false) {
         _updateBeacon();
@@ -423,14 +533,38 @@ class _BuildingManagerState extends State<BuildingManager> {
                 child: Container(
                   child: Column(
                     children: <Widget>[
-                      Text('Add question'),
-                      TextFormField(
-                        decoration:
-                            InputDecoration(labelText: 'Enter question title'),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: _questions.map((question) {
+                          return InkWell(
+                            onTap: () => _questionMenu(question),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(),
+                                ),
+                              ),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: Center(
+                                  child: Container(
+                                    margin: EdgeInsets.symmetric(
+                                      vertical: 8,
+                                      horizontal: 8,
+                                    ),
+                                    child: Text(
+                                      question.value,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                      RaisedButton(
-                          onPressed: () {},
-                          child: Text('Add question to the chosen rooms'))
                     ],
                   ),
                 ),
@@ -510,7 +644,7 @@ class _BuildingManagerState extends State<BuildingManager> {
                   case 0:
                     return _addRoom();
                   case 1:
-                    return print("pressed on addQuestion window");
+                    return _addQuestion();
                   case 2:
                     return _addBeacon();
                   case 2:
