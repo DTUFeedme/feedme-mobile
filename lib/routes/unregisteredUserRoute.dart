@@ -30,12 +30,14 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   String _token;
   GlobalKey<ScaffoldState> _scaffoldKey;
   GlobalKey<ViewAnsweredQuestionsWidgetState> _feedbackListKey =
-    GlobalKey<ViewAnsweredQuestionsWidgetState>();
+  GlobalKey<ViewAnsweredQuestionsWidgetState>();
   int _visibleIndex = 0;
   String _userId;
   BuildingModel _building;
   List<FeedbackQuestion> _questions = [];
   RoomModel _room;
+  String _title = "Provide feedback";
+  String _subtitle = "Room: scanning...";
 
   @override
   void initState() {
@@ -79,7 +81,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   }
 
   Future<void> _getActiveQuestions() async {
-    RoomModel room;
+    RoomModel room;/*
     BluetoothServices bluetooth = BluetoothServices();
 
     APIResponse<RoomModel> apiResponseRoom =
@@ -92,9 +94,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       return;
     }
 
-    room = apiResponseRoom.data;
+    room = apiResponseRoom.data;*/
 
-    //room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
+    room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
     
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, _token);
@@ -109,6 +111,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     setState(() {
       _questions = apiResponseQuestions.data;
       _room = room;
+      _setSubtitle();
     });
   }
 
@@ -117,9 +120,27 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     Navigator.of(context).pushReplacementNamed("login");
   }
 
+  void _setSubtitle() {
+    setState(() {
+      _subtitle = _room == null
+          ? "Failed scanning room, tap to retry"
+          : "Room: ${_room.name}";
+    });
+  }
+
   void _changeWindow(int index) {
     setState(() {
       _visibleIndex = index;
+      _setSubtitle();
+      switch (index) {
+        case 0:
+          _title = "Give feedback";
+          break;
+        case 1:
+          _title = "View your feedback";
+          break;
+        default:
+      }
     });
   }
 
@@ -128,8 +149,28 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(
-          "Not logged in",
+        title: InkWell(
+          onTap: () => _getActiveQuestions(),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _title,
+                    ),
+                    Text(
+                      _subtitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -217,9 +258,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
               maintainState: true,
               visible: _visibleIndex == 1,
               child: Container(
-                /*child: Text(
-                  "See Feedback. User ID: $_userId",
-                ),*/
                 child: _token != null ? 
                   ViewAnsweredQuestionsWidget(
                     scaffoldKey: _scaffoldKey,

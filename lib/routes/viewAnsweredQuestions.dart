@@ -48,18 +48,22 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
       await _restService.getFeedback(_token, "me", _t);
     if (response.error) return;
     response.data = response.data.reversed.toList();
-    _tempFeedbackList.add(response.data[0]);
     for (int i = 0; i < response.data.length; i++) {
-      for (int j = 0; j < _tempFeedbackList.length; j++) {
-        if (_tempFeedbackList[j].question.id == response.data[i].question.id) {
-          break;
-        } else if (j == (_tempFeedbackList.length - 1)) {
-          _tempFeedbackList.add(response.data[i]);
+      if (_tempFeedbackList.length == 0) {
+        _tempFeedbackList.add(response.data[i]);
+      } else {
+        for (int j = 0; j < _tempFeedbackList.length; j++) {
+          if (_tempFeedbackList[j].question.id == response.data[i].question.id) {
+            break;
+          } else if (j == (_tempFeedbackList.length - 1)) {
+            _tempFeedbackList.add(response.data[i]);
+          }
         }
       }
     }
     setState(() {
       _feedbackList = response.data;
+      _tempFeedbackList = _tempFeedbackList;
     });
   }
 
@@ -77,21 +81,170 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
     );
   }
 
+  void setT(String t) {
+    setState(() {
+      _t = t;
+    });
+    _getFeedback();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       child: RefreshIndicator(
         onRefresh: () => _getFeedback(),
-        child: Container(
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 4,
+        child: Column(
+          children: [
+            Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height/10,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width/6,
+                    ),
+                    margin: EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 6,
+                    ),
+                    child: RoundedBox(
+                      onTap: () => setT("hour"),
+                      decoration: BoxDecoration(
+                        color:  "hour" == _t
+                          ? Colors.blue
+                          : Colors.transparent,
+                      ),
+                      child: Container(
+                        child: Center(
+                          child: Text(
+                            "hour",
+                            style: TextStyles.optionStyle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width/6,
+                    ),
+                    margin: EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 6,
+                    ),
+                    child: RoundedBox(
+                      onTap: () => setT("day"),
+                      decoration: BoxDecoration(
+                        color:  "day" == _t
+                          ? Colors.blue
+                          : Colors.transparent,
+                      ),
+                      child: Container(
+                        child: Center(
+                          child: Text(
+                            "day",
+                            style: TextStyles.optionStyle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width/6,
+                    ),
+                    margin: EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 6,
+                    ),
+                    child: RoundedBox(
+                      onTap: () => setT("week"),
+                      decoration: BoxDecoration(
+                        color:  "week" == _t
+                          ? Colors.blue
+                          : Colors.transparent,
+                      ),
+                      child: Container(
+                        child: Center(
+                          child: Text(
+                            "week",
+                            style: TextStyles.optionStyle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width/6,
+                    ),
+                    margin: EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 6,
+                    ),
+                    child: RoundedBox(
+                      onTap: () => setT("month"),
+                      decoration: BoxDecoration(
+                        color:  "month" == _t
+                          ? Colors.blue
+                          : Colors.transparent,
+                      ),
+                      child: Container(
+                        child: Center(
+                          child: Text(
+                            "month",
+                            style: TextStyles.optionStyle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width/6,
+                    ),
+                    margin: EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 6,
+                    ),
+                    child: RoundedBox(
+                      onTap: () => setT("year"),
+                      decoration: BoxDecoration(
+                        color:  "year" == _t
+                          ? Colors.blue
+                          : Colors.transparent,
+                      ),
+                      child: Container(
+                        child: Center(
+                          child: Text(
+                            "year",
+                            style: TextStyles.optionStyle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            itemCount: _tempFeedbackList.length,
-            itemBuilder: (_, index) => _buildingRow(_tempFeedbackList[index], index),
-          ),
+            //_tempFeedbackList.length == 0
+            Container(
+              child: Expanded(
+                child: ListView.builder(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  itemCount: _tempFeedbackList.length,
+                  itemBuilder: (_, index) => _buildingRow(_tempFeedbackList[index], index),
+                ),
+              ),
+            )
+            //: Container(),
+          ],
         ),
       ),
     );
