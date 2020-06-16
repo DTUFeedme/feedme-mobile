@@ -489,42 +489,43 @@ class _BuildingManagerState extends State<BuildingManager> {
             children: [
               Visibility(
                 visible: _visibleIndex == 0,
-                child: Container(
-                  child: Column(
-                    children: <Widget>[
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: _building.rooms.map((room) {
-                          return InkWell(
-                            onTap: () => _roomMenu(room),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(),
+                child: RefreshIndicator(
+                  onRefresh: () => _updateBuilding(),
+                  child: Container(
+                    child: ListView.builder(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      itemCount: _building.rooms.length,
+                      itemBuilder: (_, index) => InkWell(
+                        onTap: () => _roomMenu(_building.rooms[index]),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(),
+                            ),
+                          ),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: Center(
+                              child: Container(
+                                margin: EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 8,
                                 ),
-                              ),
-                              child: SizedBox(
-                                width: double.infinity,
-                                child: Center(
-                                  child: Container(
-                                    margin: EdgeInsets.symmetric(
-                                      vertical: 8,
-                                      horizontal: 8,
-                                    ),
-                                    child: Text(
-                                      room.name,
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                      ),
-                                    ),
+                                child: Text(
+                                  _building.rooms[index].name,
+                                  style: TextStyle(
+                                    fontSize: 24,
                                   ),
                                 ),
                               ),
                             ),
-                          );
-                        }).toList(),
+                          ),
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
