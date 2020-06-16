@@ -552,8 +552,6 @@ class RestService {
         if (data.statusCode == 200) {
           List<QuestionAndFeedback> feedbackList = <QuestionAndFeedback>[];
           dynamic resultBody = json.decode(data.body);
-          //print(resultBody);
-          print(resultBody.length);
           if (resultBody == null || resultBody.length < 1) {
             return APIResponse<List<QuestionAndFeedback>>(
               error: true,
@@ -577,7 +575,6 @@ class RestService {
             );
             feedbackList.add(qF);
           }
-          print(feedbackList);
           return APIResponse<List<QuestionAndFeedback>>(
             data: feedbackList,
           );

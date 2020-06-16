@@ -44,6 +44,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
 
   Future<void> _getFeedback() async {
     await Future.delayed(Duration.zero);
+    _tempFeedbackList = [];
     APIResponse<List<QuestionAndFeedback>> response = 
       await _restService.getFeedback(_token, "me", _t);
     if (response.error) return;
