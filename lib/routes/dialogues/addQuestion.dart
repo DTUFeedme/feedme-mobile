@@ -43,11 +43,37 @@ class AddQuestion {
         }
 
         bool submitEnabled = textEditingController.text.trim() != "";
+        
+        List<TextEditingController> _controllers = new List();
 
+        
         return SimpleDialog(
           title: Text("Add Question"),
           children: <Widget>[
+            TextFormField(
+              controller: textEditingController,
+              decoration:
+                  InputDecoration(labelText: 'Question title'),
+            ),
+            Container(
+            width: double.maxFinite,
+            child: ListView.builder(
+            scrollDirection: Axis.vertical,
+            shrinkWrap:true,
+            itemBuilder: (context,index){
             
+            }),
+            ),
+            RaisedButton(
+              color: submitEnabled ? Colors.green : Colors.red,
+              child: Text("Add"),
+              onPressed: () => submitEnabled ? _submitRoom() : null,
+            ),
+            RaisedButton(
+              color: submitEnabled ? Colors.green : Colors.red,
+              child: Text("Remove"),
+              onPressed: () => submitEnabled ? _submitRoom() : null,
+            ),
             RaisedButton(
               color: submitEnabled ? Colors.green : Colors.red,
               child: Text("Submit"),

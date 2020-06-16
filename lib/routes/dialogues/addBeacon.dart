@@ -15,7 +15,7 @@ class AddBeacon {
   List<Tuple2<String, String>> beaconList;
   GlobalKey<ScaffoldState> scaffoldKey;
   StatefulBuilder addBeaconDialog;
-
+  TextEditingController editingController;
   RestService _restService = RestService();
 
   AddBeacon({
@@ -26,10 +26,16 @@ class AddBeacon {
   }) {
     addBeaconDialog = StatefulBuilder(
       builder: (context, setState) {
-        void _submitBeacon(Tuple2<String, String> selection) async {
-          APIResponse<bool> apiResponse = await _restService.addBeacon(
+        List<bool> list = [];
+        for (int i = 0; i < beaconList.length; i++){
+          list.add(false);
+        } 
+        void _submitBeacon() async {
+          for(int i = 0; i < beaconList.length; i++){
+            if(list[i] == true){
+            APIResponse<bool> apiResponse = await _restService.addBeacon(
             token,
-            Tuple2(selection.item1,selection.item2),
+            Tuple2(beaconList[i].item1,beaconList[i].item2),
             building,
           );
           if (apiResponse.error == false) {
@@ -37,45 +43,79 @@ class AddBeacon {
                 //${apiResponse.data.name}
                 "Beacon added", scaffoldKey);
             Navigator.of(context).pop(true);
-            print('uuid' + selection.item2);
           } else {
             SnackBarError.showErrorSnackBar(
                 apiResponse.errorMessage, scaffoldKey);
             Navigator.of(context).pop(false);
-            print('uuid' + selection.item2);
+          }
+            }
           }
         }
         
-        Tuple2<String, String> beaconListFirst = beaconList[0];
         bool submitEnabled = false;
 
-        if (beaconListFirst != null) {
-          submitEnabled = true;
-        }
+        // bool isSelected = false;
+        // Set<Tuple2<String, String>> selectedSet = Set();
 
+        void updateSelectedBeaconListRemove(int index) async {
+          setState(() {
+            list[index] = false;
+          });
+        }
+        void updateSelectedBeaconListAdd(int index) async {
+          setState(() {
+            list[index] = true;
+          });
+        }
+        
+        //return CircularProgressIndicator();
+
+        
         return SimpleDialog(
           title: Text("Add Beacon"),
           children: <Widget>[
-          DropdownButton<Tuple2<String, String>>(
-              items: beaconList.map((item) {
-                return new DropdownMenuItem<Tuple2<String, String>>(
-                  //child: new Text(item['item_name']),
-                  child: Text(item.item1 + " " + item.item2),
-                  //value: item['id'].toString(),
-                  value: item,
-                );
-              }).toList(),
-              onChanged: (Tuple2<String, String> newVal) {
-                setState(() {
-                  beaconListFirst = newVal;
-                });
-              },
-              value: beaconListFirst,
-            ),
+              Container(
+                width: double.maxFinite,
+              child: ListView.builder(
+                scrollDirection: Axis.vertical,
+                shrinkWrap: true,
+                itemCount: beaconList.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return InkWell(
+                          onLongPress: () {
+                                //beaconList.any((item) => item.isSelected)
+                                if (list[index] == true) {
+                                //setState(() {
+                                  //beaconList[index].isSelected = !beaconList[index].isSelected;
+                                  updateSelectedBeaconListRemove(index);
+                                  //list[index] = false;
+                                //});
+                            }
+                          },
+                          onTap: () {
+                                //setState(() {
+                                      //beaconList[index].isSelected = true;
+                                      updateSelectedBeaconListAdd(index);
+                                      //list[index] = true;
+                                //});
+                            },
+                          child: Container(
+                            margin: EdgeInsets.symmetric(vertical: 8),
+                            color: //list[index].isSelected ? 
+                                    list[index] == true ? 
+                                      Colors.grey[400] : Colors.white,
+                            child: ListTile(
+                                    title: Text(beaconList[index].item1),
+                                  ),
+                            ),
+                  );
+                }
+              ),
+              ),
             RaisedButton(
               color: submitEnabled ? Colors.green : Colors.red,
               child: Text("Submit"),
-              onPressed: () => submitEnabled ? _submitBeacon(beaconListFirst) : null,
+              onPressed: () => submitEnabled ? _submitBeacon() : null,
             ),
           ],
         );

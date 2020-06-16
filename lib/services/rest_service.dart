@@ -571,4 +571,35 @@ class RestService {
               errorMessage: "Get userId Failed",
             ));
   }
+
+    Future<APIResponse<FeedbackQuestion>> makeQuestionInactive(
+    String token,
+    String roomId,
+  ) {
+    final String body =
+        json.encode({token: token, roomId: roomId});
+    return http
+        .patch(api + '/questions/setActive/' + roomId,
+            headers: headers(token: token), body: body)
+        .then((questionData) {
+      if (questionData.statusCode == 200) {
+        dynamic resultBody = json.decode(questionData.body);
+        FeedbackQuestion questionFeedbackModel = FeedbackQuestion(
+          resultBody['userId'],
+          resultBody['bulding'],
+          resultBody['bulding'],
+          resultBody['bulding'],
+          resultBody['bulding'],
+          resultBody['bulding'],
+        );
+        return APIResponse<FeedbackQuestion>(data: questionFeedbackModel);
+      } else {
+        return APIResponse<FeedbackQuestion>(
+            error: true, errorMessage: questionData.body ?? "");
+      }
+    }).catchError((e) {
+      return APIResponse<FeedbackQuestion>(
+          error: true, errorMessage: "Setting question inactive failed");
+    });
+  }
 }
