@@ -81,7 +81,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   }
 
   Future<void> _getActiveQuestions() async {
-    RoomModel room;/*
+    RoomModel room;
     BluetoothServices bluetooth = BluetoothServices();
 
     APIResponse<RoomModel> apiResponseRoom =
@@ -94,9 +94,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       return;
     }
 
-    room = apiResponseRoom.data;*/
+    room = apiResponseRoom.data;
 
-    room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
+    //room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
     
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, _token);
