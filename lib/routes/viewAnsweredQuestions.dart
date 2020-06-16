@@ -11,15 +11,17 @@ import 'package:climify/models/roomModel.dart';
 
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter/rendering.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class ViewAnsweredQuestionsWidget extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final String token;
+  final String user;
 
   const ViewAnsweredQuestionsWidget({
     Key key,
-    @required this.scaffoldKey, this.token,
+    @required this.scaffoldKey, this.token, this.user,
   }) : super(key: key);
 
   @override
@@ -33,12 +35,14 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
   List<QuestionAndFeedback> _feedbackList = <QuestionAndFeedback>[];
   List<QuestionAndFeedback> _tempFeedbackList = <QuestionAndFeedback>[];
   String _t = "week";
+  String _user = "";
   
   @override
   void initState() {
     super.initState();
     _scaffoldKey = widget.scaffoldKey;
     _token = widget.token;
+    _user = widget.user;
     _getFeedback();
   }
 
@@ -46,7 +50,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
     await Future.delayed(Duration.zero);
     _tempFeedbackList = [];
     APIResponse<List<QuestionAndFeedback>> response = 
-      await _restService.getFeedback(_token, "me", _t);
+      await _restService.getFeedback(_token, _user, _t);
     if (response.error) return;
     response.data = response.data.reversed.toList();
     for (int i = 0; i < response.data.length; i++) {
@@ -77,6 +81,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
           scaffoldKey: _scaffoldKey, 
           feedback: feedback,
           feedbackList: _feedbackList,
+          user: _user,
         )
       ),
     );
@@ -87,6 +92,12 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
       _t = t;
     });
     _getFeedback();
+  }
+
+  String getDate(QuestionAndFeedback feedback) {
+    DateTime date = DateTime.parse(feedback.updatedAt);
+    final format = DateFormat('hh:mm, dd-MM-yyyy');
+    return format.format(date);
   }
 
   @override
@@ -231,7 +242,6 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                 ],
               ),
             ),
-            //_tempFeedbackList.length == 0
             Container(
               child: Expanded(
                 child: ListView.builder(
@@ -244,7 +254,6 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                 ),
               ),
             )
-            //: Container(),
           ],
         ),
       ),
@@ -266,7 +275,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text(
               feedback.question.value + "\n"
-              "Last answered: " + feedback.updatedAt
+              "Last answered: " + getDate(feedback)
               ,
               style: TextStyle(
                 fontSize: 18,

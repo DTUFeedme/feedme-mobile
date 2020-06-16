@@ -10,6 +10,7 @@ AnswerOption _$AnswerOptionFromJson(Map<String, dynamic> json) {
   return AnswerOption(
     json['_id'] as String,
     json['value'] as String,
+    json['__v'] as int,
   );
 }
 

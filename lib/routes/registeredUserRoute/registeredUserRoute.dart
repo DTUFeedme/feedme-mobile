@@ -120,7 +120,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
 
     room = apiResponseRoom.data;
 
-    //room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
+    //RoomModel room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
 
     
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
@@ -259,16 +259,12 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
               Visibility(
                 visible: _visibleIndex == 0,
                 child: Container(
-                  //child: Text("Give feedback here"),
                   child: Column(
                   children: <Widget>[
                     Expanded(
                       child: Container(
                         child: _questions.isNotEmpty
-                          ? /*Text(
-                                _questions[0].value,
-                            )*/
-                            Container(
+                          ? Container(
                               child: RefreshIndicator(
                                 onRefresh: () => _getActiveQuestions(),
                                 child: Container(
@@ -279,17 +275,33 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                                     ),
                                     itemCount: _questions.length,
                                     itemBuilder: (_, index) {
-                                      //return Text("Hej");
-                                      return ListTile(
-                                        title: Text(_questions[index].value),
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => FeedbackWidget (token: _token, question: _questions[index], room: _room)
+                                      return Container(
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            bottom: BorderSide(),
+                                          ),
+                                        ),
+                                        child: Material(
+                                          child: InkWell(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => FeedbackWidget(token: _token, question: _questions[index], room: _room)
+                                                ),
+                                              );
+                                            },
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(vertical: 12),
+                                              child: Text(
+                                                _questions[index].value,
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                ),
+                                              ),
                                             ),
-                                          );
-                                        },
+                                          ),
+                                        ),
                                       );
                                     }
                                   ),
@@ -322,10 +334,10 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
               Visibility(
                 visible: _visibleIndex == 2,
                 child: Container(
-                  //child: Text("View your feedback here"),
                     child: ViewAnsweredQuestionsWidget(
                       scaffoldKey: _scaffoldKey,
-                      key: _buildingListKey, 
+                      token: _token,
+                      user: "me", 
                   ),
                 ),
               ),

@@ -262,6 +262,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                   ViewAnsweredQuestionsWidget(
                     scaffoldKey: _scaffoldKey,
                     token: _token,
+                    user: "me",
                   )
                 : Container(),
               ),
