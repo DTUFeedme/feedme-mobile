@@ -1,4 +1,10 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'answerOption.g.dart';
+
+@JsonSerializable()
 class AnswerOption {
+  @JsonKey(name: "_id")
   String id;
   String value;
   int v;
@@ -9,11 +15,6 @@ class AnswerOption {
     this.v,
   );
 
-  factory AnswerOption.fromJson(json) {
-    return AnswerOption(
-      json['_id'],
-      json['value'],
-      json['__v'],
-    );
-  }
+  factory AnswerOption.fromJson(json) => _$AnswerOptionFromJson(json);
+  Map<String, dynamic> toJson() => _$AnswerOptionToJson(this);
 }

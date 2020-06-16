@@ -152,17 +152,6 @@ class RestService {
             APIResponse<UserModel>(error: true, errorMessage: 'Login failed'));
   }
 
-  List<RoomModel> _extractRooms(dynamic responseBuilding) {
-    List<RoomModel> rooms = [];
-    for (int j = 0; j < responseBuilding['rooms'].length; j++) {
-      dynamic responseRoom = responseBuilding['rooms'][j];
-      String roomName = responseRoom['name'];
-      String roomId = responseRoom['_id'];
-      rooms.add(RoomModel(roomId, roomName));
-    }
-    return rooms;
-  }
-
   Future<APIResponse<List<BuildingModel>>> getBuildingsWithAdminRights(
       String token) {
     return http
@@ -173,10 +162,7 @@ class RestService {
         List<BuildingModel> buildings = [];
         for (int i = 0; i < responseBody.length; i++) {
           dynamic responseBuilding = responseBody[i];
-          String buildingName = responseBuilding['name'];
-          String buildingId = responseBuilding['_id'];
-          List<RoomModel> rooms = _extractRooms(responseBuilding);
-          buildings.add(BuildingModel(buildingId, buildingName, rooms));
+          buildings.add(BuildingModel.fromJson(responseBuilding));
         }
         return APIResponse<List<BuildingModel>>(
             data: buildings, statusCode: 200);
@@ -203,10 +189,8 @@ class RestService {
         List<Beacon> beacons = [];
         final responseBody = json.decode(data.body);
         for (int i = 0; i < responseBody.length; i++) {
-          String id = responseBody[i]['_id'];
-          String name = responseBody[i]['name'];
-          String uuid = responseBody[i]['uuid'];
-          Beacon beacon = Beacon(id, name, building, uuid);
+          Map<String, dynamic> jsonData = responseBody[i];
+          Beacon beacon = Beacon.fromJson(jsonData);
           beacons.add(beacon);
         }
         return APIResponse<List<Beacon>>(data: beacons);
@@ -231,15 +215,7 @@ class RestService {
         List<Beacon> beacons = [];
         final responseBody = json.decode(data.body);
         for (int i = 0; i < responseBody.length; i++) {
-          String id = responseBody[i]['_id'];
-          String name = responseBody[i]['name'];
-          String uuid = responseBody[i]['uuid'];
-          BuildingModel building = BuildingModel(
-            responseBody[i]['building']['_id'],
-            responseBody[i]['building']['name'],
-            [],
-          );
-          Beacon beacon = Beacon(id, name, building, uuid);
+          Beacon beacon = Beacon.fromJson(responseBody[i]);
           beacons.add(beacon);
         }
         return APIResponse<List<Beacon>>(data: beacons);
@@ -263,12 +239,7 @@ class RestService {
         .then((data) {
       if (data.statusCode == 200) {
         dynamic resultBody = json.decode(data.body);
-        List<RoomModel> rooms = _extractRooms(resultBody);
-        BuildingModel building = BuildingModel(
-          resultBody['_id'],
-          resultBody['name'],
-          rooms,
-        );
+        BuildingModel building = BuildingModel.fromJson(resultBody);
         return APIResponse<BuildingModel>(data: building);
       } else {
         return APIResponse<BuildingModel>(
@@ -309,11 +280,7 @@ class RestService {
   }
 
   Future<APIResponse<BuildingModel>> deleteBuilding(
-    String token,
-    String buildingId
-  ){
-
-  }
+      String token, String buildingId) {}
 
   Future<APIResponse<RoomModel>> addRoom(
     String token,
@@ -329,10 +296,7 @@ class RestService {
         .then((roomData) {
       if (roomData.statusCode == 200) {
         dynamic resultBody = json.decode(roomData.body);
-        RoomModel room = RoomModel(
-          resultBody['_id'],
-          resultBody['name'],
-        );
+        RoomModel room = RoomModel.fromJson(resultBody);
         return APIResponse<RoomModel>(data: room);
       } else {
         return APIResponse<RoomModel>(
@@ -363,7 +327,7 @@ class RestService {
     });
   }
 
-    Future<APIResponse<String>> deleteBeacon(
+  Future<APIResponse<String>> deleteBeacon(
     String token,
     String beaconId,
     BuildingModel building,
@@ -445,9 +409,13 @@ class RestService {
       if (data.statusCode == 200) {
         dynamic responseBody = json.decode(data.body);
         RoomModel room = RoomModel(
-          responseBody['room']['_id'] ?? "error",
-          responseBody['room']['name'] ?? "error",
+          "error",
+          "error",
         );
+        try {
+          responseBody = responseBody['room'];
+          room = RoomModel.fromJson(responseBody);
+        } catch (e) {}
         return APIResponse<RoomModel>(data: room);
       } else {
         return APIResponse<RoomModel>(
@@ -501,11 +469,7 @@ class RestService {
         .then((questionData) {
       if (questionData.statusCode == 200) {
         dynamic resultBody = json.decode(questionData.body);
-        Question question = Question(
-          resultBody['rooms'],
-          resultBody['value'],
-          resultBody['answerOptions'],
-        );
+        Question question = Question.fromJson(resultBody);
         return APIResponse<Question>(data: question);
       } else {
         return APIResponse<Question>(

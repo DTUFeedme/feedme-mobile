@@ -6,6 +6,7 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/services/rest_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 
 class BluetoothServices {
@@ -35,12 +36,18 @@ class BluetoothServices {
     List<ScanResult> finalResults = [];
     flutterBlue.startScan(timeout: Duration(milliseconds: timeoutms));
 
-    flutterBlue.scanResults.listen((results) {
-      results.forEach((element) {
-        if (!finalResults.contains(element)) {
-          finalResults.add(element);
-        }
-      });
+    // flutterBlue.scanResults.listen((results) {
+    //   results.forEach((element) {
+    //     if (!finalResults.contains(element)) {
+    //       finalResults.add(element);
+    //     }
+    //   });
+    // });
+
+    flutterBlue.scanResults
+        .distinct((e1, e2) => listEquals(e1, e2))
+        .listen((scanResult) {
+      finalResults = scanResult;
     });
 
     flutterBlue.stopScan();
