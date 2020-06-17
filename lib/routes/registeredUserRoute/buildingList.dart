@@ -40,33 +40,6 @@ class BuildingListState extends State<BuildingList> {
     _getBLEDevicesList();
   }
 
-  List<DropdownMenuItem<BuildingModel>> buildDropdownMenuItems1(
-      List<BuildingModel> buildings) {
-    List<DropdownMenuItem<BuildingModel>> items = List();
-    for (BuildingModel building in buildings) {
-      items.add(
-        DropdownMenuItem(
-          value: building,
-          child: Text(building.name),
-        ),
-      );
-    }
-    return items;
-  }
-
-  List<DropdownMenuItem<Tuple2<String, String>>> buildDropdownMenuItems2(
-      List<Tuple2<String, String>> beacons) {
-    List<DropdownMenuItem<Tuple2<String, String>>> items = List();
-    for (Tuple2<String, String> beacon in beacons) {
-      items.add(
-        DropdownMenuItem(
-          value: beacon,
-          child: Text(beacon.item1),
-        ),
-      );
-    }
-    return items;
-  }
 
   Future<void> getBuildings() async {
     await Future.delayed(Duration.zero);
