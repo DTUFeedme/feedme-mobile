@@ -1,6 +1,7 @@
 import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/questionStatistics.dart';
 import 'package:climify/widgets/extendableWindowBase.dart';
+import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 
 class ViewRoomFeedback extends StatelessWidget {
@@ -41,42 +42,40 @@ class ViewRoomFeedback extends StatelessWidget {
       }
     }
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 4,
-        vertical: 8,
-      ),
-      decoration: BoxDecoration(
-        border: BorderDirectional(
-          bottom: BorderSide(
-            color: Colors.black87,
-            width: 1,
-          ),
+    var _hey = GlobalKey<ExtendableWindowState>();
+    return ListButton(
+      onTap: () => _hey.currentState.toggleExpand(),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: 4,
+          vertical: 8,
         ),
-      ),
-      child: ExtendableWindow(
-        header: Container(
-          child: Text(
-            qStats.question.value,
-            style: TextStyle(
-              fontSize: 24,
+        child: ExtendableWindow(
+          key: _hey,
+          extendable: false,
+          header: Container(
+            child: Text(
+              qStats.question.value,
+              style: TextStyle(
+                fontSize: 24,
+              ),
             ),
           ),
-        ),
-        body: Column(
-          children: qStats.question.answerOptions
-              .map(
-                (answerOption) => Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(answerOption.value),
-                    Text("${_getTimesAnswered(
-                      answerOption,
-                    )}"),
-                  ],
-                ),
-              )
-              .toList(),
+          body: Column(
+            children: qStats.question.answerOptions
+                .map(
+                  (answerOption) => Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(answerOption.value),
+                      Text("${_getTimesAnswered(
+                        answerOption,
+                      )}"),
+                    ],
+                  ),
+                )
+                .toList(),
+          ),
         ),
       ),
     );

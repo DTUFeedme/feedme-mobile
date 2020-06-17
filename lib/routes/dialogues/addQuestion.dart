@@ -63,7 +63,7 @@ class AddQuestion {
         bool submitEnabled1 = true;
         bool submitEnabled2 = controllerList.length >= 3;
 
-        bool submitEnabled3 = (textEditingController.text.trim() != "") && (list.contains(true) ? true : false)
+        bool submitEnabled3 = (textEditingController.text.trim() != "") && (list.contains(true))
         && controllerList.any((item) => item.text != "") && textEditingController.text.length >= 3;
 
         void _removeAnsweroption(){

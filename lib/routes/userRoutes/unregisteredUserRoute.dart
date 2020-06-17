@@ -1,16 +1,15 @@
-import 'dart:convert';
-
-import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
+import 'package:climify/routes/userRoutes/scanHelper.dart';
 import 'package:climify/routes/viewAnsweredQuestions.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:climify/routes/feedback.dart';
@@ -25,14 +24,14 @@ class UnregisteredUserScreen extends StatefulWidget {
 }
 
 class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
+  ScanHelper _scanHelper;
   SharedPrefsHelper _sharedPrefsHelper = SharedPrefsHelper();
   RestService _restService = RestService();
+  BluetoothServices _bluetooth = BluetoothServices();
   String _token;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  GlobalKey<ViewAnsweredQuestionsWidgetState> _feedbackListKey =
-  GlobalKey<ViewAnsweredQuestionsWidgetState>();
   int _visibleIndex = 0;
-  String _userId;
+  bool _loadingState = false;
   BuildingModel _building;
   List<FeedbackQuestion> _questions = [];
   RoomModel _room;
@@ -51,30 +50,40 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       _gotoLogin();
     } else {
       await _setupState();
-      _getActiveQuestions();
     }
   }
 
   Future<void> _setupState() async {
     String token = await _sharedPrefsHelper.getUnauthorizedUserToken();
-    String user = token.split('.')[1];
-    List<int> res = base64.decode(base64.normalize(user));
-    String s = utf8.decode(res);
-    Map map = json.decode(s);
-    String userId = map['_id'];
     setState(() {
       _token = token;
-      _userId = userId;
     });
 
-    // temp solution
-    APIResponse<BuildingModel> apiResponse =
-        await _restService.getBuilding(_token, "5ea1c600cd42d414a535e2b5");
-    if (!apiResponse.error) {
-      setState(() {
-        _building = apiResponse.data;
-      });
+    if (_loadingState) return;
+
+    await Future.delayed(Duration.zero);
+    setState(() {
+      _loadingState = true;
+    });
+    _setSubtitle();
+    if (!await _bluetooth.isOn) {
+      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
     }
+    _scanHelper = ScanHelper(
+      _scaffoldKey,
+      _token,
+    );
+    await Future.delayed(Duration(milliseconds: 1000));
+    var _scanResults = await _scanHelper.scanBuildingAndRoom();
+    setState(() {
+      _building = _scanResults.building;
+      _room = _scanResults.room;
+      _questions = _scanResults.questions;
+    });
+    setState(() {
+      _loadingState = false;
+    });
+    _setSubtitle();
 
     Provider.of<GlobalState>(context).updateAccount("", token);
     Provider.of<GlobalState>(context).updateBuilding(_building);
@@ -97,7 +106,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     room = apiResponseRoom.data;
 
     //room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
-    
+
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, _token);
     if (apiResponseQuestions.error) {
@@ -122,9 +131,11 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
   void _setSubtitle() {
     setState(() {
-      _subtitle = _room == null
-          ? "Failed scanning room, tap to retry"
-          : "Room: ${_room.name}";
+      _subtitle = _loadingState
+          ? "Room: scanning..."
+          : _room == null
+              ? "Failed scanning room, tap to retry"
+              : "Room: ${_room.name}";
     });
   }
 
@@ -150,7 +161,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       key: _scaffoldKey,
       appBar: AppBar(
         title: InkWell(
-          onTap: () => _getActiveQuestions(),
+          onTap: () => _setupState(),
           child: Row(
             children: [
               Expanded(
@@ -169,6 +180,12 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                   ],
                 ),
               ),
+              _loadingState
+                  ? CircularProgressIndicator(
+                      value: null,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    )
+                  : Container(),
             ],
           ),
         ),
@@ -202,52 +219,40 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                   children: <Widget>[
                     Expanded(
                       child: Container(
-                        child: _questions.isNotEmpty
-                          ? Container(
-                              child: RefreshIndicator(
-                                onRefresh: () => _getActiveQuestions(),
-                                child: Container(
-                                  child: ListView.builder(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
+                        child: _questions != null && _questions.isNotEmpty
+                            ? Container(
+                                child: RefreshIndicator(
+                                  onRefresh: () => _getActiveQuestions(),
+                                  child: Container(
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      itemCount: _questions.length,
+                                      itemBuilder: (_, index) => ListButton(
+                                        onTap: () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  FeedbackWidget(
+                                                      token: _token,
+                                                      question:
+                                                          _questions[index],
+                                                      room: _room)),
+                                        ),
+                                        child: Text(
+                                          _questions[index].value,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                    itemCount: _questions.length,
-                                    itemBuilder: (_, index) {
-                                      return Container(
-                                        decoration: BoxDecoration(
-                                          border: Border(
-                                            bottom: BorderSide(),
-                                          ),
-                                        ),
-                                        child: Material(
-                                          child: InkWell(
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) => FeedbackWidget(token: _token, question: _questions[index], room: _room)
-                                                ),
-                                              );
-                                            },
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(vertical: 12),
-                                              child: Text(
-                                                _questions[index].value,
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }
                                   ),
                                 ),
-                              ),
-                            )
-                          : Container(),
+                              )
+                            : Container(),
                       ),
                     ),
                   ],
@@ -258,13 +263,13 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
               maintainState: true,
               visible: _visibleIndex == 1,
               child: Container(
-                child: _token != null ? 
-                  ViewAnsweredQuestionsWidget(
-                    scaffoldKey: _scaffoldKey,
-                    token: _token,
-                    user: "me",
-                  )
-                : Container(),
+                child: _token != null
+                    ? ViewAnsweredQuestionsWidget(
+                        scaffoldKey: _scaffoldKey,
+                        token: _token,
+                        user: "me",
+                      )
+                    : Container(),
               ),
             ),
           ],

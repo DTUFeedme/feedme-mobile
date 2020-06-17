@@ -16,10 +16,11 @@ import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
+import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
-import 'package:climify/routes/registeredUserRoute/buildingList.dart';
+import 'package:climify/routes/userRoutes/buildingList.dart';
 
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
@@ -103,22 +104,22 @@ class _BuildingManagerState extends State<BuildingManager> {
       print(apiResponseBeacons.errorMessage);
     }
     _questions = [];
-    for(int i = 0; i < _building.rooms.length; i++){
-    
-    APIResponse<List<FeedbackQuestion>> apiResponseBuilding =
-        await _restService.getActiveQuestionsByRoom(_building.rooms[i].id, _token);
-    if (apiResponseBuilding.error == false) {
-      setState(() {
-        List<FeedbackQuestion> question = apiResponseBuilding.data;
-        for(int j = 0; j < question.length; j++){
-          if(!_questions.any((item) => item.id == question[j].id)){
-            _questions.add(question[j]);
+    for (int i = 0; i < _building.rooms.length; i++) {
+      APIResponse<List<FeedbackQuestion>> apiResponseBuilding =
+          await _restService.getActiveQuestionsByRoom(
+              _building.rooms[i].id, _token);
+      if (apiResponseBuilding.error == false) {
+        setState(() {
+          List<FeedbackQuestion> question = apiResponseBuilding.data;
+          for (int j = 0; j < question.length; j++) {
+            if (!_questions.any((item) => item.id == question[j].id)) {
+              _questions.add(question[j]);
+            }
           }
-        }
-        _questionsRealList = _questions;
-        //_questionsRealList = question;
-      });
-    }
+          _questionsRealList = _questions;
+          //_questionsRealList = question;
+        });
+      }
     }
     _updateBuilding();
   }
@@ -149,23 +150,23 @@ class _BuildingManagerState extends State<BuildingManager> {
 
   Future<void> _updateQuestions() async {
     _questions = [];
-    for(int i = 0; i < _building.rooms.length; i++){
-       
-    APIResponse<List<FeedbackQuestion>> apiResponseBuilding =
-        await _restService.getActiveQuestionsByRoom(_building.rooms[i].id, _token);
-    if (apiResponseBuilding.error == false) {
-      setState(() {
-        List<FeedbackQuestion> question = apiResponseBuilding.data;
-        for(int j = 0; j < question.length; j++){
-          if(!_questions.any((item) => item.id == question[j].id)){
-            _questions.add(question[j]);
+    for (int i = 0; i < _building.rooms.length; i++) {
+      APIResponse<List<FeedbackQuestion>> apiResponseBuilding =
+          await _restService.getActiveQuestionsByRoom(
+              _building.rooms[i].id, _token);
+      if (apiResponseBuilding.error == false) {
+        setState(() {
+          List<FeedbackQuestion> question = apiResponseBuilding.data;
+          for (int j = 0; j < question.length; j++) {
+            if (!_questions.any((item) => item.id == question[j].id)) {
+              _questions.add(question[j]);
+            }
           }
-        }
-        _questionsRealList = _questions;
-        //_questionsRealList = question;
-        controllerList = [];
-      });
-    }
+          _questionsRealList = _questions;
+          //_questionsRealList = question;
+          controllerList = [];
+        });
+      }
     }
     return;
   }
@@ -193,10 +194,9 @@ class _BuildingManagerState extends State<BuildingManager> {
         _questionNameController.text = "";
         _questionAnswerOptionsController.text = "";
         controllerList = [];
-        
       });
       //if (value ?? false) {
-        _updateQuestions();
+      _updateQuestions();
       //}
     });
   }
@@ -418,7 +418,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     setState(() {
       _beaconList = beaconList;
     });
-    if (beaconList.isEmpty){
+    if (beaconList.isEmpty) {
       SnackBarError.showErrorSnackBar("No beacons found", _scaffoldKey);
       return;
     }
@@ -529,30 +529,12 @@ class _BuildingManagerState extends State<BuildingManager> {
                         vertical: 4,
                       ),
                       itemCount: _building.rooms.length,
-                      itemBuilder: (_, index) => InkWell(
+                      itemBuilder: (_, index) => ListButton(
                         onTap: () => _roomMenu(_building.rooms[index]),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(),
-                            ),
-                          ),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Center(
-                              child: Container(
-                                margin: EdgeInsets.symmetric(
-                                  vertical: 8,
-                                  horizontal: 8,
-                                ),
-                                child: Text(
-                                  _building.rooms[index].name,
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                  ),
-                                ),
-                              ),
-                            ),
+                        child: Text(
+                          _building.rooms[index].name,
+                          style: TextStyle(
+                            fontSize: 24,
                           ),
                         ),
                       ),

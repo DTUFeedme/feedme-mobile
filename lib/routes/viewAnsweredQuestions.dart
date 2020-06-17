@@ -4,6 +4,7 @@ import 'package:climify/models/questionAndFeedback.dart';
 import 'package:climify/routes/viewFeedback.dart';
 //import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/styles/textStyles.dart';
+import 'package:climify/widgets/listButton.dart';
 import 'package:climify/widgets/roundedBox.dart';
 import 'package:flutter/material.dart';
 import 'package:climify/models/feedbackQuestion.dart';
@@ -21,14 +22,18 @@ class ViewAnsweredQuestionsWidget extends StatefulWidget {
 
   const ViewAnsweredQuestionsWidget({
     Key key,
-    @required this.scaffoldKey, this.token, this.user,
+    @required this.scaffoldKey,
+    this.token,
+    this.user,
   }) : super(key: key);
 
   @override
-  ViewAnsweredQuestionsWidgetState createState() => ViewAnsweredQuestionsWidgetState();
+  ViewAnsweredQuestionsWidgetState createState() =>
+      ViewAnsweredQuestionsWidgetState();
 }
 
-class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget> {
+class ViewAnsweredQuestionsWidgetState
+    extends State<ViewAnsweredQuestionsWidget> {
   GlobalKey<ScaffoldState> _scaffoldKey;
   String _token;
   RestService _restService = RestService();
@@ -36,7 +41,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
   List<QuestionAndFeedback> _tempFeedbackList = <QuestionAndFeedback>[];
   String _t = "week";
   String _user = "";
-  
+
   @override
   void initState() {
     super.initState();
@@ -49,8 +54,8 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
   Future<void> _getFeedback() async {
     await Future.delayed(Duration.zero);
     _tempFeedbackList = [];
-    APIResponse<List<QuestionAndFeedback>> response = 
-      await _restService.getFeedback(_token, _user, _t);
+    APIResponse<List<QuestionAndFeedback>> response =
+        await _restService.getFeedback(_token, _user, _t);
     if (response.error) return;
     response.data = response.data.reversed.toList();
     for (int i = 0; i < response.data.length; i++) {
@@ -58,7 +63,8 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
         _tempFeedbackList.add(response.data[i]);
       } else {
         for (int j = 0; j < _tempFeedbackList.length; j++) {
-          if (_tempFeedbackList[j].question.id == response.data[i].question.id) {
+          if (_tempFeedbackList[j].question.id ==
+              response.data[i].question.id) {
             break;
           } else if (j == (_tempFeedbackList.length - 1)) {
             _tempFeedbackList.add(response.data[i]);
@@ -76,14 +82,12 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => 
-        ViewFeedbackWidget(
-          scaffoldKey: _scaffoldKey, 
-          feedback: feedback,
-          feedbackList: _feedbackList,
-          user: _user,
-        )
-      ),
+          builder: (context) => ViewFeedbackWidget(
+                scaffoldKey: _scaffoldKey,
+                feedback: feedback,
+                feedbackList: _feedbackList,
+                user: _user,
+              )),
     );
   }
 
@@ -96,7 +100,8 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
 
   String getDate(QuestionAndFeedback feedback) {
     DateTime date = DateTime.parse(feedback.updatedAt);
-    final format = DateFormat('hh:mm, dd-MM-yyyy');
+    date = date.toLocal();
+    final format = DateFormat('HH:mm, dd-MM-yyyy');
     return format.format(date);
   }
 
@@ -109,14 +114,14 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
           children: [
             Container(
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height/10,
+                maxHeight: MediaQuery.of(context).size.height / 10,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Container(
                     constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width/6,
+                      maxWidth: MediaQuery.of(context).size.width / 6,
                     ),
                     margin: EdgeInsets.symmetric(
                       vertical: 6,
@@ -125,9 +130,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                     child: RoundedBox(
                       onTap: () => setT("hour"),
                       decoration: BoxDecoration(
-                        color:  "hour" == _t
-                          ? Colors.blue
-                          : Colors.transparent,
+                        color: "hour" == _t ? Colors.blue : Colors.transparent,
                       ),
                       child: Container(
                         child: Center(
@@ -141,7 +144,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                   ),
                   Container(
                     constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width/6,
+                      maxWidth: MediaQuery.of(context).size.width / 6,
                     ),
                     margin: EdgeInsets.symmetric(
                       vertical: 6,
@@ -150,9 +153,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                     child: RoundedBox(
                       onTap: () => setT("day"),
                       decoration: BoxDecoration(
-                        color:  "day" == _t
-                          ? Colors.blue
-                          : Colors.transparent,
+                        color: "day" == _t ? Colors.blue : Colors.transparent,
                       ),
                       child: Container(
                         child: Center(
@@ -166,7 +167,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                   ),
                   Container(
                     constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width/6,
+                      maxWidth: MediaQuery.of(context).size.width / 6,
                     ),
                     margin: EdgeInsets.symmetric(
                       vertical: 6,
@@ -175,9 +176,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                     child: RoundedBox(
                       onTap: () => setT("week"),
                       decoration: BoxDecoration(
-                        color:  "week" == _t
-                          ? Colors.blue
-                          : Colors.transparent,
+                        color: "week" == _t ? Colors.blue : Colors.transparent,
                       ),
                       child: Container(
                         child: Center(
@@ -191,7 +190,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                   ),
                   Container(
                     constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width/6,
+                      maxWidth: MediaQuery.of(context).size.width / 6,
                     ),
                     margin: EdgeInsets.symmetric(
                       vertical: 6,
@@ -200,9 +199,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                     child: RoundedBox(
                       onTap: () => setT("month"),
                       decoration: BoxDecoration(
-                        color:  "month" == _t
-                          ? Colors.blue
-                          : Colors.transparent,
+                        color: "month" == _t ? Colors.blue : Colors.transparent,
                       ),
                       child: Container(
                         child: Center(
@@ -216,7 +213,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                   ),
                   Container(
                     constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width/6,
+                      maxWidth: MediaQuery.of(context).size.width / 6,
                     ),
                     margin: EdgeInsets.symmetric(
                       vertical: 6,
@@ -225,9 +222,7 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                     child: RoundedBox(
                       onTap: () => setT("year"),
                       decoration: BoxDecoration(
-                        color:  "year" == _t
-                          ? Colors.blue
-                          : Colors.transparent,
+                        color: "year" == _t ? Colors.blue : Colors.transparent,
                       ),
                       child: Container(
                         child: Center(
@@ -250,7 +245,20 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
                     vertical: 4,
                   ),
                   itemCount: _tempFeedbackList.length,
-                  itemBuilder: (_, index) => _buildingRow(_tempFeedbackList[index], index),
+                  itemBuilder: (_, index) => ListButton(
+                    onTap: () => _focusFeedback(_tempFeedbackList[index]),
+                    child: Text(
+                      (_tempFeedbackList[index].question.value +
+                          "\n"
+                              "Last answered: " +
+                          getDate(
+                            _tempFeedbackList[index],
+                          )),
+                      style: TextStyle(
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             )
@@ -260,30 +268,29 @@ class ViewAnsweredQuestionsWidgetState extends State<ViewAnsweredQuestionsWidget
     );
   }
 
-
-  Widget _buildingRow(QuestionAndFeedback feedback, int index) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(),
-        )
-      ),
-      child: Material(
-        child: InkWell(
-          onTap: () => _focusFeedback(feedback),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              feedback.question.value + "\n"
-              "Last answered: " + getDate(feedback)
-              ,
-              style: TextStyle(
-                fontSize: 18,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildingRow(QuestionAndFeedback feedback, int index) {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //         border: Border(
+  //       bottom: BorderSide(),
+  //     )),
+  //     child: Material(
+  //       child: InkWell(
+  //         onTap: () => _focusFeedback(feedback),
+  //         child: Container(
+  //           padding: EdgeInsets.symmetric(vertical: 12),
+  //           child: Text(
+  //             feedback.question.value +
+  //                 "\n"
+  //                     "Last answered: " +
+  //                 getDate(feedback),
+  //             style: TextStyle(
+  //               fontSize: 18,
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 }

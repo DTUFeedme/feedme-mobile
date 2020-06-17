@@ -6,6 +6,7 @@ import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
+import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:provider/provider.dart';
@@ -40,16 +41,18 @@ class BuildingListState extends State<BuildingList> {
     _getBLEDevicesList();
   }
 
-
   Future<void> getBuildings() async {
-    await Future.delayed(Duration.zero);
+    await Future.delayed(Duration(milliseconds: 250));
+    if (!mounted) return;
     String token = Provider.of<GlobalState>(context).globalState['token'];
     APIResponse<List<BuildingModel>> buildingsResponse =
         await _restService.getBuildingsWithAdminRights(token);
     if (buildingsResponse.error) return;
-    setState(() {
-      _buildings = buildingsResponse.data;
-    });
+    if (mounted) {
+      setState(() {
+        _buildings = buildingsResponse.data;
+      });
+    }
   }
 
   void _focusBuilding(BuildingModel building) {
@@ -60,6 +63,8 @@ class BuildingListState extends State<BuildingList> {
   }
 
   void _getBLEDevicesList() async {
+    await Future.delayed(Duration(milliseconds: 250));
+    if (!mounted) return;
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
       return;
@@ -72,7 +77,7 @@ class BuildingListState extends State<BuildingList> {
     List<Tuple2<String, String>> beaconList = [];
     List<ScanResult> scanResults = await _bluetooth.scanForDevices(4000);
     scanResults.forEach((result) {
-      setState(() {});
+      if (mounted) setState(() {});
       String beaconName = _bluetooth.getBeaconName(result);
       List<String> serviceUuids = result.advertisementData.serviceUuids;
       String beaconId = serviceUuids.isNotEmpty ? serviceUuids[0] : "";
@@ -83,14 +88,14 @@ class BuildingListState extends State<BuildingList> {
         beaconList.add(item);
       }
     });
-    setState(() {
-      _beaconList = beaconList;
-    });
+    if (mounted) {
+      setState(() {
+        _beaconList = beaconList;
+      });
+    }
   }
 
-  void _deleteBuilding(){
-    
-  }
+  void _deleteBuilding() {}
 
   @override
   Widget build(BuildContext context) {
@@ -104,33 +109,12 @@ class BuildingListState extends State<BuildingList> {
               vertical: 4,
             ),
             itemCount: _buildings.length,
-            itemBuilder: (_, index) => _buildingRow(_buildings[index]),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildingRow(BuildingModel building) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(),
-        ),
-      ),
-      child: Material(
-        child: InkWell(
-          onTap: () => _focusBuilding(building),
-          child: SizedBox(
-            width: double.infinity,
-            child: Center(
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  building.name,
-                  style: TextStyle(
-                    fontSize: 24,
-                  ),
+            itemBuilder: (_, index) => ListButton(
+              onTap: () => _focusBuilding(_buildings[index]),
+              child: Text(
+                _buildings[index].name,
+                style: TextStyle(
+                  fontSize: 24,
                 ),
               ),
             ),

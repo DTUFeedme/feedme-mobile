@@ -13,10 +13,10 @@ class ExtendableWindow extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _ExtendableWindowState createState() => _ExtendableWindowState();
+  ExtendableWindowState createState() => ExtendableWindowState();
 }
 
-class _ExtendableWindowState extends State<ExtendableWindow>
+class ExtendableWindowState extends State<ExtendableWindow>
     with TickerProviderStateMixin {
   AnimationController _expandController;
   Animation<double> _animation;
@@ -40,7 +40,7 @@ class _ExtendableWindowState extends State<ExtendableWindow>
     );
   }
 
-  void _toggleExpand() {
+  void toggleExpand() {
     if (_expanded) {
       _expandController.reverse();
     } else {
@@ -60,21 +60,16 @@ class _ExtendableWindowState extends State<ExtendableWindow>
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: InkWell(
-        onTap: () {
-          if (widget.extendable || _expanded == true) _toggleExpand();
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            widget.header,
-            SizeTransition(
-              axisAlignment: 1.0,
-              sizeFactor: _animation,
-              child: widget.body,
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          widget.header,
+          SizeTransition(
+            axisAlignment: 1.0,
+            sizeFactor: _animation,
+            child: widget.body,
+          ),
+        ],
       ),
     );
   }

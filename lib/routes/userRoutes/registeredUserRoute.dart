@@ -5,12 +5,14 @@ import 'package:climify/models/globalState.dart';
 import 'package:climify/models/questionStatistics.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/routes/dialogues/addBuilding.dart';
-import 'package:climify/routes/registeredUserRoute/buildingList.dart';
-import 'package:climify/routes/registeredUserRoute/viewRoomFeedback.dart';
+import 'package:climify/routes/userRoutes/buildingList.dart';
+import 'package:climify/routes/userRoutes/scanHelper.dart';
+import 'package:climify/routes/userRoutes/viewRoomFeedback.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
+import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -40,6 +42,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   List<QuestionStatisticsModel> _roomQuestionStatistics = [];
   TextEditingController _buildingNameTextController = TextEditingController();
   List<FeedbackQuestion> _questions = [];
+  ScanHelper _scanHelper;
 
   @override
   void initState() {
@@ -55,12 +58,21 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       _loadingState = true;
       _token = Provider.of<GlobalState>(context).globalState['token'];
     });
+    _setSubtitle();
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
     }
-    await Future.delayed(Duration(milliseconds: 1000));
-    if (_building == null) await _getBuildingScan();
-    if (_building != null) await _getAndSetRoom();
+    _scanHelper = ScanHelper(
+      _scaffoldKey,
+      _token,
+    );
+    await Future.delayed(Duration(milliseconds: 500));
+    var _scanResults = await _scanHelper.scanBuildingAndRoom();
+    setState(() {
+      _building = _scanResults.building;
+      _room = _scanResults.room;
+      _questions = _scanResults.questions;
+    });
     if (_room != null) _getAndSetRoomFeedbackStats();
     setState(() {
       _loadingState = false;
@@ -68,60 +80,12 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     _setSubtitle();
   }
 
-  Future<void> _getBuildingScan() async {
-    APIResponse<String> idResponse =
-        await _bluetooth.getBuildingIdFromScan(_token);
-    if (!idResponse.error) {
-      APIResponse<BuildingModel> buildingResponse =
-          await _restService.getBuilding(_token, idResponse.data);
-      if (!buildingResponse.error) {
-        setState(() {
-          _building = buildingResponse.data;
-        });
-        print(_building.name);
-      } else {
-        SnackBarError.showErrorSnackBar(
-            "Failed getting building", _scaffoldKey);
-      }
-    } else {
-      SnackBarError.showErrorSnackBar("Failed getting building", _scaffoldKey);
-    }
-    return;
-  }
-
-  Future<void> _getAndSetRoom() async {
-    RoomModel room;
-    APIResponse<RoomModel> apiResponse =
-        await _bluetooth.getRoomFromBuilding(_building, _token);
-    if (!apiResponse.error) {
-      room = apiResponse.data;
-      setState(() {
-        _room = room;
-      });
-      _getActiveQuestions();
-    } else {
-      SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
-    }
-    return;
-  }
-
   Future<void> _getActiveQuestions() async {
-    //RoomModel room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
-
-    
-    APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
-        await _restService.getActiveQuestionsByRoom(_room.id, _token);
-    if (apiResponseQuestions.error) {
-      SnackBarError.showErrorSnackBar(
-        apiResponseQuestions.errorMessage,
-        _scaffoldKey,
-      );
-      return;
-    }
-    
+    List<FeedbackQuestion> questions = await _scanHelper.getActiveQuestions();
     setState(() {
-      _questions = apiResponseQuestions.data;
+      _questions = questions;
     });
+    return;
   }
 
   Future<void> _getAndSetRoomFeedbackStats() async {
@@ -152,9 +116,11 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
 
   void _setSubtitle() {
     setState(() {
-      _subtitle = _room == null
-          ? "Failed scanning room, tap to retry"
-          : "Room: ${_room.name}";
+      _subtitle = _loadingState
+          ? "Room: scanning..."
+          : _room == null
+              ? "Failed scanning room, tap to retry"
+              : "Room: ${_room.name}";
     });
   }
 
@@ -244,59 +210,49 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                 visible: _visibleIndex == 0,
                 child: Container(
                   child: Column(
-                  children: <Widget>[
-                    Expanded(
-                      child: Container(
-                        child: _questions.isNotEmpty
-                          ? Container(
-                              child: RefreshIndicator(
-                                onRefresh: () => _getActiveQuestions(),
-                                child: Container(
-                                  child: ListView.builder(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    itemCount: _questions.length,
-                                    itemBuilder: (_, index) {
-                                      return Container(
-                                        decoration: BoxDecoration(
-                                          border: Border(
-                                            bottom: BorderSide(),
-                                          ),
+                    children: <Widget>[
+                      Expanded(
+                        child: Container(
+                          child: _questions != null && _questions.isNotEmpty
+                              ? Container(
+                                  child: RefreshIndicator(
+                                    onRefresh: () => _getActiveQuestions(),
+                                    child: Container(
+                                      child: ListView.builder(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
                                         ),
-                                        child: Material(
-                                          child: InkWell(
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) => FeedbackWidget(token: _token, question: _questions[index], room: _room)
-                                                ),
-                                              );
-                                            },
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(vertical: 12),
-                                              child: Text(
-                                                _questions[index].value,
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                ),
-                                              ),
+                                        itemCount: _questions.length,
+                                        itemBuilder: (context, index) =>
+                                            ListButton(
+                                          onTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  FeedbackWidget(
+                                                      token: _token,
+                                                      question:
+                                                          _questions[index],
+                                                      room: _room),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            _questions[index].value,
+                                            style: TextStyle(
+                                              fontSize: 18,
                                             ),
                                           ),
                                         ),
-                                      );
-                                    }
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            )
-                          : Container(),
+                                )
+                              : Container(),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 ),
               ),
               Visibility(
@@ -318,15 +274,15 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
               Visibility(
                 visible: _visibleIndex == 2,
                 child: Container(
-                    child: ViewAnsweredQuestionsWidget(
-                      scaffoldKey: _scaffoldKey,
-                      token: _token,
-                      user: "me", 
+                  child: ViewAnsweredQuestionsWidget(
+                    scaffoldKey: _scaffoldKey,
+                    token: _token,
+                    user: "me",
                   ),
                 ),
               ),
               Visibility(
-                maintainState: true,
+                // maintainState: true,
                 visible: _visibleIndex == 3,
                 child: Container(
                   child: BuildingList(

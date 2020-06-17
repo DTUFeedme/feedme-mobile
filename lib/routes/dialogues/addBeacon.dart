@@ -4,10 +4,11 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
-import 'package:climify/routes/registeredUserRoute/buildingList.dart';
+import 'package:climify/routes/userRoutes/buildingList.dart';
 
 class AddBeacon {
   String token;
@@ -44,9 +45,7 @@ class AddBeacon {
             }
           }
           if (apiResponse.error == false) {
-            SnackBarError.showErrorSnackBar(
-                "Beacon added",
-                scaffoldKey);
+            SnackBarError.showErrorSnackBar("Beacon added", scaffoldKey);
             Navigator.of(context).pop(true);
           } else {
             SnackBarError.showErrorSnackBar(
@@ -63,14 +62,13 @@ class AddBeacon {
           });
         }
 
-        void updateSelectedBeaconListAdd(int index) async {
+        void updateSelectedBeaconList(int index) async {
           setState(() {
-            list[index] = true;
+            list[index] = !list[index];
           });
         }
 
         //return CircularProgressIndicator();
-
         return SimpleDialog(
           title: Text("Add Beacon"),
           children: <Widget>[
@@ -81,24 +79,20 @@ class AddBeacon {
                   scrollDirection: Axis.vertical,
                   shrinkWrap: true,
                   itemCount: beaconList.length,
-                  itemBuilder: (BuildContext context, int index) {
+                  itemBuilder: (_, int index) {
+                    print(beaconList[index]);
                     return InkWell(
-                      onLongPress: () {
-                        if (list[index] == true) {
-                          updateSelectedBeaconListRemove(index);
-
-                        }
-                      },
                       onTap: () {
-
-                        updateSelectedBeaconListAdd(index);
-
+                        updateSelectedBeaconList(index);
                       },
                       child: Container(
                         margin: EdgeInsets.symmetric(vertical: 4),
-                        color:
-                            list[index] == true ? Colors.grey[300] :
-                            (alreadyExistingBeacons.contains(beaconList[index]) ? Colors.brown[200] : Colors.white),
+                        color: list[index] == true
+                            ? Colors.grey[300]
+                            : (alreadyExistingBeacons.any((beacon) =>
+                                    beacon.name == beaconList[index].item1)
+                                ? Colors.brown[200]
+                                : Colors.white),
                         child: ListTile(
                           title: Text(beaconList[index].item1),
                         ),

@@ -1,9 +1,8 @@
 import 'package:climify/models/globalState.dart';
 import 'package:climify/routes/buildingManager.dart';
-import 'package:climify/routes/registeredUserRoute/registeredUserRoute.dart';
-import 'package:climify/routes/unregisteredUserRoute.dart';
+import 'package:climify/routes/userRoutes/registeredUserRoute.dart';
+import 'package:climify/routes/userRoutes/unregisteredUserRoute.dart';
 import 'package:climify/routes/userLogin.dart';
-import 'package:climify/services/bluetooth.dart';
 //import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

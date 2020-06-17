@@ -69,7 +69,7 @@ class BluetoothServices {
     if (!allBeaconsResponse.error) {
       List<Beacon> allBeacons = allBeaconsResponse.data;
       Map<String, int> scannedBuildings = {};
-      List<ScanResult> scanResults = await scanForDevices(2500);
+      List<ScanResult> scanResults = await scanForDevices(1750);
       scanResults.forEach((result) {
         String beaconName = getBeaconName(result);
         List<Beacon> matchingBeacons = allBeacons
@@ -144,7 +144,7 @@ class BluetoothServices {
     // scanForDevices(1900).then((results) => scanResults.addAll(results));
     // await Future.delayed(Duration(milliseconds: 2000));
 
-    List<ScanResult> scanResults = await scanForDevices(2200);
+    List<ScanResult> scanResults = await scanForDevices(2000);
 
     scanResults.forEach((result) {
       String beaconName = getBeaconName(result);
