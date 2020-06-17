@@ -20,8 +20,8 @@ class QuestionMenu {
   RestService _restService = RestService();
 
   Future<void> _makeQuestionInactive() async {
-    APIResponse<FeedbackQuestion> deleteResponse =
-        await _restService.makeQuestionInactive(token, question.id);
+    APIResponse<String> deleteResponse =
+        await _restService.makeQuestionInactive(token, question.id, false);
     if (!deleteResponse.error) {
       SnackBarError.showErrorSnackBar("Question ${question.value} set inactive", scaffoldKey);
     } else {

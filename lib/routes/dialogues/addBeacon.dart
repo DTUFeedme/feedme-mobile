@@ -13,6 +13,7 @@ class AddBeacon {
   String token;
   BuildingModel building;
   List<Tuple2<String, String>> beaconList;
+  List<Beacon> alreadyExistingBeacons;
   GlobalKey<ScaffoldState> scaffoldKey;
   StatefulBuilder addBeaconDialog;
   TextEditingController editingController;
@@ -21,6 +22,7 @@ class AddBeacon {
   AddBeacon({
     this.token,
     this.beaconList,
+    this.alreadyExistingBeacons,
     this.building,
     this.scaffoldKey,
   }) {
@@ -30,30 +32,30 @@ class AddBeacon {
     }
     addBeaconDialog = StatefulBuilder(
       builder: (context, setState) {
+        APIResponse<bool> apiResponse;
         void _submitBeacon() async {
           for (int i = 0; i < beaconList.length; i++) {
             if (list[i] == true) {
-              APIResponse<bool> apiResponse = await _restService.addBeacon(
+              apiResponse = await _restService.addBeacon(
                 token,
                 Tuple2(beaconList[i].item1, beaconList[i].item2),
                 building,
               );
-              if (apiResponse.error == false) {
-                SnackBarError.showErrorSnackBar(
-                    //${apiResponse.data.name}
-                    "Beacon added",
-                    scaffoldKey);
-                Navigator.of(context).pop(true);
-              } else {
-                SnackBarError.showErrorSnackBar(
-                    apiResponse.errorMessage, scaffoldKey);
-                Navigator.of(context).pop(false);
-              }
             }
+          }
+          if (apiResponse.error == false) {
+            SnackBarError.showErrorSnackBar(
+                "Beacon added",
+                scaffoldKey);
+            Navigator.of(context).pop(true);
+          } else {
+            SnackBarError.showErrorSnackBar(
+                apiResponse.errorMessage, scaffoldKey);
+            Navigator.of(context).pop(false);
           }
         }
 
-        bool submitEnabled = false;
+        bool submitEnabled = list.contains(true) ? true : false;
 
         // bool isSelected = false;
         // Set<Tuple2<String, String>> selectedSet = Set();
@@ -76,6 +78,7 @@ class AddBeacon {
           title: Text("Add Beacon"),
           children: <Widget>[
             Container(
+              height: 300,
               width: double.maxFinite,
               child: ListView.builder(
                   scrollDirection: Axis.vertical,
@@ -101,11 +104,10 @@ class AddBeacon {
                         //});
                       },
                       child: Container(
-                        margin: EdgeInsets.symmetric(vertical: 8),
+                        margin: EdgeInsets.symmetric(vertical: 4),
                         color: //list[index].isSelected ?
-                            list[index] == true
-                                ? Colors.grey[400]
-                                : Colors.white,
+                            list[index] == true ? Colors.grey[300] :
+                            (alreadyExistingBeacons.contains(beaconList[index]) ? Colors.brown[200] : Colors.white),
                         child: ListTile(
                           title: Text(beaconList[index].item1),
                         ),

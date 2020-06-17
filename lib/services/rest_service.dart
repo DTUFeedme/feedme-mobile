@@ -452,9 +452,9 @@ class RestService {
 
   Future<APIResponse<Question>> addQuestion(
     String token,
-    List<RoomModel> rooms,
+    List<String> rooms,
     String value,
-    List<AnswerOption> answerOptions,
+    List<String> answerOptions,
   ) {
     final String body = json.encode(
         {'rooms': rooms, 'value': value, 'answerOptions': answerOptions});
@@ -572,34 +572,26 @@ class RestService {
             ));
   }
 
-    Future<APIResponse<FeedbackQuestion>> makeQuestionInactive(
+    Future<APIResponse<String>> makeQuestionInactive(
     String token,
-    String roomId,
+    String questionId,
+    bool isActive,
   ) {
     final String body =
-        json.encode({token: token, roomId: roomId});
+        json.encode({'isActive': isActive});
     return http
-        .patch(api + '/questions/setActive/' + roomId,
+        .patch(api + '/questions/setActive/' + questionId,
             headers: headers(token: token), body: body)
         .then((questionData) {
       if (questionData.statusCode == 200) {
-        dynamic resultBody = json.decode(questionData.body);
-        FeedbackQuestion questionFeedbackModel = FeedbackQuestion(
-          resultBody['userId'],
-          resultBody['bulding'],
-          resultBody['bulding'],
-          resultBody['bulding'],
-          resultBody['bulding'],
-          resultBody['bulding'],
-        );
-        return APIResponse<FeedbackQuestion>(data: questionFeedbackModel);
+        return APIResponse<String>(data: "Question set inactive");
       } else {
-        return APIResponse<FeedbackQuestion>(
-            error: true, errorMessage: questionData.body ?? "");
+        return APIResponse<String>(
+            error: true, errorMessage: questionData.body);
       }
     }).catchError((e) {
-      return APIResponse<FeedbackQuestion>(
-          error: true, errorMessage: "Setting question inactive failed");
+      return APIResponse<String>(
+          error: true, errorMessage: "Failed to set question inactive");
     });
   }
 }
