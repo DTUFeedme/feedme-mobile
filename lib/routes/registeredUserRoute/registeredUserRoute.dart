@@ -66,7 +66,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       _loadingState = false;
     });
     _setSubtitle();
-    _getActiveQuestions();
   }
 
   Future<void> _getBuildingScan() async {
@@ -98,6 +97,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       setState(() {
         _room = room;
       });
+      _getActiveQuestions();
     } else {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     }
@@ -105,26 +105,11 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   }
 
   Future<void> _getActiveQuestions() async {
-    RoomModel room;
-    BluetoothServices bluetooth = BluetoothServices();
-
-    APIResponse<RoomModel> apiResponseRoom =
-        await bluetooth.getRoomFromBuilding(_building, _token);
-    if (apiResponseRoom.error) {
-      SnackBarError.showErrorSnackBar(
-        apiResponseRoom.errorMessage,
-        _scaffoldKey,
-      );
-      return;
-    }
-
-    room = apiResponseRoom.data;
-
     //RoomModel room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
 
     
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
-        await _restService.getActiveQuestionsByRoom(room.id, _token);
+        await _restService.getActiveQuestionsByRoom(_room.id, _token);
     if (apiResponseQuestions.error) {
       SnackBarError.showErrorSnackBar(
         apiResponseQuestions.errorMessage,
@@ -134,10 +119,8 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     }
     
     setState(() {
-      _room = room;
       _questions = apiResponseQuestions.data;
     });
-    print(_questions);
   }
 
   Future<void> _getAndSetRoomFeedbackStats() async {

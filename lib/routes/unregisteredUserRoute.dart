@@ -28,7 +28,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   SharedPrefsHelper _sharedPrefsHelper = SharedPrefsHelper();
   RestService _restService = RestService();
   String _token;
-  GlobalKey<ScaffoldState> _scaffoldKey;
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<ViewAnsweredQuestionsWidgetState> _feedbackListKey =
   GlobalKey<ViewAnsweredQuestionsWidgetState>();
   int _visibleIndex = 0;
