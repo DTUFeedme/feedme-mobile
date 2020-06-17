@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
+import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/questionModel.dart';
 import 'package:climify/models/roomModel.dart';
@@ -50,7 +51,8 @@ class _BuildingManagerState extends State<BuildingManager> {
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<State> _dialogKey = GlobalKey<State>();
   BuildingModel _building = BuildingModel('', '', []);
-  List<Question> _questions = [];
+  List<FeedbackQuestion> _questionsRealList = [];
+  List<FeedbackQuestion> _questions = [];
   TextEditingController _newRoomNameController = TextEditingController();
   List<Beacon> _beacons = [];
   List<Tuple2<String, String>> _beaconList = [];
@@ -66,10 +68,9 @@ class _BuildingManagerState extends State<BuildingManager> {
   bool _gettingUserId = false;
   bool _makinguseradmin = false;
   final myController = TextEditingController();
-  final myControllerAddBeaconName = TextEditingController();
-  final myControllerAddBeaconUUID = TextEditingController();
   final _questionNameController = TextEditingController();
   final _questionAnswerOptionsController = TextEditingController();
+  List<TextEditingController> controllerList = [];
 
   @override
   void initState() {
@@ -81,8 +82,6 @@ class _BuildingManagerState extends State<BuildingManager> {
   void dispose() {
     // Clean up the controller when the widget is disposed.
     myController.dispose();
-    myControllerAddBeaconName.dispose();
-    myControllerAddBeaconUUID.dispose();
     _newRoomNameController.dispose();
     super.dispose();
   }
@@ -102,6 +101,24 @@ class _BuildingManagerState extends State<BuildingManager> {
       print("beacons of the deep: $_beacons");
     } else {
       print(apiResponseBeacons.errorMessage);
+    }
+    _questions = [];
+    for(int i = 0; i < _building.rooms.length; i++){
+    
+    APIResponse<List<FeedbackQuestion>> apiResponseBuilding =
+        await _restService.getActiveQuestionsByRoom(_building.rooms[i].id, _token);
+    if (apiResponseBuilding.error == false) {
+      setState(() {
+        List<FeedbackQuestion> question = apiResponseBuilding.data;
+        for(int j = 0; j < question.length; j++){
+          if(!_questions.any((item) => item.id == question[j].id)){
+            _questions.add(question[j]);
+          }
+        }
+        _questionsRealList = _questions;
+        //_questionsRealList = question;
+      });
+    }
     }
     _updateBuilding();
   }
@@ -130,17 +147,28 @@ class _BuildingManagerState extends State<BuildingManager> {
     return;
   }
 
-  // Future<void> _updateQuestions() async {
-  //   APIResponse<List<Beacon>> apiResponseBuilding =
-  //       await _restService.getActiveQuestionsByRoom(roomId, _token);
-  //   if (apiResponseBuilding.error == false) {
-  //     List<Beacon> beacons = apiResponseBuilding.data;
-  //     setState(() {
-  //       _beacons = beacons;
-  //     });
-  //   }
-  //   return;
-  // }
+  Future<void> _updateQuestions() async {
+    _questions = [];
+    for(int i = 0; i < _building.rooms.length; i++){
+       
+    APIResponse<List<FeedbackQuestion>> apiResponseBuilding =
+        await _restService.getActiveQuestionsByRoom(_building.rooms[i].id, _token);
+    if (apiResponseBuilding.error == false) {
+      setState(() {
+        List<FeedbackQuestion> question = apiResponseBuilding.data;
+        for(int j = 0; j < question.length; j++){
+          if(!_questions.any((item) => item.id == question[j].id)){
+            _questions.add(question[j]);
+          }
+        }
+        _questionsRealList = _questions;
+        //_questionsRealList = question;
+        controllerList = [];
+      });
+    }
+    }
+    return;
+  }
 
   void _updateBuildingAndAddScan() async {
     await _updateBuilding();
@@ -148,14 +176,14 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _addQuestion() async {
-    await showDialogModified<bool>(
+    await showDialogModified(
       barrierColor: Colors.black12,
       context: context,
       builder: (context) {
         return AddQuestion(
           token: _token,
           textEditingController: _questionNameController,
-          textEditingController2: _questionAnswerOptionsController,
+          controllerList: controllerList,
           building: _building,
           scaffoldKey: _scaffoldKey,
         ).dialog;
@@ -164,10 +192,12 @@ class _BuildingManagerState extends State<BuildingManager> {
       setState(() {
         _questionNameController.text = "";
         _questionAnswerOptionsController.text = "";
+        controllerList = [];
+        
       });
-      if (value ?? false) {
-        //_updateQuestions();
-      }
+      //if (value ?? false) {
+        _updateQuestions();
+      //}
     });
   }
 
@@ -278,7 +308,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     });
   }
 
-  void _questionMenu(Question question) async {
+  void _questionMenu(FeedbackQuestion question) async {
     await showDialogModified(
       barrierColor: Colors.black12,
       context: context,
@@ -296,8 +326,9 @@ class _BuildingManagerState extends State<BuildingManager> {
     ).then((value) {
       setState(() {
         _currentlyConfirming = "";
+        controllerList = [];
       });
-      //_updateQuestion();
+      _updateQuestions();
     });
   }
 
@@ -320,7 +351,6 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _getUserIdFromEmailFunc(String _email) async {
-    print("user email" + _email);
     setState(() {
       _gettingUserId = true;
     });
@@ -388,10 +418,10 @@ class _BuildingManagerState extends State<BuildingManager> {
     setState(() {
       _beaconList = beaconList;
     });
-    // if (beaconList.isEmpty){
-    //   SnackBarError.showErrorSnackBar("No beacons found", _scaffoldKey);
-    //   return;
-    // }
+    if (beaconList.isEmpty){
+      SnackBarError.showErrorSnackBar("No beacons found", _scaffoldKey);
+      return;
+    }
     await showDialogModified<bool>(
       barrierColor: Colors.black12,
       context: context,
@@ -399,6 +429,7 @@ class _BuildingManagerState extends State<BuildingManager> {
         return AddBeacon(
           token: _token,
           beaconList: _beaconList,
+          alreadyExistingBeacons: _beacons,
           // textEditingController: myControllerAddBeaconName,
           // textEditingController2: myControllerAddBeaconUUID,
           building: _building,
@@ -536,7 +567,7 @@ class _BuildingManagerState extends State<BuildingManager> {
                     children: <Widget>[
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: _questions.map((question) {
+                        children: _questionsRealList.map((question) {
                           return InkWell(
                             onTap: () => _questionMenu(question),
                             child: Container(

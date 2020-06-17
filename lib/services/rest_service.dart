@@ -458,9 +458,9 @@ class RestService {
 
   Future<APIResponse<Question>> addQuestion(
     String token,
-    List<RoomModel> rooms,
+    List<String> rooms,
     String value,
-    List<AnswerOption> answerOptions,
+    List<String> answerOptions,
   ) {
     final String body = json.encode(
         {'rooms': rooms, 'value': value, 'answerOptions': answerOptions});
@@ -624,5 +624,28 @@ class RestService {
               error: true,
               errorMessage: "Get userId Failed",
             ));
+  }
+
+    Future<APIResponse<String>> makeQuestionInactive(
+    String token,
+    String questionId,
+    bool isActive,
+  ) {
+    final String body =
+        json.encode({'isActive': isActive});
+    return http
+        .patch(api + '/questions/setActive/' + questionId,
+            headers: headers(token: token), body: body)
+        .then((questionData) {
+      if (questionData.statusCode == 200) {
+        return APIResponse<String>(data: "Question set inactive");
+      } else {
+        return APIResponse<String>(
+            error: true, errorMessage: questionData.body);
+      }
+    }).catchError((e) {
+      return APIResponse<String>(
+          error: true, errorMessage: "Failed to set question inactive");
+    });
   }
 }
