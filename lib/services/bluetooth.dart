@@ -69,21 +69,16 @@ class BluetoothServices {
     if (!allBeaconsResponse.error) {
       List<Beacon> allBeacons = allBeaconsResponse.data;
       Map<String, int> scannedBuildings = {};
-      List<ScanResult> scanResults = await scanForDevices(2000);
+      List<ScanResult> scanResults = await scanForDevices(2500);
       scanResults.forEach((result) {
         String beaconName = getBeaconName(result);
-        if (allBeacons
-            .where((element) => element.name == beaconName)
-            .isNotEmpty) {
-          String beaconBuilding = allBeacons
-              .firstWhere((element) => element.name == beaconName)
-              .building
-              .id;
-          scannedBuildings[beaconBuilding] =
-              scannedBuildings[beaconBuilding] == null
-                  ? 1
-                  : scannedBuildings[beaconBuilding] + 1;
-        }
+        List<Beacon> matchingBeacons = allBeacons
+            .where((listBeacon) => listBeacon.name == beaconName)
+            .toList();
+        matchingBeacons.forEach((matchingBeacon) {
+          int currentCounter = scannedBuildings[matchingBeacon.building.id] ?? 0;
+          scannedBuildings[matchingBeacon.building.id] = currentCounter + 1;
+        });
       });
       String buildingIdMostScans = "";
       int highestVal = 0;

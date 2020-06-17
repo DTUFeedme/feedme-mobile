@@ -78,6 +78,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
         setState(() {
           _building = buildingResponse.data;
         });
+        print(_building.name);
       } else {
         SnackBarError.showErrorSnackBar(
             "Failed getting building", _scaffoldKey);
