@@ -57,9 +57,6 @@ class AddBeacon {
 
         bool submitEnabled = list.contains(true) ? true : false;
 
-        // bool isSelected = false;
-        // Set<Tuple2<String, String>> selectedSet = Set();
-
         void updateSelectedBeaconListRemove(int index) async {
           setState(() {
             list[index] = false;
@@ -87,25 +84,19 @@ class AddBeacon {
                   itemBuilder: (BuildContext context, int index) {
                     return InkWell(
                       onLongPress: () {
-                        //beaconList.any((item) => item.isSelected)
                         if (list[index] == true) {
-                          //setState(() {
-                          //beaconList[index].isSelected = !beaconList[index].isSelected;
                           updateSelectedBeaconListRemove(index);
-                          //list[index] = false;
-                          //});
+
                         }
                       },
                       onTap: () {
-                        //setState(() {
-                        //beaconList[index].isSelected = true;
+
                         updateSelectedBeaconListAdd(index);
-                        //list[index] = true;
-                        //});
+
                       },
                       child: Container(
                         margin: EdgeInsets.symmetric(vertical: 4),
-                        color: //list[index].isSelected ?
+                        color:
                             list[index] == true ? Colors.grey[300] :
                             (alreadyExistingBeacons.contains(beaconList[index]) ? Colors.brown[200] : Colors.white),
                         child: ListTile(
