@@ -76,8 +76,11 @@ class BluetoothServices {
             .where((listBeacon) => listBeacon.name == beaconName)
             .toList();
         matchingBeacons.forEach((matchingBeacon) {
-          int currentCounter = scannedBuildings[matchingBeacon.building.id] ?? 0;
-          scannedBuildings[matchingBeacon.building.id] = currentCounter + 1;
+          if (matchingBeacon?.building?.id != null) {
+            int currentCounter =
+                scannedBuildings[matchingBeacon.building.id] ?? 0;
+            scannedBuildings[matchingBeacon.building.id] = currentCounter + 1;
+          }
         });
       });
       String buildingIdMostScans = "";
