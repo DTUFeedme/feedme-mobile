@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 class ListButton extends StatelessWidget {
   final void Function() onTap;
+  final void Function() onLongPress;
   final Widget child;
 
   const ListButton({
     Key key,
     this.onTap,
+    this.onLongPress,
     this.child,
   }) : super(key: key);
 
@@ -20,6 +22,7 @@ class ListButton extends StatelessWidget {
         elevation: 3,
         child: InkWell(
           onTap: onTap,
+          onLongPress: onLongPress,
           child: Container(
             decoration: BoxDecoration(
                 // border: Border(

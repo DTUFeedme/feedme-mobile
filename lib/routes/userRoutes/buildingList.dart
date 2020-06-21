@@ -95,7 +95,44 @@ class BuildingListState extends State<BuildingList> {
     }
   }
 
-  void _deleteBuilding() {}
+  void _showDeleteBuildingDialog(BuildingModel building) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Confirm deletion"),
+          content: Text("Really delete ${building.name}?"),
+          actions: <Widget>[
+            FlatButton(
+              child: Text("Cancel"),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            FlatButton(
+              child: Text("Confirm"),
+              onPressed: () async {
+                await _deleteBuilding(building);
+                Navigator.of(context).pop();
+                getBuildings();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteBuilding(BuildingModel building) async {
+    String token = Provider.of<GlobalState>(context).globalState['token'];
+    APIResponse<String> _deleteBuildingResponse =
+        await _restService.deleteBuilding(token, building);
+    if (!_deleteBuildingResponse.error) {
+      SnackBarError.showErrorSnackBar(
+          _deleteBuildingResponse.data, _scaffoldKey);
+    } else {
+      SnackBarError.showErrorSnackBar("Failed deleting building", _scaffoldKey);
+    }
+    return;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +148,7 @@ class BuildingListState extends State<BuildingList> {
             itemCount: _buildings.length,
             itemBuilder: (_, index) => ListButton(
               onTap: () => _focusBuilding(_buildings[index]),
+              onLongPress: () => _showDeleteBuildingDialog(_buildings[index]),
               child: Text(
                 _buildings[index].name,
                 style: TextStyle(

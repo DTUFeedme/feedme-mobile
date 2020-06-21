@@ -221,6 +221,26 @@ class RestService {
             error: true, errorMessage: 'Get Buildings failed'));
   }
 
+  Future<APIResponse<String>> deleteBuilding(
+    String token,
+    BuildingModel building,
+  ) {
+    return http
+        .delete(api + '/buildings/' + building.id,
+            headers: headers(token: token))
+        .then((data) {
+      if (data.statusCode == 200) {
+        return APIResponse<String>(data: "Deleted building ${building.name}");
+      } else {
+        return APIResponse<String>(error: true, errorMessage: data.body ?? "");
+      }
+    }).catchError((e) {
+      print(e);
+      return APIResponse<String>(
+          error: true, errorMessage: "Deleting building failed");
+    });
+  }
+
   Future<APIResponse<List<Beacon>>> getBeaconsOfBuilding(
     String token,
     BuildingModel building,
@@ -322,9 +342,6 @@ class RestService {
           error: true, errorMessage: "Add building failed");
     });
   }
-
-  Future<APIResponse<BuildingModel>> deleteBuilding(
-      String token, String buildingId) {}
 
   Future<APIResponse<RoomModel>> addRoom(
     String token,
