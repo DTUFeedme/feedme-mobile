@@ -627,6 +627,10 @@ class _BuildingManagerState extends State<BuildingManager> {
               Visibility(
                 visible: _visibleIndex == 3,
                 child: Container(
+                  margin: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Column(
                     children: <Widget>[
                       TextFormField(
