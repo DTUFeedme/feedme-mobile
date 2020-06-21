@@ -4,6 +4,7 @@ import 'package:climify/models/questionAndFeedback.dart';
 import 'package:climify/routes/viewFeedback.dart';
 //import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/styles/textStyles.dart';
+import 'package:climify/widgets/dateFilterButton.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:climify/widgets/roundedBox.dart';
 import 'package:flutter/material.dart';
@@ -119,120 +120,30 @@ class ViewAnsweredQuestionsWidgetState
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width / 6,
-                    ),
-                    margin: EdgeInsets.symmetric(
-                      vertical: 6,
-                      horizontal: 6,
-                    ),
-                    child: RoundedBox(
-                      onTap: () => setT("hour"),
-                      decoration: BoxDecoration(
-                        color: "hour" == _t ? Colors.blue : Colors.transparent,
-                      ),
-                      child: Container(
-                        child: Center(
-                          child: Text(
-                            "hour",
-                            style: TextStyles.optionStyle,
-                          ),
-                        ),
-                      ),
-                    ),
+                  DateFilterButton(
+                    value: "hour",
+                    selected: _t == "hour",
+                    setT: setT,
                   ),
-                  Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width / 6,
-                    ),
-                    margin: EdgeInsets.symmetric(
-                      vertical: 6,
-                      horizontal: 6,
-                    ),
-                    child: RoundedBox(
-                      onTap: () => setT("day"),
-                      decoration: BoxDecoration(
-                        color: "day" == _t ? Colors.blue : Colors.transparent,
-                      ),
-                      child: Container(
-                        child: Center(
-                          child: Text(
-                            "day",
-                            style: TextStyles.optionStyle,
-                          ),
-                        ),
-                      ),
-                    ),
+                  DateFilterButton(
+                    value: "day",
+                    selected: _t == "day",
+                    setT: setT,
                   ),
-                  Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width / 6,
-                    ),
-                    margin: EdgeInsets.symmetric(
-                      vertical: 6,
-                      horizontal: 6,
-                    ),
-                    child: RoundedBox(
-                      onTap: () => setT("week"),
-                      decoration: BoxDecoration(
-                        color: "week" == _t ? Colors.blue : Colors.transparent,
-                      ),
-                      child: Container(
-                        child: Center(
-                          child: Text(
-                            "week",
-                            style: TextStyles.optionStyle,
-                          ),
-                        ),
-                      ),
-                    ),
+                  DateFilterButton(
+                    value: "week",
+                    selected: _t == "week",
+                    setT: setT,
                   ),
-                  Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width / 6,
-                    ),
-                    margin: EdgeInsets.symmetric(
-                      vertical: 6,
-                      horizontal: 6,
-                    ),
-                    child: RoundedBox(
-                      onTap: () => setT("month"),
-                      decoration: BoxDecoration(
-                        color: "month" == _t ? Colors.blue : Colors.transparent,
-                      ),
-                      child: Container(
-                        child: Center(
-                          child: Text(
-                            "month",
-                            style: TextStyles.optionStyle,
-                          ),
-                        ),
-                      ),
-                    ),
+                  DateFilterButton(
+                    value: "month",
+                    selected: _t == "month",
+                    setT: setT,
                   ),
-                  Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width / 6,
-                    ),
-                    margin: EdgeInsets.symmetric(
-                      vertical: 6,
-                      horizontal: 6,
-                    ),
-                    child: RoundedBox(
-                      onTap: () => setT("year"),
-                      decoration: BoxDecoration(
-                        color: "year" == _t ? Colors.blue : Colors.transparent,
-                      ),
-                      child: Container(
-                        child: Center(
-                          child: Text(
-                            "year",
-                            style: TextStyles.optionStyle,
-                          ),
-                        ),
-                      ),
-                    ),
+                  DateFilterButton(
+                    value: "year",
+                    selected: _t == "year",
+                    setT: setT,
                   ),
                 ],
               ),

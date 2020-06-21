@@ -30,7 +30,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   String _title = "Provide feedback";
   String _subtitle = "Room: scanning...";
   RoomModel _room;
-  BuildingModel _building;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<BuildingListState> _buildingListKey =
       GlobalKey<BuildingListState>();
@@ -39,6 +38,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   BluetoothServices _bluetooth = BluetoothServices();
   RestService _restService = RestService();
   String _token;
+  String _t;
   List<QuestionStatisticsModel> _roomQuestionStatistics = [];
   TextEditingController _buildingNameTextController = TextEditingController();
   List<FeedbackQuestion> _questions = [];
@@ -69,11 +69,10 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     await Future.delayed(Duration(milliseconds: 500));
     var _scanResults = await _scanHelper.scanBuildingAndRoom();
     setState(() {
-      _building = _scanResults.building;
       _room = _scanResults.room;
       _questions = _scanResults.questions;
     });
-    if (_room != null) _getAndSetRoomFeedbackStats();
+    if (_room != null) _getAndSetRoomFeedbackStats("week");
     setState(() {
       _loadingState = false;
     });
@@ -88,22 +87,24 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     return;
   }
 
-  Future<void> _getAndSetRoomFeedbackStats() async {
+  Future<void> _getAndSetRoomFeedbackStats(String t) async {
     List<FeedbackQuestion> questionsOfRoom = [];
     setState(() {
       _roomQuestionStatistics = [];
+      _t = t;
     });
     APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
-        await _restService.getActiveQuestionsByRoom(_room.id, _token);
+        await _restService.getActiveQuestionsByRoom(_room.id, _token, t: _t);
     if (!apiResponseQuestionsOfRoom.error) {
       questionsOfRoom = apiResponseQuestionsOfRoom.data;
       List<QuestionStatisticsModel> roomQuestionStatistics = [];
-
       questionsOfRoom.forEach((q) async {
         APIResponse<QuestionStatisticsModel> apiResponseQuestionStatistics =
-            await _restService.getQuestionStatistics(_token, q);
+            await _restService.getQuestionStatistics(_token, q, t: _t);
         if (!apiResponseQuestionStatistics.error) {
           roomQuestionStatistics.add(apiResponseQuestionStatistics.data);
+          roomQuestionStatistics.sort((q1, q2) =>
+              Comparable.compare(q1.question.value, q2.question.value));
           setState(() {
             _roomQuestionStatistics = roomQuestionStatistics;
           });
@@ -260,13 +261,16 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                 child: Container(
                   child: RefreshIndicator(
                     onRefresh: () async {
-                      if (_room != null) await _getAndSetRoomFeedbackStats();
+                      if (_room != null)
+                        await _getAndSetRoomFeedbackStats("week");
                       await Future.delayed(Duration(milliseconds: 125));
                       _changeWindow(1);
                       return;
                     },
                     child: ViewRoomFeedback(
                       questions: _roomQuestionStatistics,
+                      dateFilter: _t,
+                      refreshQuestions: _getAndSetRoomFeedbackStats,
                     ),
                   ),
                 ),

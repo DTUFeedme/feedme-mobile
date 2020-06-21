@@ -6,7 +6,8 @@ class SnackBarError {
     SnackBar snackBar = SnackBar(
       content: Text(error),
     );
-    scaffoldKey.currentState.removeCurrentSnackBar();
+    if (!(scaffoldKey?.currentState?.mounted ?? false)) return;
+      scaffoldKey.currentState.removeCurrentSnackBar();
     scaffoldKey.currentState.showSnackBar(snackBar);
   }
 }

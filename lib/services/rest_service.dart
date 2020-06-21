@@ -39,10 +39,18 @@ class RestService {
   }
 
   Future<APIResponse<List<FeedbackQuestion>>> getActiveQuestionsByRoom(
-      String roomId, String token) {
+    String roomId,
+    String token, {
+    String t,
+  }) {
+    String url;
+    if (t == null) {
+      url = api + '/questions/active';
+    } else {
+      url = api + '/questions/active?t=' + t;
+    }
     return http
-        .get(api + '/questions/active',
-            headers: headers(token: token, roomId: roomId))
+        .get(url, headers: headers(token: token, roomId: roomId))
         .then((data) {
       if (data.statusCode == 200) {
         List<FeedbackQuestion> questions = [];
@@ -67,8 +75,13 @@ class RestService {
     });
   }
 
-  Future<APIResponse<bool>> postFeedback(String token, FeedbackQuestion question, int choosenOption, RoomModel room) {
-    final String body = json.encode({'roomId': room.id, 'answerId': question.answerOptions[choosenOption].id, 'questionId': question.id});
+  Future<APIResponse<bool>> postFeedback(String token,
+      FeedbackQuestion question, int choosenOption, RoomModel room) {
+    final String body = json.encode({
+      'roomId': room.id,
+      'answerId': question.answerOptions[choosenOption].id,
+      'questionId': question.id
+    });
     return http
         .post(api + '/feedback', headers: headers(token: token), body: body)
         .then((data) {
@@ -80,16 +93,19 @@ class RestService {
         final jsonRoom = jsonData['room'];
         final jsonAnswer = jsonData['answer'];
         final jsonQuestion = jsonData['question'];
-        if (jsonRoom == room.id && 
-              jsonAnswer == question.answerOptions[choosenOption].id &&
-                jsonQuestion == question.id) {
+        if (jsonRoom == room.id &&
+            jsonAnswer == question.answerOptions[choosenOption].id &&
+            jsonQuestion == question.id) {
           return APIResponse<bool>(data: true);
         } else if (jsonAnswer != question.answerOptions[choosenOption].id) {
-          return APIResponse<bool>(error: true, errorMessage: 'No matching answer was found');
+          return APIResponse<bool>(
+              error: true, errorMessage: 'No matching answer was found');
         } else if (jsonQuestion != question.id) {
-          return APIResponse<bool>(error: true, errorMessage: 'No matching question was found');
+          return APIResponse<bool>(
+              error: true, errorMessage: 'No matching question was found');
         } else if (jsonRoom != room.id) {
-          return APIResponse<bool>(error: true, errorMessage: 'No matching room was found');
+          return APIResponse<bool>(
+              error: true, errorMessage: 'No matching room was found');
         }
         return APIResponse<bool>(error: true, errorMessage: 'An error occured');
       }
@@ -505,48 +521,41 @@ class RestService {
   }
 
   Future<APIResponse<List<QuestionAndFeedback>>> getFeedback(
-    String token,
-    String user,
-    String t
-  ) {
+      String token, String user, String t) {
     return http
-      .get(api + '/feedback?user=' + user + '&t=' + t, 
-        headers: headers(token: token)) 
-      .then((data) {
-        if (data.statusCode == 200) {
-          List<QuestionAndFeedback> feedbackList = <QuestionAndFeedback>[];
-          dynamic resultBody = json.decode(data.body);
-          if (resultBody == null || resultBody.length < 1) {
-            return APIResponse<List<QuestionAndFeedback>>(
-              error: true,
-              errorMessage: "List of answered questions were empty",
-            );
-          }
-          for (var e in resultBody) {
-            QuestionAndFeedback qF = QuestionAndFeedback(
-              e["_id"],
-              e["user"],
-              e["room"],
-              AnswerOption.fromJson(
-                e["answer"]
-              ),
-              FeedbackQuestion.fromJson(
-                e["question"]
-              ),
-              e["createdAt"],
-              e["updatedAt"],
-              e["__v"],
-            );
-            feedbackList.add(qF);
-          }
+        .get(api + '/feedback?user=' + user + '&t=' + t,
+            headers: headers(token: token))
+        .then((data) {
+      if (data.statusCode == 200) {
+        List<QuestionAndFeedback> feedbackList = <QuestionAndFeedback>[];
+        dynamic resultBody = json.decode(data.body);
+        if (resultBody == null || resultBody.length < 1) {
           return APIResponse<List<QuestionAndFeedback>>(
-            data: feedbackList,
+            error: true,
+            errorMessage: "List of answered questions were empty",
           );
-        } else {
-          return APIResponse<List<QuestionAndFeedback>>(
-            error: true, errorMessage: "Getting answered questions failed");
         }
-      }).catchError((e) {
+        for (var e in resultBody) {
+          QuestionAndFeedback qF = QuestionAndFeedback(
+            e["_id"],
+            e["user"],
+            e["room"],
+            AnswerOption.fromJson(e["answer"]),
+            FeedbackQuestion.fromJson(e["question"]),
+            e["createdAt"],
+            e["updatedAt"],
+            e["__v"],
+          );
+          feedbackList.add(qF);
+        }
+        return APIResponse<List<QuestionAndFeedback>>(
+          data: feedbackList,
+        );
+      } else {
+        return APIResponse<List<QuestionAndFeedback>>(
+            error: true, errorMessage: "Getting answered questions failed");
+      }
+    }).catchError((e) {
       return APIResponse<List<QuestionAndFeedback>>(
           error: true, errorMessage: "Getting answered questions failed");
     });
@@ -554,14 +563,17 @@ class RestService {
 
   Future<APIResponse<QuestionStatisticsModel>> getQuestionStatistics(
     String token,
-    FeedbackQuestion question,
-  ) {
+    FeedbackQuestion question, {
+    String t,
+  }) {
     FeedbackQuestion q = question;
-
-    return http
-        .get(api + '/feedback/questionStatistics/' + q.id,
-            headers: headers(token: token))
-        .then((data) {
+    String url;
+    if (t == null) {
+      url = api + '/feedback/questionStatistics/' + q.id;
+    } else {
+      url = api + '/feedback/questionStatistics/' + q.id + '?t=' + t;
+    }
+    return http.get(url, headers: headers(token: token)).then((data) {
       if (data.statusCode == 200) {
         return APIResponse<QuestionStatisticsModel>(
           data: QuestionStatisticsModel.fromJson(
@@ -626,13 +638,12 @@ class RestService {
             ));
   }
 
-    Future<APIResponse<String>> makeQuestionInactive(
+  Future<APIResponse<String>> makeQuestionInactive(
     String token,
     String questionId,
     bool isActive,
   ) {
-    final String body =
-        json.encode({'isActive': isActive});
+    final String body = json.encode({'isActive': isActive});
     return http
         .patch(api + '/questions/setActive/' + questionId,
             headers: headers(token: token), body: body)

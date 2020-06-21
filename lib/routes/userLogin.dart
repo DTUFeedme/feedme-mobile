@@ -18,6 +18,7 @@ class _UserLoginState extends State<UserLogin> {
   bool _buttonsActive = true;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   SharedPrefsHelper _sharedPrefsHelper = SharedPrefsHelper();
+  String _titleText = "User Login";
 
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
@@ -64,8 +65,20 @@ class _UserLoginState extends State<UserLogin> {
   }
 
   void _changeWindow(int index) {
+    String _title;
+    switch (index) {
+      case 0:
+        _title = "User Login";
+        break;
+      case 1:
+        _title = "Create User";
+        break;
+      default:
+        _title = "User Login";
+    }
     setState(() {
       _visibleIndex = index;
+      _titleText = _title;
     });
   }
 
@@ -74,16 +87,16 @@ class _UserLoginState extends State<UserLogin> {
     Navigator.of(context).pushReplacementNamed("unregistered");
   }
 
-  void _setupDev() {
-    _newEmailController.text = "test@test.com";
-    _newPasswordController.text = "test1234";
-    _newPasswordConfirmController.text = "test1234";
-  }
+  // void _setupDev() {
+  //   _newEmailController.text = "test@test.com";
+  //   _newPasswordController.text = "test1234";
+  //   _newPasswordConfirmController.text = "test1234";
+  // }
 
-  void _setupDev2() {
-    _emailController.text = "test@test.com";
-    _passwordController.text = "test1234";
-  }
+  // void _setupDev2() {
+  //   _emailController.text = "test@test.com";
+  //   _passwordController.text = "test1234";
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +104,7 @@ class _UserLoginState extends State<UserLogin> {
       key: _scaffoldKey,
       appBar: AppBar(
         title: Text(
-          "User Login",
+          _titleText,
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -119,102 +132,102 @@ class _UserLoginState extends State<UserLogin> {
           children: <Widget>[
             Visibility(
               visible: _visibleIndex == 0,
-              child: Column(
-                children: <Widget>[
-                  Text("Login"),
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        "Email:",
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
+              child: Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Column(
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          "Email:",
                         ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        "Password:",
-                      ),
-                      Expanded(
-                        child: _passwordField(
-                          controller: _passwordController,
+                        Expanded(
+                          child: TextField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
                         ),
+                      ],
+                    ),
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          "Password:",
+                        ),
+                        Expanded(
+                          child: _passwordField(
+                            controller: _passwordController,
+                          ),
+                        ),
+                      ],
+                    ),
+                    RaisedButton(
+                      child: Text(
+                        "Login",
                       ),
-                    ],
-                  ),
-                  RaisedButton(
-                    child: Text(
-                      "Login",
+                      onPressed: () => _authUser(),
                     ),
-                    onPressed: () => _authUser(),
-                  ),
-                  RaisedButton(
-                    child: Text(
-                      "Test Input",
-                    ),
-                    onPressed: () => _setupDev2(),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             Visibility(
               visible: _visibleIndex == 1,
-              child: Column(
-                children: <Widget>[
-                  Text("Create User"),
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        "Email:",
-                      ),
-                      Expanded(
-                        child: TextField(
-                          controller: _newEmailController,
-                          keyboardType: TextInputType.emailAddress,
+              child: Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Column(
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          "Email:",
                         ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        "Password:",
-                      ),
-                      Expanded(
-                        child: _passwordField(
-                          controller: _newPasswordController,
+                        Expanded(
+                          child: TextField(
+                            controller: _newEmailController,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        "Confirm Password:",
-                      ),
-                      Expanded(
-                        child: _passwordField(
-                          controller: _newPasswordConfirmController,
-                        ),
-                      ),
-                    ],
-                  ),
-                  RaisedButton(
-                    child: Text(
-                      "Create User",
+                      ],
                     ),
-                    onPressed: () => _authUser(create: true),
-                  ),
-                  RaisedButton(
-                    child: Text("test input"),
-                    onPressed: () => _setupDev(),
-                  ),
-                ],
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          "Password:",
+                        ),
+                        Expanded(
+                          child: _passwordField(
+                            controller: _newPasswordController,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          "Confirm Password:",
+                        ),
+                        Expanded(
+                          child: _passwordField(
+                            controller: _newPasswordConfirmController,
+                          ),
+                        ),
+                      ],
+                    ),
+                    RaisedButton(
+                      child: Text(
+                        "Create User",
+                      ),
+                      onPressed: () => _authUser(create: true),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -73,8 +73,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       _scaffoldKey,
       _token,
     );
-    await Future.delayed(Duration(milliseconds: 1000));
     var _scanResults = await _scanHelper.scanBuildingAndRoom();
+    if(!mounted) return;
     setState(() {
       _building = _scanResults.building;
       _room = _scanResults.room;
