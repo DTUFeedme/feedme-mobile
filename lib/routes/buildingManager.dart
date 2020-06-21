@@ -106,7 +106,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     _questions = [];
     for (int i = 0; i < _building.rooms.length; i++) {
       APIResponse<List<FeedbackQuestion>> apiResponseBuilding =
-          await _restService.getActiveQuestionsByRoom(
+          await _restService.getAllQuestionsByRoom(
               _building.rooms[i].id, _token);
       if (apiResponseBuilding.error == false) {
         setState(() {
@@ -152,7 +152,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     _questions = [];
     for (int i = 0; i < _building.rooms.length; i++) {
       APIResponse<List<FeedbackQuestion>> apiResponseBuilding =
-          await _restService.getActiveQuestionsByRoom(
+          await _restService.getAllQuestionsByRoom(
               _building.rooms[i].id, _token);
       if (apiResponseBuilding.error == false) {
         setState(() {
@@ -544,83 +544,53 @@ class _BuildingManagerState extends State<BuildingManager> {
               ),
               Visibility(
                 visible: _visibleIndex == 1,
-                child: Container(
-                  child: Column(
-                    children: <Widget>[
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: _questionsRealList.map((question) {
-                          return InkWell(
-                            onTap: () => _questionMenu(question),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(),
-                                ),
-                              ),
-                              child: SizedBox(
-                                width: double.infinity,
-                                child: Center(
-                                  child: Container(
-                                    margin: EdgeInsets.symmetric(
-                                      vertical: 8,
-                                      horizontal: 8,
-                                    ),
-                                    child: Text(
-                                      question.value,
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                child: RefreshIndicator(
+                  onRefresh: () => _updateQuestions(),
+                    child: Container(
+                      child: ListView.builder(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        itemCount: _questionsRealList.length,
+                        itemBuilder: (_, index) => ListButton(
+                          onTap: () => _questionMenu(_questionsRealList[index]),
+                          child: Text( 
+                            _questionsRealList[index].value,
+                            style: TextStyle(
+                            color: (_questionsRealList.any((question) =>
+                                    _questionsRealList[index].isActive == false)
+                                ? Colors.red[800]
+                                : Colors.green[800]),
+                              fontSize: 24,
                             ),
-                          );
-                        }).toList(),
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
                 ),
               ),
               Visibility(
                 visible: _visibleIndex == 2,
-                child: Container(
-                  child: Column(
-                    children: <Widget>[
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: _beacons.map((beacon) {
-                          return InkWell(
-                            onTap: () => _beaconMenu(beacon),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(),
-                                ),
-                              ),
-                              child: SizedBox(
-                                width: double.infinity,
-                                child: Center(
-                                  child: Container(
-                                    margin: EdgeInsets.symmetric(
-                                      vertical: 8,
-                                      horizontal: 8,
-                                    ),
-                                    child: Text(
-                                      beacon.name,
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                child: RefreshIndicator(
+                  onRefresh: () => _updateBeacon(),
+                  child: Container(
+                    child: ListView.builder(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                    ],
+                      itemCount: _beacons.length,
+                      itemBuilder: (_, index) => ListButton(
+                        onTap: () => _beaconMenu(_beacons[index]),
+                        child: Text(
+                          _beacons[index].name,
+                          style: TextStyle(
+                            fontSize: 24,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

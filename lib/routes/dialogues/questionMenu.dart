@@ -30,6 +30,17 @@ class QuestionMenu {
     return;
   }
 
+    Future<void> _makeQuestionActive() async {
+    APIResponse<String> activeResponse =
+        await _restService.makeQuestionInactive(token, question.id, true);
+    if (!activeResponse.error) {
+      SnackBarError.showErrorSnackBar("Question ${question.value} set active", scaffoldKey);
+    } else {
+      SnackBarError.showErrorSnackBar(activeResponse.errorMessage, scaffoldKey);
+    }
+    return;
+  }
+
   QuestionMenu({
     this.question,
     this.token,
@@ -43,6 +54,22 @@ class QuestionMenu {
         return SimpleDialog(
           title: Text("${question.value}"),
           children: <Widget>[
+            getCurrentlyConfirming() == "activequestion"
+                ? RaisedButton( 
+                    color: Colors.red,
+                    child: Text("Confirm"),
+                    onPressed: () async {
+                      await _makeQuestionActive();
+                      Navigator.of(context).pop();
+                    },
+                  )
+                : RaisedButton(
+                    child: Text("Make question active"),
+                    onPressed: () {
+                      setCurrentlyConfirming("activequestion");
+                      setState(() {});
+                    },
+                  ),
             getCurrentlyConfirming() == "inactivequestion"
                 ? RaisedButton( 
                     color: Colors.red,

@@ -75,6 +75,34 @@ class RestService {
     });
   }
 
+  Future<APIResponse<List<FeedbackQuestion>>> getAllQuestionsByRoom(
+      String roomId, String token) {
+    return http
+        .get(api + '/questions', headers: headers(token: token, roomId: roomId))
+        .then((data) {
+      if (data.statusCode == 200) {
+        List<FeedbackQuestion> questions = [];
+        var jsonData = json.decode(data.body);
+
+        jsonData.forEach(
+            (element) => questions.add(FeedbackQuestion.fromJson(element)));
+
+        return APIResponse<List<FeedbackQuestion>>(data: questions);
+      } else {
+        return APIResponse<List<FeedbackQuestion>>(
+          error: true,
+          errorMessage: data.body,
+        );
+      }
+    }).catchError((e) {
+      print(e);
+      return APIResponse<List<FeedbackQuestion>>(
+        error: true,
+        errorMessage: "Getting all questions failed",
+      );
+    });
+  }
+
   Future<APIResponse<bool>> postFeedback(String token,
       FeedbackQuestion question, int choosenOption, RoomModel room) {
     final String body = json.encode({
