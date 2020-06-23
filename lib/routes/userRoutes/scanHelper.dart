@@ -6,6 +6,7 @@ import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/material.dart';
+import 'package:tuple/tuple.dart';
 
 class ScanHelper {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -22,10 +23,15 @@ class ScanHelper {
   RoomModel _room;
   List<FeedbackQuestion> _questions;
 
-  Future<_Result> scanBuildingAndRoom() async {
-    if (_building == null) await _getBuildingScan();
-    if (_building != null) await _getAndSetRoom();
-    print(_questions);
+  Future<_Result> scanBuildingAndRoom({
+    bool resetBuilding = false,
+  }) async {
+    if (_building == null || resetBuilding) {
+      await _getBuildingAndRoomScan();
+    } else {
+      await _getAndSetRoom();
+    }
+    await getActiveQuestions();
     return _Result(
       _building,
       _room,
@@ -33,19 +39,14 @@ class ScanHelper {
     );
   }
 
-  Future<void> _getBuildingScan() async {
-    APIResponse<String> idResponse =
-        await _bluetooth.getBuildingIdFromScan(token);
-    if (!idResponse.error) {
-      APIResponse<BuildingModel> buildingResponse =
-          await _restService.getBuilding(token, idResponse.data);
-      if (!buildingResponse.error) {
-        _building = buildingResponse.data;
-      } else {
-        SnackBarError.showErrorSnackBar("Failed getting building", scaffoldKey);
-      }
+  Future<void> _getBuildingAndRoomScan() async {
+    APIResponse<Tuple2<BuildingModel, RoomModel>> apiResponse =
+        await _bluetooth.getBuildingAndRoomFromScan(token);
+    if (!apiResponse.error) {
+      _building = apiResponse.data.item1;
+      _room = apiResponse.data.item2;
     } else {
-      SnackBarError.showErrorSnackBar(idResponse.errorMessage, scaffoldKey);
+      SnackBarError.showErrorSnackBar(apiResponse.errorMessage, scaffoldKey);
     }
     return;
   }
@@ -55,7 +56,6 @@ class ScanHelper {
         await _bluetooth.getRoomFromBuilding(_building, token);
     if (!apiResponse.error) {
       _room = apiResponse.data;
-      await getActiveQuestions();
     } else {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, scaffoldKey);
     }
@@ -63,17 +63,20 @@ class ScanHelper {
   }
 
   Future<List<FeedbackQuestion>> getActiveQuestions() async {
-    APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
-        await _restService.getActiveQuestionsByRoom(_room.id, token);
-    if (apiResponseQuestions.error) {
-      SnackBarError.showErrorSnackBar(
-        apiResponseQuestions.errorMessage,
-        scaffoldKey,
-      );
+    if (_room == null) {
       return [];
     }
-    _questions = apiResponseQuestions.data;
-    return _questions;
+    APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
+        await _restService.getActiveQuestionsByRoom(_room.id, token);
+    if (!apiResponseQuestions.error) {
+      _questions = apiResponseQuestions.data;
+      return _questions;
+    }
+    SnackBarError.showErrorSnackBar(
+      apiResponseQuestions.errorMessage,
+      scaffoldKey,
+    );
+    return [];
   }
 }
 
