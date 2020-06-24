@@ -1,7 +1,6 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
-import 'package:climify/models/roomModel.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/cupertino.dart';

@@ -1,11 +1,9 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/globalState.dart';
-import 'package:climify/routes/dialogues/addBuilding.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
-import 'package:climify/widgets/customDialog.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
@@ -29,9 +27,7 @@ class BuildingListState extends State<BuildingList> {
   BluetoothServices _bluetooth = BluetoothServices();
   RestService _restService = RestService();
   List<BuildingModel> _buildings = [];
-  List<Tuple2<String, String>> _beaconList = [];
   String buildingId = "";
-  TextEditingController _buildingNameTextController = TextEditingController();
 
   @override
   void initState() {
@@ -90,7 +86,6 @@ class BuildingListState extends State<BuildingList> {
     });
     if (mounted) {
       setState(() {
-        _beaconList = beaconList;
       });
     }
   }

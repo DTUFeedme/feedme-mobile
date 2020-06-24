@@ -5,9 +5,7 @@ import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
-import 'package:climify/models/questionModel.dart';
 import 'package:climify/models/roomModel.dart';
-import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/routes/dialogues/addBeacon.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
@@ -20,20 +18,7 @@ import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
-import 'package:climify/routes/userRoutes/buildingList.dart';
-
-import 'package:climify/models/api_response.dart';
-import 'package:climify/models/buildingModel.dart';
-import 'package:climify/models/globalState.dart';
-import 'package:climify/routes/dialogues/addBuilding.dart';
-import 'package:climify/services/bluetooth.dart';
-import 'package:climify/services/rest_service.dart';
-import 'package:climify/services/snackbarError.dart';
-import 'package:climify/widgets/customDialog.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:provider/provider.dart';
-import 'package:tuple/tuple.dart';
 
 import 'dialogues/scanRoom.dart';
 import 'dialogues/beaconMenu.dart';
@@ -50,7 +35,6 @@ class _BuildingManagerState extends State<BuildingManager> {
   RestService _restService = RestService();
 
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  GlobalKey<State> _dialogKey = GlobalKey<State>();
   BuildingModel _building = BuildingModel('', '', []);
   List<FeedbackQuestion> _questionsRealList = [];
   List<FeedbackQuestion> _questions = [];
@@ -61,13 +45,9 @@ class _BuildingManagerState extends State<BuildingManager> {
   bool _scanningSignalMap = false;
   int _signalMapScans = 0;
   // SignalMap _signalMap;
-  String _currentRoom = "";
-  bool _gettingRoom = false;
   String _currentlyConfirming = "";
   int _visibleIndex = 0;
   String _title = "Manage rooms";
-  bool _gettingUserId = false;
-  bool _makinguseradmin = false;
   final myController = TextEditingController();
   final _questionNameController = TextEditingController();
   final _questionAnswerOptionsController = TextEditingController();
@@ -332,28 +312,8 @@ class _BuildingManagerState extends State<BuildingManager> {
     });
   }
 
-  void _getRoom() async {
-    setState(() {
-      _gettingRoom = true;
-    });
-    RoomModel room;
-    APIResponse<RoomModel> apiResponse =
-        await _bluetooth.getRoomFromBuilding(_building, _token);
-    if (apiResponse.error) {
-      SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
-    } else {
-      room = apiResponse.data;
-    }
-    setState(() {
-      _currentRoom = room?.name ?? "unknown";
-      _gettingRoom = false;
-    });
-  }
-
   void _getUserIdFromEmailFunc(String _email) async {
-    setState(() {
-      _gettingUserId = true;
-    });
+    setState(() {});
     String userId;
     APIResponse<String> apiResponse =
         await _restService.getUserIdFromEmail(_token, _email);
@@ -362,9 +322,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     } else {
       userId = apiResponse.data;
     }
-    setState(() {
-      _gettingUserId = false;
-    });
+    setState(() {});
     if (userId != null) {
       _makeUserAdmin(userId, _email);
     } else {
@@ -374,10 +332,6 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _makeUserAdmin(String _userId, String _email) async {
-    setState(() {
-      _makinguseradmin = true;
-    });
-    UserModel userAdminData;
     APIResponse<UserModel> apiResponse =
         await _restService.makeUserAdmin(_token, _userId, _building);
     if (apiResponse.error) {
@@ -386,11 +340,7 @@ class _BuildingManagerState extends State<BuildingManager> {
       SnackBarError.showErrorSnackBar(
           _email + " is now admin of building: " + _building.name,
           _scaffoldKey);
-      userAdminData = apiResponse.data;
     }
-    setState(() {
-      _makinguseradmin = false;
-    });
   }
 
   void _addBeacon() async {
@@ -546,28 +496,28 @@ class _BuildingManagerState extends State<BuildingManager> {
                 visible: _visibleIndex == 1,
                 child: RefreshIndicator(
                   onRefresh: () => _updateQuestions(),
-                    child: Container(
-                      child: ListView.builder(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        itemCount: _questionsRealList.length,
-                        itemBuilder: (_, index) => ListButton(
-                          onTap: () => _questionMenu(_questionsRealList[index]),
-                          child: Text( 
-                            _questionsRealList[index].value,
-                            style: TextStyle(
+                  child: Container(
+                    child: ListView.builder(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      itemCount: _questionsRealList.length,
+                      itemBuilder: (_, index) => ListButton(
+                        onTap: () => _questionMenu(_questionsRealList[index]),
+                        child: Text(
+                          _questionsRealList[index].value,
+                          style: TextStyle(
                             color: (_questionsRealList.any((question) =>
                                     _questionsRealList[index].isActive == false)
                                 ? Colors.red[800]
                                 : Colors.green[800]),
-                              fontSize: 24,
-                            ),
+                            fontSize: 24,
                           ),
                         ),
                       ),
                     ),
+                  ),
                 ),
               ),
               Visibility(

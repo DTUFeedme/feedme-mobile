@@ -1,5 +1,4 @@
 import 'package:climify/models/api_response.dart';
-import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/questionStatistics.dart';
@@ -32,8 +31,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   RoomModel _room;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<BuildingListState> _buildingListKey =
-      GlobalKey<BuildingListState>();
-  GlobalKey<BuildingListState> _feedbackListKey =
       GlobalKey<BuildingListState>();
   BluetoothServices _bluetooth = BluetoothServices();
   RestService _restService = RestService();

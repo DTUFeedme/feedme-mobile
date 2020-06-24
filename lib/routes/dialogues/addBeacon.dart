@@ -1,14 +1,11 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
-import 'package:climify/models/roomModel.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
-import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
-import 'package:climify/routes/userRoutes/buildingList.dart';
 
 class AddBeacon {
   String token;
@@ -55,12 +52,6 @@ class AddBeacon {
         }
 
         bool submitEnabled = list.contains(true) ? true : false;
-
-        void updateSelectedBeaconListRemove(int index) async {
-          setState(() {
-            list[index] = false;
-          });
-        }
 
         void updateSelectedBeaconList(int index) async {
           setState(() {

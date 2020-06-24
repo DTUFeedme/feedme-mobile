@@ -116,8 +116,6 @@ class RestService {
       print(data.statusCode);
       if (data.statusCode == 200) {
         final jsonData = json.decode(data.body);
-        final jsonId = jsonData['id'];
-        final jsonUser = jsonData['user'];
         final jsonRoom = jsonData['room'];
         final jsonAnswer = jsonData['answer'];
         final jsonQuestion = jsonData['question'];
