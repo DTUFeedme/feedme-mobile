@@ -18,17 +18,6 @@ class BeaconMenu {
 
   RestService _restService = RestService();
 
-  Future<void> _deleteBeacon() async {
-    APIResponse<String> deleteResponse =
-        await _restService.deleteBeacon(token, beacon.id, building);
-    if (!deleteResponse.error) {
-      SnackBarError.showErrorSnackBar("Beacon ${beacon.name} deleted from  ${building.name}", scaffoldKey);
-    } else {
-      SnackBarError.showErrorSnackBar(deleteResponse.errorMessage, scaffoldKey);
-    }
-    return;
-  }
-
   BeaconMenu({
     this.beacon,
     this.token,
@@ -40,6 +29,20 @@ class BeaconMenu {
   }) {
     beaconMenuDialog = StatefulBuilder(
       builder: (context, setState) {
+        Future<void> _deleteBeacon() async {
+          APIResponse<String> deleteResponse =
+              await _restService.deleteBeacon(token, beacon.id, building);
+          if (!deleteResponse.error) {
+            SnackBarError.showErrorSnackBar(
+                "Beacon ${beacon.name} deleted from  ${building.name}",
+                scaffoldKey);
+          } else {
+            SnackBarError.showErrorSnackBar(
+                deleteResponse.errorMessage, scaffoldKey);
+          }
+          return;
+        }
+
         return SimpleDialog(
           title: Text("${beacon.name}"),
           children: <Widget>[
