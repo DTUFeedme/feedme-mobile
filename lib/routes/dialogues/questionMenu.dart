@@ -15,28 +15,6 @@ class QuestionMenu {
 
   RestService _restService = RestService();
 
-  Future<void> _makeQuestionInactive() async {
-    APIResponse<String> deleteResponse =
-        await _restService.makeQuestionInactive(token, question.id, false);
-    if (!deleteResponse.error) {
-      SnackBarError.showErrorSnackBar("Question ${question.value} set inactive", scaffoldKey);
-    } else {
-      SnackBarError.showErrorSnackBar(deleteResponse.errorMessage, scaffoldKey);
-    }
-    return;
-  }
-
-    Future<void> _makeQuestionActive() async {
-    APIResponse<String> activeResponse =
-        await _restService.makeQuestionInactive(token, question.id, true);
-    if (!activeResponse.error) {
-      SnackBarError.showErrorSnackBar("Question ${question.value} set active", scaffoldKey);
-    } else {
-      SnackBarError.showErrorSnackBar(activeResponse.errorMessage, scaffoldKey);
-    }
-    return;
-  }
-
   QuestionMenu({
     this.question,
     this.token,
@@ -47,11 +25,37 @@ class QuestionMenu {
   }) {
     questionMenuDialog = StatefulBuilder(
       builder: (context, setState) {
+        Future<void> _makeQuestionInactive() async {
+          APIResponse<String> deleteResponse = await _restService
+              .makeQuestionInactive(token, question.id, false);
+          if (!deleteResponse.error) {
+            SnackBarError.showErrorSnackBar(
+                "Question ${question.value} set inactive", scaffoldKey);
+          } else {
+            SnackBarError.showErrorSnackBar(
+                deleteResponse.errorMessage, scaffoldKey);
+          }
+          return;
+        }
+
+        Future<void> _makeQuestionActive() async {
+          APIResponse<String> activeResponse =
+              await _restService.makeQuestionInactive(token, question.id, true);
+          if (!activeResponse.error) {
+            SnackBarError.showErrorSnackBar(
+                "Question ${question.value} set active", scaffoldKey);
+          } else {
+            SnackBarError.showErrorSnackBar(
+                activeResponse.errorMessage, scaffoldKey);
+          }
+          return;
+        }
+
         return SimpleDialog(
           title: Text("${question.value}"),
           children: <Widget>[
             getCurrentlyConfirming() == "activequestion"
-                ? RaisedButton( 
+                ? RaisedButton(
                     color: Colors.red,
                     child: Text("Confirm"),
                     onPressed: () async {
@@ -67,7 +71,7 @@ class QuestionMenu {
                     },
                   ),
             getCurrentlyConfirming() == "inactivequestion"
-                ? RaisedButton( 
+                ? RaisedButton(
                     color: Colors.red,
                     child: Text("Confirm"),
                     onPressed: () async {
