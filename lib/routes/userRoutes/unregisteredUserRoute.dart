@@ -98,10 +98,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
   Future<void> _getActiveQuestions() async {
     RoomModel room;
-    BluetoothServices bluetooth = BluetoothServices();
 
     APIResponse<RoomModel> apiResponseRoom =
-        await bluetooth.getRoomFromBuilding(_building, _token);
+        await _bluetooth.getRoomFromBuilding(_building, _token);
     if (apiResponseRoom.error) {
       SnackBarError.showErrorSnackBar(
         apiResponseRoom.errorMessage,
