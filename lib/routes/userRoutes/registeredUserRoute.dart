@@ -33,8 +33,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<BuildingListState> _buildingListKey =
       GlobalKey<BuildingListState>();
-  GlobalKey<BuildingListState> _feedbackListKey =
-      GlobalKey<BuildingListState>();
   BluetoothServices _bluetooth = BluetoothServices();
   RestService _restService = RestService();
   String _token;

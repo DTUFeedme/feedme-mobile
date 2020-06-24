@@ -13,9 +13,6 @@ class FeedbackWidget extends StatefulWidget {
   final RoomModel room;
   final String token;
 
-  //final String room;
-  //final Function(FeedbackQuestion question) returnFeedback;
-
   const FeedbackWidget({
     Key key,
     @required this.token, this.question, this.room,
@@ -45,8 +42,6 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
       } else {
         print(status.errorMessage);
       }
-
-      //widget.returnFeedback(widget.question);
       Navigator.pop(context);
     }
   }
