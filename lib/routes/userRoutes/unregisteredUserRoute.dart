@@ -111,8 +111,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
     room = apiResponseRoom.data;
 
-    //room = RoomModel("5ecce5fecd42d414a535e4b9", "Living Room");
-
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, _token);
     if (apiResponseQuestions.error) {

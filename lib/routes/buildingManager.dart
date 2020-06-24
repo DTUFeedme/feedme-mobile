@@ -35,6 +35,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   RestService _restService = RestService();
 
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  //GlobalKey<State> _dialogKey = GlobalKey<State>();
   BuildingModel _building = BuildingModel('', '', []);
   List<FeedbackQuestion> _questionsRealList = [];
   List<FeedbackQuestion> _questions = [];
