@@ -48,7 +48,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     _setupState();
   }
 
-  Future<void> _setupState() async {
+  Future<void> _setupState({
+    bool forceBuildingRescan = false,
+  }) async {
     if (_loadingState) return;
 
     await Future.delayed(Duration.zero);
@@ -64,17 +66,23 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       _scaffoldKey,
       _token,
     );
-    await Future.delayed(Duration(milliseconds: 500));
-    var _scanResults = await _scanHelper.scanBuildingAndRoom();
-    setState(() {
-      _room = _scanResults.room;
-      _questions = _scanResults.questions;
-    });
+    // await Future.delayed(Duration(milliseconds: 500));
+    await _scanForRoom(forceBuildingRescan);
     if (_room != null) _getAndSetRoomFeedbackStats("week");
     setState(() {
       _loadingState = false;
     });
     _setSubtitle();
+  }
+
+  Future<void> _scanForRoom(bool forceBuildingRescan) async {
+    var _scanResults = await _scanHelper.scanBuildingAndRoom(
+        resetBuilding: forceBuildingRescan);
+    if (!mounted) return;
+    setState(() {
+      _room = _scanResults.room;
+      _questions = _scanResults.questions;
+    });
   }
 
   Future<void> _getActiveQuestions() async {
@@ -173,6 +181,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       appBar: AppBar(
         title: InkWell(
           onTap: () => _setupState(),
+          onLongPress: () => _setupState(forceBuildingRescan: true),
           child: Row(
             children: [
               Expanded(

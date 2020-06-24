@@ -8,6 +8,7 @@ import 'package:climify/models/signalMap.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:tuple/tuple.dart';
 
 class BluetoothServices {
   final FlutterBlue flutterBlue = FlutterBlue.instance;
@@ -55,11 +56,12 @@ class BluetoothServices {
     return finalResults;
   }
 
-  Future<APIResponse<String>> getBuildingIdFromScan(
+  Future<APIResponse<Tuple2<BuildingModel, RoomModel>>>
+      getBuildingAndRoomFromScan(
     String token,
   ) async {
     if (!await isOn) {
-      return APIResponse<String>(
+      return APIResponse<Tuple2<BuildingModel, RoomModel>>(
           error: true, errorMessage: "Bluetooth is not on");
     }
 
@@ -69,7 +71,7 @@ class BluetoothServices {
     if (!allBeaconsResponse.error) {
       List<Beacon> allBeacons = allBeaconsResponse.data;
       Map<String, int> scannedBuildings = {};
-      List<ScanResult> scanResults = await scanForDevices(1750);
+      List<ScanResult> scanResults = await scanForDevices(2000);
       scanResults.forEach((result) {
         String beaconName = getBeaconName(result);
         List<Beacon> matchingBeacons = allBeacons
@@ -92,21 +94,39 @@ class BluetoothServices {
         }
       });
       if (buildingIdMostScans != "") {
-        return APIResponse<String>(data: buildingIdMostScans);
+        APIResponse<BuildingModel> buildingResponse =
+            await restService.getBuilding(token, buildingIdMostScans);
+        if (!buildingResponse.error) {
+          BuildingModel building = buildingResponse.data;
+          APIResponse<RoomModel> roomResponse = await getRoomFromBuilding(
+            building,
+            token,
+            scanResults: scanResults,
+          );
+          if(!roomResponse.error){
+            return APIResponse<Tuple2<BuildingModel, RoomModel>>(data: Tuple2(building, roomResponse.data));
+          } else {
+            return APIResponse<Tuple2<BuildingModel, RoomModel>>(error: true, errorMessage: roomResponse.errorMessage);
+          }
+        } else {
+          return APIResponse<Tuple2<BuildingModel, RoomModel>>(
+              error: true, errorMessage: buildingResponse.errorMessage);
+        }
       } else {
-        return APIResponse<String>(
+        return APIResponse<Tuple2<BuildingModel, RoomModel>>(
             error: true, errorMessage: "Failed getting building based on scan");
       }
     } else {
-      return APIResponse<String>(
+      return APIResponse<Tuple2<BuildingModel, RoomModel>>(
           error: true, errorMessage: "Failed getting beacons from database");
     }
   }
 
   Future<APIResponse<RoomModel>> getRoomFromBuilding(
     BuildingModel building,
-    String token,
-  ) async {
+    String token, {
+    List<ScanResult> scanResults,
+  }) async {
     RestService restService = RestService();
     SignalMap signalMap = SignalMap(building.id);
     List<Beacon> beacons = [];
@@ -147,7 +167,9 @@ class BluetoothServices {
     // scanForDevices(1900).then((results) => scanResults.addAll(results));
     // await Future.delayed(Duration(milliseconds: 2000));
 
-    List<ScanResult> scanResults = await scanForDevices(2000);
+    if (scanResults == null) {
+      scanResults = await scanForDevices(2000);
+    }
 
     scanResults.forEach((result) {
       String beaconName = getBeaconName(result);
@@ -189,9 +211,4 @@ class BluetoothServices {
   }
 
   int getRSSI(ScanResult scanResult) => scanResult.rssi;
-
-  String getBeaconID(ScanResult scanResult) {
-    DeviceIdentifier deviceIdentifier = scanResult.device.id;
-    return deviceIdentifier.toString();
-  }
 }

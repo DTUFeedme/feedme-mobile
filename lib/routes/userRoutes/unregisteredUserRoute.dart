@@ -53,7 +53,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     }
   }
 
-  Future<void> _setupState() async {
+  Future<void> _setupState({
+    bool forceBuildingRescan = false,
+  }) async {
     String token = await _sharedPrefsHelper.getUnauthorizedUserToken();
     setState(() {
       _token = token;
@@ -73,13 +75,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       _scaffoldKey,
       _token,
     );
-    var _scanResults = await _scanHelper.scanBuildingAndRoom();
-    if(!mounted) return;
-    setState(() {
-      _building = _scanResults.building;
-      _room = _scanResults.room;
-      _questions = _scanResults.questions;
-    });
+    await _scanForRoom(forceBuildingRescan);
     setState(() {
       _loadingState = false;
     });
@@ -89,12 +85,22 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     Provider.of<GlobalState>(context).updateBuilding(_building);
   }
 
+  Future<void> _scanForRoom(bool forceBuildingRescan) async {
+    var _scanResults = await _scanHelper.scanBuildingAndRoom(
+        resetBuilding: forceBuildingRescan);
+    if (!mounted) return;
+    setState(() {
+      _building = _scanResults.building;
+      _room = _scanResults.room;
+      _questions = _scanResults.questions;
+    });
+  }
+
   Future<void> _getActiveQuestions() async {
     RoomModel room;
-    BluetoothServices bluetooth = BluetoothServices();
 
     APIResponse<RoomModel> apiResponseRoom =
-        await bluetooth.getRoomFromBuilding(_building, _token);
+        await _bluetooth.getRoomFromBuilding(_building, _token);
     if (apiResponseRoom.error) {
       SnackBarError.showErrorSnackBar(
         apiResponseRoom.errorMessage,
@@ -160,6 +166,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       appBar: AppBar(
         title: InkWell(
           onTap: () => _setupState(),
+          onLongPress: () => _setupState(forceBuildingRescan: true),
           child: Row(
             children: [
               Expanded(
