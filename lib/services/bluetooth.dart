@@ -211,9 +211,4 @@ class BluetoothServices {
   }
 
   int getRSSI(ScanResult scanResult) => scanResult.rssi;
-
-  String getBeaconID(ScanResult scanResult) {
-    DeviceIdentifier deviceIdentifier = scanResult.device.id;
-    return deviceIdentifier.toString();
-  }
 }
