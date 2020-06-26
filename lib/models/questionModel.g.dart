@@ -8,9 +8,7 @@ part of 'questionModel.dart';
 
 Question _$QuestionFromJson(Map<String, dynamic> json) {
   return Question(
-    (json['rooms'] as List)
-        ?.map((e) => e == null ? null : RoomModel.fromJson(e))
-        ?.toList(),
+    (json['rooms'] as List)?.map((e) => e as String)?.toList(),
     json['value'] as String,
     (json['answerOptions'] as List)
         ?.map((e) => e == null ? null : AnswerOption.fromJson(e))
@@ -19,7 +17,7 @@ Question _$QuestionFromJson(Map<String, dynamic> json) {
 }
 
 Map<String, dynamic> _$QuestionToJson(Question instance) => <String, dynamic>{
-      'rooms': instance.rooms?.map((e) => e?.toJson())?.toList(),
+      'rooms': instance.rooms,
       'value': instance.value,
       'answerOptions':
           instance.answerOptions?.map((e) => e?.toJson())?.toList(),

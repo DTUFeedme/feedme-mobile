@@ -1,17 +1,24 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/services/rest_service.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPrefsHelper {
   final String tokenKey = "unauthorizedToken";
   final String startOnLogin = "alreadyUser";
 
+  final BuildContext context;
+  final RestService restService;
+  const SharedPrefsHelper(
+    this.context,
+    this.restService,
+  );
+
   Future<String> getUnauthorizedUserToken() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String token = sharedPreferences.getString(tokenKey);
     if (token == null) {
-      RestService restService = RestService();
       APIResponse<UserModel> newUserAPIResponse =
           await restService.createUnauthorizedUser();
       if (!newUserAPIResponse.error) {

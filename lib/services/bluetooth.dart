@@ -7,10 +7,15 @@ import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:tuple/tuple.dart';
 
 class BluetoothServices {
+  final BuildContext context;
+  
+  BluetoothServices(this.context);
+
   final FlutterBlue flutterBlue = FlutterBlue.instance;
   bool _gettingRoom = false;
 
@@ -65,7 +70,7 @@ class BluetoothServices {
           error: true, errorMessage: "Bluetooth is not on");
     }
 
-    RestService restService = RestService();
+    RestService restService = RestService(context);
     APIResponse<List<Beacon>> allBeaconsResponse =
         await restService.getAllBeacons(token);
     if (!allBeaconsResponse.error) {
@@ -127,7 +132,7 @@ class BluetoothServices {
     String token, {
     List<ScanResult> scanResults,
   }) async {
-    RestService restService = RestService();
+    RestService restService = RestService(context);
     SignalMap signalMap = SignalMap(building.id);
     List<Beacon> beacons = [];
 

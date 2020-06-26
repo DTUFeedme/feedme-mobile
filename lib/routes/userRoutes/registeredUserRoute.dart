@@ -32,19 +32,29 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<BuildingListState> _buildingListKey =
       GlobalKey<BuildingListState>();
-  BluetoothServices _bluetooth = BluetoothServices();
-  RestService _restService = RestService();
+  BluetoothServices _bluetooth;
+  RestService _restService;
   String _token;
   String _t;
   List<QuestionStatisticsModel> _roomQuestionStatistics = [];
   TextEditingController _buildingNameTextController = TextEditingController();
   List<FeedbackQuestion> _questions = [];
   ScanHelper _scanHelper;
+  Future<void> _gettingRoom = Future.delayed(Duration.zero);
 
   @override
   void initState() {
     super.initState();
+    _restService = RestService(context);
+    _bluetooth = BluetoothServices(context);
     _setupState();
+  }
+
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
   }
 
   Future<void> _setupState({
@@ -62,11 +72,13 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
     }
     _scanHelper = ScanHelper(
-      _scaffoldKey,
-      _token,
+      context,
+      scaffoldKey: _scaffoldKey,
+      token: _token,
     );
     // await Future.delayed(Duration(milliseconds: 500));
-    await _scanForRoom(forceBuildingRescan);
+    _gettingRoom = _scanForRoom(forceBuildingRescan);
+    await _gettingRoom;
     if (_room != null) _getAndSetRoomFeedbackStats("week");
     setState(() {
       _loadingState = false;
@@ -77,7 +89,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   Future<void> _scanForRoom(bool forceBuildingRescan) async {
     var _scanResults = await _scanHelper.scanBuildingAndRoom(
         resetBuilding: forceBuildingRescan);
-    if (!mounted) return;
     setState(() {
       _room = _scanResults.room;
       _questions = _scanResults.questions;
@@ -156,8 +167,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     await showDialogModified<bool>(
       barrierColor: Colors.black12,
       context: context,
-      builder: (context) {
+      builder: (_) {
         return AddBuilding(
+          context,
           token: _token,
           textEditingController: _buildingNameTextController,
           scaffoldKey: _scaffoldKey,
@@ -171,6 +183,21 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
         _buildingListKey.currentState.getBuildings();
       }
     });
+  }
+
+  DateTime currentBackPressTime;
+
+  Future<bool> onWillPop() {
+    DateTime now = DateTime.now();
+    if (currentBackPressTime == null ||
+        now.difference(currentBackPressTime) > Duration(milliseconds: 1500)) {
+      currentBackPressTime = now;
+      SnackBarError.showErrorSnackBar(
+          "Exit application by pressing the back button again", _scaffoldKey,
+          duration: Duration(milliseconds: 1500));
+      return Future.value(false);
+    }
+    return Future.value(true);
   }
 
   @override
@@ -209,99 +236,103 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
           ),
         ),
       ),
-      body: Center(
-        child: Container(
-          child: Stack(
-            children: [
-              Visibility(
-                visible: _visibleIndex == 0,
-                child: Container(
-                  child: Column(
-                    children: <Widget>[
-                      Expanded(
-                        child: Container(
-                          child: _questions != null && _questions.isNotEmpty
-                              ? Container(
-                                  child: RefreshIndicator(
-                                    onRefresh: () => _getActiveQuestions(),
-                                    child: Container(
-                                      child: ListView.builder(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        itemCount: _questions.length,
-                                        itemBuilder: (context, index) =>
-                                            ListButton(
-                                          onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  FeedbackWidget(
-                                                      token: _token,
-                                                      question:
-                                                          _questions[index],
-                                                      room: _room),
-                                            ),
+      body: WillPopScope(
+        onWillPop: onWillPop,
+        child: Center(
+          child: Container(
+            child: Stack(
+              children: [
+                Visibility(
+                  visible: _visibleIndex == 0,
+                  child: Container(
+                    child: Column(
+                      children: <Widget>[
+                        Expanded(
+                          child: Container(
+                            child: _questions != null && _questions.isNotEmpty
+                                ? Container(
+                                    child: RefreshIndicator(
+                                      onRefresh: () => _getActiveQuestions(),
+                                      child: Container(
+                                        child: ListView.builder(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
                                           ),
-                                          child: Text(
-                                            _questions[index].value,
-                                            style: TextStyle(
-                                              fontSize: 18,
+                                          itemCount: _questions.length,
+                                          itemBuilder: (context, index) =>
+                                              ListButton(
+                                            onTap: () => Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    FeedbackWidget(
+                                                        token: _token,
+                                                        question:
+                                                            _questions[index],
+                                                        room: _room),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              _questions[index].value,
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                )
-                              : Container(),
+                                  )
+                                : Container(),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Visibility(
-                visible: _visibleIndex == 1,
-                child: Container(
-                  child: RefreshIndicator(
-                    onRefresh: () async {
-                      if (_room != null)
-                        await _getAndSetRoomFeedbackStats("week");
-                      await Future.delayed(Duration(milliseconds: 125));
-                      _changeWindow(1);
-                      return;
-                    },
-                    child: ViewRoomFeedback(
-                      questions: _roomQuestionStatistics,
-                      dateFilter: _t,
-                      refreshQuestions: _getAndSetRoomFeedbackStats,
+                      ],
                     ),
                   ),
                 ),
-              ),
-              Visibility(
-                visible: _visibleIndex == 2,
-                child: Container(
-                  child: ViewAnsweredQuestionsWidget(
-                    scaffoldKey: _scaffoldKey,
-                    token: _token,
-                    user: "me",
+                Visibility(
+                  visible: _visibleIndex == 1,
+                  child: Container(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        if (_room != null)
+                          await _getAndSetRoomFeedbackStats("week");
+                        await Future.delayed(Duration(milliseconds: 125));
+                        _changeWindow(1);
+                        return;
+                      },
+                      child: ViewRoomFeedback(
+                        questions: _roomQuestionStatistics,
+                        dateFilter: _t,
+                        refreshQuestions: _getAndSetRoomFeedbackStats,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              Visibility(
-                // maintainState: true,
-                visible: _visibleIndex == 3,
-                child: Container(
-                  child: BuildingList(
-                    scaffoldKey: _scaffoldKey,
-                    key: _buildingListKey,
+                Visibility(
+                  visible: _visibleIndex == 2,
+                  child: Container(
+                    child: ViewAnsweredQuestionsWidget(
+                      scaffoldKey: _scaffoldKey,
+                      token: _token,
+                      user: "me",
+                    ),
                   ),
                 ),
-              ),
-            ],
+                Visibility(
+                  // maintainState: true,
+                  visible: _visibleIndex == 3,
+                  child: Container(
+                    child: BuildingList(
+                      scaffoldKey: _scaffoldKey,
+                      key: _buildingListKey,
+                      gettingRoom: _gettingRoom,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

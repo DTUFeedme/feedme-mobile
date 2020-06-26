@@ -31,7 +31,7 @@ class ViewAnsweredQuestionsWidgetState
     extends State<ViewAnsweredQuestionsWidget> {
   GlobalKey<ScaffoldState> _scaffoldKey;
   String _token;
-  RestService _restService = RestService();
+  RestService _restService;
   List<QuestionAndFeedback> _feedbackList = <QuestionAndFeedback>[];
   List<QuestionAndFeedback> _tempFeedbackList = <QuestionAndFeedback>[];
   String _t = "week";
@@ -40,6 +40,7 @@ class ViewAnsweredQuestionsWidgetState
   @override
   void initState() {
     super.initState();
+    _restService = RestService(context);
     _scaffoldKey = widget.scaffoldKey;
     _token = widget.token;
     _user = widget.user;

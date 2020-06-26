@@ -12,10 +12,12 @@ import 'package:tuple/tuple.dart';
 
 class BuildingList extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
+  final Future gettingRoom;
 
   const BuildingList({
     Key key,
     @required this.scaffoldKey,
+    @required this.gettingRoom,
   }) : super(key: key);
 
   @override
@@ -24,31 +26,37 @@ class BuildingList extends StatefulWidget {
 
 class BuildingListState extends State<BuildingList> {
   GlobalKey<ScaffoldState> _scaffoldKey;
-  BluetoothServices _bluetooth = BluetoothServices();
-  RestService _restService = RestService();
-  List<BuildingModel> _buildings = [];
+  BluetoothServices _bluetooth;
+  RestService _restService;
+  List<BuildingModel> _buildings;
   String buildingId = "";
 
   @override
   void initState() {
     super.initState();
+    _restService = RestService(context);
+    _bluetooth = BluetoothServices(context);
     _scaffoldKey = widget.scaffoldKey;
     getBuildings();
-    _getBLEDevicesList();
+  }
+
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
   }
 
   Future<void> getBuildings() async {
-    await Future.delayed(Duration(milliseconds: 250));
-    if (!mounted) return;
+    await Future.delayed(Duration.zero);
+    await widget.gettingRoom;
     String token = Provider.of<GlobalState>(context).globalState['token'];
     APIResponse<List<BuildingModel>> buildingsResponse =
         await _restService.getBuildingsWithAdminRights(token);
     if (buildingsResponse.error) return;
-    if (mounted) {
-      setState(() {
-        _buildings = buildingsResponse.data;
-      });
-    }
+    setState(() {
+      _buildings = buildingsResponse.data;
+    });
   }
 
   void _focusBuilding(BuildingModel building) {
@@ -56,38 +64,6 @@ class BuildingListState extends State<BuildingList> {
     Navigator.of(context)
         .pushNamed("buildingManager")
         .then((value) => getBuildings());
-  }
-
-  void _getBLEDevicesList() async {
-    await Future.delayed(Duration(milliseconds: 250));
-    if (!mounted) return;
-    if (!await _bluetooth.isOn) {
-      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
-      return;
-    }
-    _scan();
-  }
-
-  void _scan() async {
-    if (await _bluetooth.isOn == false) return;
-    List<Tuple2<String, String>> beaconList = [];
-    List<ScanResult> scanResults = await _bluetooth.scanForDevices(4000);
-    scanResults.forEach((result) {
-      if (mounted) setState(() {});
-      String beaconName = _bluetooth.getBeaconName(result);
-      List<String> serviceUuids = result.advertisementData.serviceUuids;
-      String beaconId = serviceUuids.isNotEmpty ? serviceUuids[0] : "";
-      RegExp regex = RegExp(r'^[a-zA-Z0-9]{4,6}$');
-      if (beaconName != "" && regex.hasMatch(beaconName)) {
-        Tuple2<String, String> item =
-            new Tuple2<String, String>(beaconName, beaconId);
-        beaconList.add(item);
-      }
-    });
-    if (mounted) {
-      setState(() {
-      });
-    }
   }
 
   void _showDeleteBuildingDialog(BuildingModel building) {
@@ -135,23 +111,28 @@ class BuildingListState extends State<BuildingList> {
       child: RefreshIndicator(
         onRefresh: () => getBuildings(),
         child: Container(
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 4,
-            ),
-            itemCount: _buildings.length,
-            itemBuilder: (_, index) => ListButton(
-              onTap: () => _focusBuilding(_buildings[index]),
-              onLongPress: () => _showDeleteBuildingDialog(_buildings[index]),
-              child: Text(
-                _buildings[index].name,
-                style: TextStyle(
-                  fontSize: 24,
+          child: _buildings == null
+              ? CircularProgressIndicator(
+                  value: null,
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  itemCount: _buildings.length,
+                  itemBuilder: (_, index) => ListButton(
+                    onTap: () => _focusBuilding(_buildings[index]),
+                    onLongPress: () =>
+                        _showDeleteBuildingDialog(_buildings[index]),
+                    child: Text(
+                      _buildings[index].name,
+                      style: TextStyle(
+                        fontSize: 24,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
         ),
       ),
     );

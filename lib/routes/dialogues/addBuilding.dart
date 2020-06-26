@@ -6,19 +6,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class AddBuilding {
-  String token;
-  TextEditingController textEditingController;
-  BuildingModel building;
-  GlobalKey<ScaffoldState> scaffoldKey;
+  final BuildContext context;
+  final String token;
+  final TextEditingController textEditingController;
+  final GlobalKey<ScaffoldState> scaffoldKey;
   StatefulBuilder addBuildingDialog;
 
-  RestService _restService = RestService();
+  RestService _restService;
 
-  AddBuilding({
+  AddBuilding(
+    this.context, {
     this.token,
     this.textEditingController,
     this.scaffoldKey,
   }) {
+    _restService = RestService(context);
     addBuildingDialog = StatefulBuilder(
       builder: (context, setState) {
         void _submitBuilding() async {

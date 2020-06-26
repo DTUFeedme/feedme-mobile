@@ -2,34 +2,40 @@ import 'package:climify/models/api_response.dart';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/services/rest_service.dart';
-import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 
 class AddBeacon {
-  String token;
-  BuildingModel building;
-  List<Tuple2<String, String>> beaconList;
-  List<Beacon> alreadyExistingBeacons;
-  GlobalKey<ScaffoldState> scaffoldKey;
+  final BuildContext context;
+  final String token;
+  final BuildingModel building;
+  final List<Tuple2<String, String>> beaconList;
+  final List<Beacon> alreadyExistingBeacons;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final void Function(int) setBeaconsAdded;
   StatefulBuilder addBeaconDialog;
-  TextEditingController editingController;
-  RestService _restService = RestService();
 
-  AddBeacon({
+  RestService _restService;
+
+  AddBeacon(
+    this.context, {
     this.token,
     this.beaconList,
     this.alreadyExistingBeacons,
     this.building,
     this.scaffoldKey,
+    this.setBeaconsAdded,
   }) {
+    _restService = RestService(context);
     List<bool> list = [];
     for (int i = 0; i < beaconList.length; i++) {
       list.add(false);
     }
+    int successFullyAddedBeacons = 0;
     addBeaconDialog = StatefulBuilder(
       builder: (context, setState) {
+        setState(() {});
         APIResponse<bool> apiResponse;
         void _submitBeacon() async {
           for (int i = 0; i < beaconList.length; i++) {
@@ -39,19 +45,16 @@ class AddBeacon {
                 Tuple2(beaconList[i].item1, beaconList[i].item2),
                 building,
               );
+              if (apiResponse.error == false) {
+                successFullyAddedBeacons = successFullyAddedBeacons + 1;
+              }
             }
           }
-          if (apiResponse.error == false) {
-            SnackBarError.showErrorSnackBar("Beacon added", scaffoldKey);
-            Navigator.of(context).pop(true);
-          } else {
-            SnackBarError.showErrorSnackBar(
-                apiResponse.errorMessage, scaffoldKey);
-            Navigator.of(context).pop(false);
-          }
+          setBeaconsAdded(successFullyAddedBeacons);
+          Navigator.of(context).pop();
         }
 
-        bool submitEnabled = list.contains(true) ? true : false;
+        bool submitEnabled = list.contains(true);
 
         void updateSelectedBeaconList(int index) async {
           setState(() {

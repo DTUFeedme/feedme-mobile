@@ -1,27 +1,129 @@
 import 'dart:convert';
+import 'package:climify/models/baseModel.dart';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
+import 'package:climify/models/globalState.dart';
 import 'package:climify/models/questionAndFeedback.dart';
 import 'package:climify/models/questionModel.dart';
 import 'package:climify/models/questionStatistics.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
+import 'package:climify/services/bluetooth.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:http/http.dart';
+import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
 
+enum RequestType {
+  GET,
+  DELETE,
+  PATCH,
+  POST,
+}
+
 class RestService {
+  final BuildContext context;
+  BluetoothServices bluetooth;
+
+  RestService(
+    this.context,
+  ) {
+    bluetooth = BluetoothServices(context);
+  }
+
+  static Map<String, String> headers(
+    BuildContext context, {
+    bool noToken = false,
+    Map<String, String> additionalParameters = const {},
+  }) {
+    String token = "";
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+    if (!noToken) {
+      try {
+        token = Provider.of<GlobalState>(context).globalState['token'];
+        headers['x-auth-token'] = token;
+      } catch (_) {}
+    }
+    headers.addAll(additionalParameters);
+    return (headers);
+  }
+
+  static Future<APIResponse<BaseModel>> requestServer(
+    BuildContext context, {
+    Map<String, dynamic> body,
+    RequestType requestType,
+    String route,
+    Map<String, dynamic> additionalParameters,
+  }) async {
+    Future<Response> responseData;
+
+    switch (requestType) {
+      case RequestType.GET:
+        responseData = http.get(
+          api + route,
+          headers: headers(
+            context,
+            additionalParameters: additionalParameters,
+          ),
+        );
+        break;
+      case RequestType.POST:
+        responseData = http.post(
+          api + route,
+          headers: headers(
+            context,
+            additionalParameters: additionalParameters,
+          ),
+          body: body,
+        );
+        break;
+      case RequestType.DELETE:
+        responseData = http.delete(
+          api + route,
+          headers: headers(
+            context,
+            additionalParameters: additionalParameters,
+          ),
+        );
+        break;
+      case RequestType.PATCH:
+        responseData = http.patch(
+          api + route,
+          headers: headers(
+            context,
+            additionalParameters: additionalParameters,
+          ),
+          body: body,
+        );
+        break;
+      default:
+        break;
+    }
+
+    await responseData.then((data) {
+      if (data.statusCode == 200) {
+        dynamic json = data.body;
+        BaseModel responseObject = BaseModel.fromJson(json);
+        return APIResponse<BaseModel>(data: responseObject);
+      } else {
+        return APIResponse<BaseModel>(
+            error: true, errorMessage: data.body ?? "");
+      }
+    }).catchError((_) {
+      return APIResponse<BaseModel>(
+          error: true, errorMessage: "Request failed");
+    });
+  }
+
   static const api = 'http://climify-spe.compute.dtu.dk:8080/api-dev';
-  Map<String, String> headers({String token = "", String roomId = ""}) => {
-        'Content-Type': 'application/json',
-        'x-auth-token': token,
-        'roomId': roomId,
-      };
 
   String getErrorMessage(Response response) {
     switch (response.statusCode) {
@@ -50,7 +152,13 @@ class RestService {
       url = api + '/questions/active?t=' + t;
     }
     return http
-        .get(url, headers: headers(token: token, roomId: roomId))
+        .get(
+      url,
+      headers: headers(
+        context,
+        additionalParameters: {"roomId": roomId},
+      ),
+    )
         .then((data) {
       if (data.statusCode == 200) {
         List<FeedbackQuestion> questions = [];
@@ -78,7 +186,13 @@ class RestService {
   Future<APIResponse<List<FeedbackQuestion>>> getAllQuestionsByRoom(
       String roomId, String token) {
     return http
-        .get(api + '/questions', headers: headers(token: token, roomId: roomId))
+        .get(
+      api + '/questions',
+      headers: headers(
+        context,
+        additionalParameters: {"roomId": roomId},
+      ),
+    )
         .then((data) {
       if (data.statusCode == 200) {
         List<FeedbackQuestion> questions = [];
@@ -111,7 +225,7 @@ class RestService {
       'questionId': question.id
     });
     return http
-        .post(api + '/feedback', headers: headers(token: token), body: body)
+        .post(api + '/feedback', headers: headers(context), body: body)
         .then((data) {
       print(data.statusCode);
       if (data.statusCode == 200) {
@@ -143,7 +257,8 @@ class RestService {
   Future<APIResponse<UserModel>> postUser(String email, String password) {
     final String body = json.encode({'email': email, 'password': password});
     return http
-        .post(api + '/users', headers: headers(), body: body)
+        .post(api + '/users',
+            headers: headers(context, noToken: true), body: body)
         .then((data) {
       if (data.statusCode == 200) {
         final responseBody = json.decode(data.body);
@@ -171,7 +286,7 @@ class RestService {
   Future<APIResponse<UserModel>> loginUser(String email, String password) {
     final String body = json.encode({'email': email, 'password': password});
     return http
-        .post(api + '/auth', headers: headers(), body: body)
+        .post(api + '/auth', headers: headers(context), body: body)
         .then((data) {
       if (data.statusCode == 200) {
         final responseHeaders = data.headers;
@@ -197,7 +312,7 @@ class RestService {
   Future<APIResponse<List<BuildingModel>>> getBuildingsWithAdminRights(
       String token) {
     return http
-        .get(api + '/buildings?admin=me', headers: headers(token: token))
+        .get(api + '/buildings?admin=me', headers: headers(context))
         .then((data) {
       if (data.statusCode == 200) {
         final responseBody = json.decode(data.body);
@@ -224,8 +339,7 @@ class RestService {
     BuildingModel building,
   ) {
     return http
-        .delete(api + '/buildings/' + building.id,
-            headers: headers(token: token))
+        .delete(api + '/buildings/' + building.id, headers: headers(context))
         .then((data) {
       if (data.statusCode == 200) {
         return APIResponse<String>(data: "Deleted building ${building.name}");
@@ -245,7 +359,7 @@ class RestService {
   ) {
     return http
         .get(api + '/beacons?building=' + building.id,
-            headers: headers(token: token))
+            headers: headers(context))
         .then((data) {
       if (data.statusCode == 200) {
         List<Beacon> beacons = [];
@@ -270,9 +384,7 @@ class RestService {
   Future<APIResponse<List<Beacon>>> getAllBeacons(
     String token,
   ) {
-    return http
-        .get(api + '/beacons', headers: headers(token: token))
-        .then((data) {
+    return http.get(api + '/beacons', headers: headers(context)).then((data) {
       if (data.statusCode == 200) {
         List<Beacon> beacons = [];
         final responseBody = json.decode(data.body);
@@ -297,7 +409,7 @@ class RestService {
     String buildingId,
   ) {
     return http
-        .get(api + '/buildings/' + buildingId, headers: headers(token: token))
+        .get(api + '/buildings/' + buildingId, headers: headers(context))
         .then((data) {
       if (data.statusCode == 200) {
         dynamic resultBody = json.decode(data.body);
@@ -321,7 +433,7 @@ class RestService {
       'name': buildingName,
     });
     return http
-        .post(api + '/buildings', headers: headers(token: token), body: body)
+        .post(api + '/buildings', headers: headers(context), body: body)
         .then((buildingData) {
       if (buildingData.statusCode == 200) {
         dynamic resultBody = json.decode(buildingData.body);
@@ -351,7 +463,7 @@ class RestService {
       'buildingId': building.id,
     });
     return http
-        .post(api + '/rooms', headers: headers(token: token), body: body)
+        .post(api + '/rooms', headers: headers(context), body: body)
         .then((roomData) {
       if (roomData.statusCode == 200) {
         dynamic resultBody = json.decode(roomData.body);
@@ -372,7 +484,7 @@ class RestService {
     String roomId,
   ) {
     return http
-        .delete(api + '/rooms/$roomId', headers: headers(token: token))
+        .delete(api + '/rooms/$roomId', headers: headers(context))
         .then((deleteRoomData) {
       if (deleteRoomData.statusCode == 200) {
         return APIResponse<String>(data: "Room deleted");
@@ -392,7 +504,7 @@ class RestService {
     BuildingModel building,
   ) {
     return http
-        .delete(api + '/beacons/' + beaconId, headers: headers(token: token))
+        .delete(api + '/beacons/' + beaconId, headers: headers(context))
         .then((deleteBeaconData) {
       if (deleteBeaconData.statusCode == 200) {
         return APIResponse<String>(data: "Beacon deleted");
@@ -417,8 +529,7 @@ class RestService {
       "buildingId": signalMap.buildingId
     });
     return http
-        .post(api + '/signalMaps',
-            headers: headers(token: token), body: signalBody)
+        .post(api + '/signalMaps', headers: headers(context), body: signalBody)
         .then((signalMapData) {
       if (signalMapData.statusCode == 200) {
         return APIResponse<String>(data: "Scan added");
@@ -437,8 +548,7 @@ class RestService {
     String roomId,
   ) {
     return http
-        .delete(api + '/signalMaps/room/$roomId',
-            headers: headers(token: token))
+        .delete(api + '/signalMaps/room/$roomId', headers: headers(context))
         .then((signalMapDeleteData) {
       if (signalMapDeleteData.statusCode == 200) {
         return APIResponse<String>(data: "Scans Deleted");
@@ -462,8 +572,7 @@ class RestService {
     });
     print(signalBody);
     return http
-        .post(api + '/signalMaps',
-            headers: headers(token: token), body: signalBody)
+        .post(api + '/signalMaps', headers: headers(context), body: signalBody)
         .then((data) {
       if (data.statusCode == 200) {
         dynamic responseBody = json.decode(data.body);
@@ -495,7 +604,7 @@ class RestService {
       'uuid': beacon.item2
     });
     return http
-        .post(api + '/beacons', headers: headers(token: token), body: body)
+        .post(api + '/beacons', headers: headers(context), body: body)
         .then((data) {
       if (data.statusCode == 200) {
         dynamic responseBody = json.decode(data.body);
@@ -521,13 +630,17 @@ class RestService {
     String value,
     List<String> answerOptions,
   ) {
-    final String body = json.encode(
-        {'rooms': rooms, 'value': value, 'answerOptions': answerOptions});
+    final String body = json.encode({
+      'rooms': rooms,
+      'value': value,
+      'answerOptions': answerOptions,
+    });
     return http
-        .post(api + '/questions', headers: headers(token: token), body: body)
+        .post(api + '/questions', headers: headers(context), body: body)
         .then((questionData) {
       if (questionData.statusCode == 200) {
         dynamic resultBody = json.decode(questionData.body);
+        print(resultBody);
         Question question = Question.fromJson(resultBody);
         return APIResponse<Question>(data: question);
       } else {
@@ -535,13 +648,16 @@ class RestService {
             error: true, errorMessage: questionData.body ?? "");
       }
     }).catchError((e) {
+      print(e);
       return APIResponse<Question>(
           error: true, errorMessage: "Adding question failed");
     });
   }
 
   Future<APIResponse<UserModel>> createUnauthorizedUser() {
-    return http.post(api + '/users', headers: headers()).then((data) {
+    return http
+        .post(api + '/users', headers: headers(context, noToken: true))
+        .then((data) {
       if (data.statusCode == 200) {
         final responseHeaders = data.headers;
         final token = responseHeaders['x-auth-token'];
@@ -567,7 +683,7 @@ class RestService {
       String token, String user, String t) {
     return http
         .get(api + '/feedback?user=' + user + '&t=' + t,
-            headers: headers(token: token))
+            headers: headers(context))
         .then((data) {
       if (data.statusCode == 200) {
         List<QuestionAndFeedback> feedbackList = <QuestionAndFeedback>[];
@@ -616,7 +732,7 @@ class RestService {
     } else {
       url = api + '/feedback/questionStatistics/' + q.id + '?t=' + t;
     }
-    return http.get(url, headers: headers(token: token)).then((data) {
+    return http.get(url, headers: headers(context)).then((data) {
       if (data.statusCode == 200) {
         return APIResponse<QuestionStatisticsModel>(
           data: QuestionStatisticsModel.fromJson(
@@ -642,7 +758,7 @@ class RestService {
         json.encode({'userId': userId, 'buildingId': building.id});
     return http
         .patch(api + '/users/makeBuildingAdmin',
-            headers: headers(token: token), body: body)
+            headers: headers(context), body: body)
         .then((adminData) {
       if (adminData.statusCode == 200) {
         dynamic resultBody = json.decode(adminData.body);
@@ -667,7 +783,7 @@ class RestService {
   ) {
     return http
         .get(api + '/users/getUserIdFromEmail/' + email,
-            headers: headers(token: token))
+            headers: headers(context))
         .then((userData) {
       if (userData.statusCode == 200) {
         return APIResponse<String>(data: userData.body);
@@ -689,7 +805,7 @@ class RestService {
     final String body = json.encode({'isActive': isActive});
     return http
         .patch(api + '/questions/setActive/' + questionId,
-            headers: headers(token: token), body: body)
+            headers: headers(context), body: body)
         .then((questionData) {
       if (questionData.statusCode == 200) {
         return APIResponse<String>(data: "Question set inactive");
@@ -697,9 +813,6 @@ class RestService {
         return APIResponse<String>(
             error: true, errorMessage: questionData.body);
       }
-    }).catchError((e) {
-      return APIResponse<String>(
-          error: true, errorMessage: "Failed to set question inactive");
     });
   }
 }

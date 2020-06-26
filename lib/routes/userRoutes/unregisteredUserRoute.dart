@@ -25,9 +25,9 @@ class UnregisteredUserScreen extends StatefulWidget {
 
 class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   ScanHelper _scanHelper;
-  SharedPrefsHelper _sharedPrefsHelper = SharedPrefsHelper();
-  RestService _restService = RestService();
-  BluetoothServices _bluetooth = BluetoothServices();
+  SharedPrefsHelper _sharedPrefsHelper;
+  RestService _restService;
+  BluetoothServices _bluetooth;
   String _token;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _visibleIndex = 0;
@@ -41,7 +41,17 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   @override
   void initState() {
     super.initState();
+    _restService = RestService(context);
+    _sharedPrefsHelper = SharedPrefsHelper(context, _restService);
+    _bluetooth = BluetoothServices(context);
     _checkUserStatus();
+  }
+
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
   }
 
   void _checkUserStatus() async {
@@ -64,6 +74,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     if (_loadingState) return;
 
     await Future.delayed(Duration.zero);
+
     setState(() {
       _loadingState = true;
     });
@@ -72,29 +83,29 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
     }
     _scanHelper = ScanHelper(
-      _scaffoldKey,
-      _token,
+      context,
+      scaffoldKey: _scaffoldKey,
+      token: _token,
     );
+    Provider.of<GlobalState>(context).updateAccount("", token);
+    Provider.of<GlobalState>(context).updateBuilding(_building);
     await _scanForRoom(forceBuildingRescan);
     setState(() {
       _loadingState = false;
     });
     _setSubtitle();
-
-    Provider.of<GlobalState>(context).updateAccount("", token);
-    Provider.of<GlobalState>(context).updateBuilding(_building);
   }
 
   Future<void> _scanForRoom(bool forceBuildingRescan) async {
     var _scanResults = await _scanHelper.scanBuildingAndRoom(
         resetBuilding: forceBuildingRescan);
-    if (!mounted) return;
     setState(() {
       _building = _scanResults.building;
       _room = _scanResults.room;
       _questions = _scanResults.questions;
     });
   }
+  
 
   Future<void> _getActiveQuestions() async {
     RoomModel room;
@@ -159,6 +170,21 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     });
   }
 
+  DateTime currentBackPressTime;
+
+  Future<bool> onWillPop() {
+    DateTime now = DateTime.now();
+    if (currentBackPressTime == null ||
+        now.difference(currentBackPressTime) > Duration(milliseconds: 1500)) {
+      currentBackPressTime = now;
+      SnackBarError.showErrorSnackBar(
+          "Exit application by pressing the back button again", _scaffoldKey,
+          duration: Duration(milliseconds: 1500));
+      return Future.value(false);
+    }
+    return Future.value(true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -213,71 +239,74 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
         onTap: (int index) => index == 2 ? _gotoLogin() : _changeWindow(index),
         currentIndex: _visibleIndex,
       ),
-      body: Container(
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            Visibility(
-              visible: _visibleIndex == 0,
-              child: Container(
-                child: Column(
-                  children: <Widget>[
-                    Expanded(
-                      child: Container(
-                        child: _questions != null && _questions.isNotEmpty
-                            ? Container(
-                                child: RefreshIndicator(
-                                  onRefresh: () => _getActiveQuestions(),
-                                  child: Container(
-                                    child: ListView.builder(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      itemCount: _questions.length,
-                                      itemBuilder: (_, index) => ListButton(
-                                        onTap: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  FeedbackWidget(
-                                                      token: _token,
-                                                      question:
-                                                          _questions[index],
-                                                      room: _room)),
+      body: WillPopScope(
+        onWillPop: onWillPop,
+        child: Container(
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              Visibility(
+                visible: _visibleIndex == 0,
+                child: Container(
+                  child: Column(
+                    children: <Widget>[
+                      Expanded(
+                        child: Container(
+                          child: _questions != null && _questions.isNotEmpty
+                              ? Container(
+                                  child: RefreshIndicator(
+                                    onRefresh: () => _getActiveQuestions(),
+                                    child: Container(
+                                      child: ListView.builder(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
                                         ),
-                                        child: Text(
-                                          _questions[index].value,
-                                          style: TextStyle(
-                                            fontSize: 18,
+                                        itemCount: _questions.length,
+                                        itemBuilder: (_, index) => ListButton(
+                                          onTap: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    FeedbackWidget(
+                                                        token: _token,
+                                                        question:
+                                                            _questions[index],
+                                                        room: _room)),
+                                          ),
+                                          child: Text(
+                                            _questions[index].value,
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              )
-                            : Container(),
+                                )
+                              : Container(),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Visibility(
-              maintainState: true,
-              visible: _visibleIndex == 1,
-              child: Container(
-                child: _token != null
-                    ? ViewAnsweredQuestionsWidget(
-                        scaffoldKey: _scaffoldKey,
-                        token: _token,
-                        user: "me",
-                      )
-                    : Container(),
+              Visibility(
+                maintainState: true,
+                visible: _visibleIndex == 1,
+                child: Container(
+                  child: _token != null
+                      ? ViewAnsweredQuestionsWidget(
+                          scaffoldKey: _scaffoldKey,
+                          token: _token,
+                          user: "me",
+                        )
+                      : Container(),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

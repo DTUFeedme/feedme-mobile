@@ -15,7 +15,9 @@ class FeedbackWidget extends StatefulWidget {
 
   const FeedbackWidget({
     Key key,
-    @required this.token, this.question, this.room,
+    @required this.token,
+    this.question,
+    this.room,
   }) : super(key: key);
 
   @override
@@ -24,6 +26,13 @@ class FeedbackWidget extends StatefulWidget {
 
 class _FeedbackWidgetState extends State<FeedbackWidget> {
   int _chosenOption;
+  RestService _restService;
+
+  @override
+  void initState() {
+    super.initState();
+    _restService = RestService(context);
+  }
 
   void _setChosenOption(int option) {
     setState(() {
@@ -33,9 +42,8 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
   void _sendFeedback() async {
     if (_chosenOption != null && (widget.question != null)) {
-      RestService restService = RestService();
-
-      APIResponse<bool> status = await restService.postFeedback(widget.token, widget.question, _chosenOption, widget.room);
+      APIResponse<bool> status = await _restService.postFeedback(
+          widget.token, widget.question, _chosenOption, widget.room);
 
       if (status.data == true) {
         print("Answer has been added");
@@ -48,12 +56,11 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return 
-    Scaffold(
-        appBar: AppBar(
+    return Scaffold(
+      appBar: AppBar(
         title: Text('Answer the question'),
-        ),
-        body: Container(
+      ),
+      body: Container(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.spaceAround,

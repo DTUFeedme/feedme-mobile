@@ -31,8 +31,8 @@ class BuildingManager extends StatefulWidget {
 }
 
 class _BuildingManagerState extends State<BuildingManager> {
-  BluetoothServices _bluetooth = BluetoothServices();
-  RestService _restService = RestService();
+  BluetoothServices _bluetooth;
+  RestService _restService;
 
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   //GlobalKey<State> _dialogKey = GlobalKey<State>();
@@ -53,10 +53,13 @@ class _BuildingManagerState extends State<BuildingManager> {
   final _questionNameController = TextEditingController();
   final _questionAnswerOptionsController = TextEditingController();
   List<TextEditingController> controllerList = [];
+  bool _scanningBeacons = false;
 
   @override
   void initState() {
     super.initState();
+    _bluetooth = BluetoothServices(context);
+    _restService = RestService(context);
     _setBuildingState();
   }
 
@@ -66,6 +69,13 @@ class _BuildingManagerState extends State<BuildingManager> {
     myController.dispose();
     _newRoomNameController.dispose();
     super.dispose();
+  }
+
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
   }
 
   void _setBuildingState() async {
@@ -161,8 +171,9 @@ class _BuildingManagerState extends State<BuildingManager> {
     await showDialogModified(
       barrierColor: Colors.black12,
       context: context,
-      builder: (context) {
+      builder: (_) {
         return AddQuestion(
+          context,
           token: _token,
           textEditingController: _questionNameController,
           controllerList: controllerList,
@@ -186,8 +197,9 @@ class _BuildingManagerState extends State<BuildingManager> {
     await showDialogModified<bool>(
       barrierColor: Colors.black12,
       context: context,
-      builder: (context) {
+      builder: (_) {
         return AddRoom(
+          context,
           token: _token,
           textEditingController: _newRoomNameController,
           building: _building,
@@ -220,8 +232,9 @@ class _BuildingManagerState extends State<BuildingManager> {
     await showDialogModified(
       barrierColor: Colors.black12,
       context: context,
-      builder: (context) {
+      builder: (_) {
         return ScanRoom(
+          context,
           room: room,
           token: _token,
           building: _building,
@@ -244,8 +257,9 @@ class _BuildingManagerState extends State<BuildingManager> {
     await showDialogModified(
       barrierColor: Colors.black12,
       context: context,
-      builder: (context) {
+      builder: (_) {
         return RoomMenu(
+          context,
           room: room,
           token: _token,
           building: _building,
@@ -269,8 +283,9 @@ class _BuildingManagerState extends State<BuildingManager> {
     await showDialogModified(
       barrierColor: Colors.black12,
       context: context,
-      builder: (context) {
+      builder: (_) {
         return BeaconMenu(
+          context,
           beacon: beacon,
           token: _token,
           building: _building,
@@ -293,8 +308,9 @@ class _BuildingManagerState extends State<BuildingManager> {
     await showDialogModified(
       barrierColor: Colors.black12,
       context: context,
-      builder: (context) {
+      builder: (_) {
         return QuestionMenu(
+          context,
           question: question,
           token: _token,
           scaffoldKey: _scaffoldKey,
@@ -345,13 +361,22 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _addBeacon() async {
+    if (_scanningBeacons) {
+      return;
+    }
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
       return;
     }
     if (await _bluetooth.isOn == false) return;
     List<Tuple2<String, String>> beaconList = [];
-    List<ScanResult> scanResults = await _bluetooth.scanForDevices(4000);
+    setState(() {
+      _scanningBeacons = true;
+    });
+    List<ScanResult> scanResults = await _bluetooth.scanForDevices(2500);
+    setState(() {
+      _scanningBeacons = false;
+    });
     scanResults.forEach((result) {
       setState(() {});
       String beaconName = _bluetooth.getBeaconName(result);
@@ -373,26 +398,34 @@ class _BuildingManagerState extends State<BuildingManager> {
       SnackBarError.showErrorSnackBar("No beacons found", _scaffoldKey);
       return;
     }
-    await showDialogModified<bool>(
+    int addedBeacons = 0;
+    void Function(int) setBeaconsAdded = (b) {
+      addedBeacons = b;
+    };
+    await showDialogModified(
       barrierColor: Colors.black12,
       context: context,
-      builder: (context) {
+      builder: (_) {
         return AddBeacon(
+          context,
           token: _token,
           beaconList: _beaconList,
           alreadyExistingBeacons: _beacons,
-          // textEditingController: myControllerAddBeaconName,
-          // textEditingController2: myControllerAddBeaconUUID,
           building: _building,
           scaffoldKey: _scaffoldKey,
+          setBeaconsAdded: setBeaconsAdded,
         ).dialog;
       },
-    ).then((value) {
-      setState(() {
-        // myControllerAddBeaconName.text = "";
-        // myControllerAddBeaconUUID.text = "";
-      });
-      if (value ?? false) {
+    ).then((_) {
+      if (addedBeacons == 0) {
+        SnackBarError.showErrorSnackBar("No beacons were added", _scaffoldKey);
+      } else {
+        if (addedBeacons == 1) {
+          SnackBarError.showErrorSnackBar("1 beacon was added", _scaffoldKey);
+        } else {
+          SnackBarError.showErrorSnackBar(
+              "$addedBeacons beacons were added", _scaffoldKey);
+        }
         _updateBeacon();
       }
     });
@@ -575,9 +608,14 @@ class _BuildingManagerState extends State<BuildingManager> {
       ),
       floatingActionButton: _visibleIndex != 3
           ? FloatingActionButton(
-              child: Icon(
-                Icons.add,
-              ),
+              child: _scanningBeacons
+                  ? CircularProgressIndicator(
+                      value: null,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    )
+                  : Icon(
+                      Icons.add,
+                    ),
               onPressed: () {
                 switch (_visibleIndex) {
                   case 0:

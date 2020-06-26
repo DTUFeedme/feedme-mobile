@@ -14,10 +14,10 @@ class UserLogin extends StatefulWidget {
 
 class _UserLoginState extends State<UserLogin> {
   int _visibleIndex = 0;
-  RestService _restService = RestService();
+  RestService _restService;
   bool _buttonsActive = true;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  SharedPrefsHelper _sharedPrefsHelper = SharedPrefsHelper();
+  SharedPrefsHelper _sharedPrefsHelper;
   String _titleText = "User Login";
 
   TextEditingController _emailController = TextEditingController();
@@ -25,6 +25,20 @@ class _UserLoginState extends State<UserLogin> {
   TextEditingController _newEmailController = TextEditingController();
   TextEditingController _newPasswordController = TextEditingController();
   TextEditingController _newPasswordConfirmController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _restService = RestService(context);
+    _sharedPrefsHelper = SharedPrefsHelper(context, _restService);
+  }
+
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
 
   Future<void> _authUser({bool create = false}) async {
     if (!_buttonsActive) return;
@@ -98,6 +112,21 @@ class _UserLoginState extends State<UserLogin> {
   //   _passwordController.text = "test1234";
   // }
 
+  DateTime currentBackPressTime;
+
+  Future<bool> onWillPop() {
+    DateTime now = DateTime.now();
+    if (currentBackPressTime == null ||
+        now.difference(currentBackPressTime) > Duration(milliseconds: 1500)) {
+      currentBackPressTime = now;
+      SnackBarError.showErrorSnackBar(
+          "Exit application by pressing the back button again", _scaffoldKey,
+          duration: Duration(milliseconds: 1500));
+      return Future.value(false);
+    }
+    return Future.value(true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -126,111 +155,114 @@ class _UserLoginState extends State<UserLogin> {
             index == 2 ? _gotoUnregistered() : _changeWindow(index),
         currentIndex: _visibleIndex,
       ),
-      body: Container(
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            Visibility(
-              visible: _visibleIndex == 0,
-              child: Container(
-                margin: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Column(
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          "Email:",
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
+      body: WillPopScope(
+        onWillPop: onWillPop,
+        child: Container(
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              Visibility(
+                visible: _visibleIndex == 0,
+                child: Container(
+                  margin: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            "Email:",
                           ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          "Password:",
-                        ),
-                        Expanded(
-                          child: _passwordField(
-                            controller: _passwordController,
+                          Expanded(
+                            child: TextField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    RaisedButton(
-                      child: Text(
-                        "Login",
+                        ],
                       ),
-                      onPressed: () => _authUser(),
-                    ),
-                  ],
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            "Password:",
+                          ),
+                          Expanded(
+                            child: _passwordField(
+                              controller: _passwordController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      RaisedButton(
+                        child: Text(
+                          "Login",
+                        ),
+                        onPressed: () => _authUser(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Visibility(
-              visible: _visibleIndex == 1,
-              child: Container(
-                margin: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Column(
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          "Email:",
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _newEmailController,
-                            keyboardType: TextInputType.emailAddress,
+              Visibility(
+                visible: _visibleIndex == 1,
+                child: Container(
+                  margin: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            "Email:",
                           ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          "Password:",
-                        ),
-                        Expanded(
-                          child: _passwordField(
-                            controller: _newPasswordController,
+                          Expanded(
+                            child: TextField(
+                              controller: _newEmailController,
+                              keyboardType: TextInputType.emailAddress,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          "Confirm Password:",
-                        ),
-                        Expanded(
-                          child: _passwordField(
-                            controller: _newPasswordConfirmController,
-                          ),
-                        ),
-                      ],
-                    ),
-                    RaisedButton(
-                      child: Text(
-                        "Create User",
+                        ],
                       ),
-                      onPressed: () => _authUser(create: true),
-                    ),
-                  ],
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            "Password:",
+                          ),
+                          Expanded(
+                            child: _passwordField(
+                              controller: _newPasswordController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Text(
+                            "Confirm Password:",
+                          ),
+                          Expanded(
+                            child: _passwordField(
+                              controller: _newPasswordConfirmController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      RaisedButton(
+                        child: Text(
+                          "Create User",
+                        ),
+                        onPressed: () => _authUser(create: true),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

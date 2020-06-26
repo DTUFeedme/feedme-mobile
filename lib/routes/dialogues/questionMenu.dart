@@ -6,23 +6,25 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class QuestionMenu {
-  FeedbackQuestion question;
-  String token;
-  GlobalKey<ScaffoldState> scaffoldKey;
-  Function(String) setCurrentlyConfirming;
-  String Function() getCurrentlyConfirming;
+  final BuildContext context;
+  final FeedbackQuestion question;
+  final String token;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final Function(String) setCurrentlyConfirming;
+  final String Function() getCurrentlyConfirming;
   StatefulBuilder questionMenuDialog;
 
-  RestService _restService = RestService();
+  RestService _restService;
 
-  QuestionMenu({
-    this.question,
-    this.token,
-    this.scaffoldKey,
-    //this.addScans,
-    this.setCurrentlyConfirming,
-    this.getCurrentlyConfirming,
+  QuestionMenu(
+    this.context, {
+    @required this.question,
+    @required this.token,
+    @required this.scaffoldKey,
+    @required this.setCurrentlyConfirming,
+    @required this.getCurrentlyConfirming,
   }) {
+    _restService = RestService(context);
     questionMenuDialog = StatefulBuilder(
       builder: (context, setState) {
         Future<void> _makeQuestionInactive() async {

@@ -7,22 +7,25 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class AddQuestion {
-  String token;
-  TextEditingController textEditingController;
-  List<TextEditingController> controllerList;
-  BuildingModel building;
-  GlobalKey<ScaffoldState> scaffoldKey;
+  final BuildContext context;
+  final String token;
+  final TextEditingController textEditingController;
+  final List<TextEditingController> controllerList;
+  final BuildingModel building;
+  final GlobalKey<ScaffoldState> scaffoldKey;
   StatefulBuilder addQuestionDialog;
 
-  RestService _restService = RestService();
+  RestService _restService;
 
-  AddQuestion({
+  AddQuestion(
+    this.context, {
     this.token,
     this.textEditingController,
     this.controllerList,
     this.building,
     this.scaffoldKey,
   }) {
+    _restService = RestService(context);
     List<bool> list = [];
     for (int i = 0; i < building.rooms.length; i++) {
       list.add(false);
@@ -34,19 +37,19 @@ class AddQuestion {
     addQuestionDialog = StatefulBuilder(
       builder: (context, setState) {
         void _submitRoom() async {
-          for(int i = 0; i < building.rooms.length; i++){
-            if(list[i] == true){
+          for (int i = 0; i < building.rooms.length; i++) {
+            if (list[i] == true) {
               finalroomlist.add(building.rooms[i].id.toString());
             }
           }
-          for(int j = 0; j < controllerList.length; j++){
+          for (int j = 0; j < controllerList.length; j++) {
             finalansweroptionslist.add(controllerList[j].text.toString());
           }
           APIResponse<Question> apiResponse = await _restService.addQuestion(
-            token,
-            finalroomlist,
-            textEditingController.text.trim().toString(),
-            finalansweroptionslist);
+              token,
+              finalroomlist,
+              textEditingController.text.trim().toString(),
+              finalansweroptionslist);
           if (apiResponse.error == false) {
             SnackBarError.showErrorSnackBar(
                 "Question ${apiResponse.data.value} added", scaffoldKey);
@@ -61,18 +64,20 @@ class AddQuestion {
         bool submitEnabled1 = true;
         bool submitEnabled2 = controllerList.length >= 3;
 
-        bool submitEnabled3 = (textEditingController.text.trim() != "") && (list.contains(true))
-        && controllerList.any((item) => item.text != "") && textEditingController.text.length >= 3;
+        bool submitEnabled3 = (textEditingController.text.trim() != "") &&
+            (list.contains(true)) &&
+            controllerList.any((item) => item.text != "") &&
+            textEditingController.text.length >= 3;
 
-        void _removeAnsweroption(){
+        void _removeAnsweroption() {
           setState(() {
-          controllerList.removeLast();
+            controllerList.removeLast();
           });
         }
 
-        void _addAnsweroption(){
+        void _addAnsweroption() {
           setState(() {
-          controllerList.add(TextEditingController());
+            controllerList.add(TextEditingController());
           });
         }
 
@@ -82,9 +87,9 @@ class AddQuestion {
           });
         }
 
-        void updateSelectedRoomsListAdd(int index) async {
+        void updateSelectedRoomsList(int index) async {
           setState(() {
-            list[index] = true;
+            list[index] = !list[index];
           });
         }
 
@@ -93,10 +98,10 @@ class AddQuestion {
           children: <Widget>[
             TextFormField(
               controller: textEditingController,
-              decoration:
-                  InputDecoration(labelText: 'Question title'),
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(labelText: 'Question title'),
             ),
-              Container(
+            Container(
               height: 100,
               width: double.maxFinite,
               child: ListView.builder(
@@ -108,10 +113,11 @@ class AddQuestion {
                       child: Container(
                         margin: EdgeInsets.symmetric(vertical: 4),
                         child: TextFormField(
-                            controller: controllerList[index],
-                            decoration:
+                          onChanged: (_) => setState(() {}),
+                          controller: controllerList[index],
+                          decoration:
                               InputDecoration(labelText: 'Answeroption'),
-                      ),
+                        ),
                       ),
                     );
                   }),
@@ -125,17 +131,14 @@ class AddQuestion {
                   itemCount: building.rooms.length,
                   itemBuilder: (BuildContext context, int index) {
                     return InkWell(
-                      onLongPress: () {
-                        if (list[index] == true) {
-                          updateSelectedRoomsListRemove(index);
-                        }
-                      },
                       onTap: () {
-                        updateSelectedRoomsListAdd(index);
+                        updateSelectedRoomsList(index);
                       },
                       child: Container(
                         margin: EdgeInsets.symmetric(vertical: 4),
-                        color: list[index] == true ? Colors.grey[300] : Colors.white,
+                        color: list[index] == true
+                            ? Colors.grey[300]
+                            : Colors.white,
                         child: ListTile(
                           title: Text(building.rooms[index].name),
                         ),

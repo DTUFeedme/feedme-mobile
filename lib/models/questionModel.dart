@@ -6,7 +6,7 @@ part 'questionModel.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class Question {
-  List<RoomModel> rooms;
+  List<String> rooms;
   String value;
   List<AnswerOption> answerOptions;
 

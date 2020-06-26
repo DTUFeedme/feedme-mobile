@@ -10,7 +10,7 @@ AnswerOption _$AnswerOptionFromJson(Map<String, dynamic> json) {
   return AnswerOption(
     json['_id'] as String,
     json['value'] as String,
-    json['__v'] as int,
+    json['v'] as int,
   );
 }
 
@@ -18,4 +18,5 @@ Map<String, dynamic> _$AnswerOptionToJson(AnswerOption instance) =>
     <String, dynamic>{
       '_id': instance.id,
       'value': instance.value,
+      'v': instance.v,
     };

@@ -11,14 +11,19 @@ import 'package:tuple/tuple.dart';
 class ScanHelper {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final String token;
+  final BuildContext context;
 
   ScanHelper(
-    this.scaffoldKey,
-    this.token,
-  );
+    this.context, {
+    @required this.scaffoldKey,
+    @required this.token,
+  }) {
+    _restService = RestService(context);
+    _bluetooth = BluetoothServices(context);
+  }
 
-  BluetoothServices _bluetooth = BluetoothServices();
-  RestService _restService = RestService();
+  BluetoothServices _bluetooth;
+  RestService _restService;
   BuildingModel _building;
   RoomModel _room;
   List<FeedbackQuestion> _questions;

@@ -7,16 +7,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class RoomMenu {
-  RoomModel room;
-  String token;
-  BuildingModel building;
-  GlobalKey<ScaffoldState> scaffoldKey;
-  Function(RoomModel) addScans;
-  Function(String) setCurrentlyConfirming;
-  String Function() getCurrentlyConfirming;
+  final BuildContext context;
+  final RoomModel room;
+  final String token;
+  final BuildingModel building;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final Function(RoomModel) addScans;
+  final Function(String) setCurrentlyConfirming;
+  final String Function() getCurrentlyConfirming;
   StatefulBuilder roomMenuDialog;
 
-  RestService _restService = RestService();
+  RestService _restService;
 
   Future<void> _deleteRoom() async {
     APIResponse<String> deleteResponse =
@@ -40,15 +41,17 @@ class RoomMenu {
     }
   }
 
-  RoomMenu({
-    this.room,
-    this.token,
-    this.building,
-    this.scaffoldKey,
-    this.addScans,
-    this.setCurrentlyConfirming,
-    this.getCurrentlyConfirming,
+  RoomMenu(
+    this.context, {
+    @required this.room,
+    @required this.token,
+    @required this.building,
+    @required this.scaffoldKey,
+    @required this.addScans,
+    @required this.setCurrentlyConfirming,
+    @required this.getCurrentlyConfirming,
   }) {
+    _restService = RestService(context);
     roomMenuDialog = StatefulBuilder(
       builder: (context, setState) {
         return SimpleDialog(

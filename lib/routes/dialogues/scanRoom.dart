@@ -11,32 +11,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 
 class ScanRoom {
-  RoomModel room;
-  String token;
-  BuildingModel building;
-  GlobalKey<ScaffoldState> scaffoldKey;
+  final BuildContext context;
+  final RoomModel room;
+  final String token;
+  final BuildingModel building;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final Function(bool) setScanning;
+  final Function incrementScans;
+  final bool Function() getScanning;
+  final int Function() getNumberOfScans;
+  final List<Beacon> beacons;
   StatefulBuilder scanRoomDialog;
-  Function(bool) setScanning;
-  Function incrementScans;
-  bool Function() getScanning;
-  int Function() getNumberOfScans;
-  List<Beacon> beacons;
 
-  RestService _restService = RestService();
+  RestService _restService;
   GlobalKey<State> _dialogKey = GlobalKey<State>();
-  BluetoothServices _bluetooth = BluetoothServices();
+  BluetoothServices _bluetooth;
 
-  ScanRoom({
-    this.room,
-    this.token,
-    this.building,
-    this.scaffoldKey,
-    this.setScanning,
-    this.incrementScans,
-    this.getScanning,
-    this.getNumberOfScans,
-    this.beacons,
+  ScanRoom(
+    this.context, {
+    @required this.room,
+    @required this.token,
+    @required this.building,
+    @required this.scaffoldKey,
+    @required this.setScanning,
+    @required this.incrementScans,
+    @required this.getScanning,
+    @required this.getNumberOfScans,
+    @required this.beacons,
   }) {
+    _restService = RestService(context);
+    _bluetooth = BluetoothServices(context);
     scanRoomDialog = StatefulBuilder(
       key: _dialogKey,
       builder: (context, setState) {

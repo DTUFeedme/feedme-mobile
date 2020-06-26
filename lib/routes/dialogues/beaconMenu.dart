@@ -7,26 +7,27 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class BeaconMenu {
-  Beacon beacon;
-  String token;
-  BuildingModel building;
-  GlobalKey<ScaffoldState> scaffoldKey;
-  //Function(RoomModel) addScans;
-  Function(String) setCurrentlyConfirming;
-  String Function() getCurrentlyConfirming;
+  final BuildContext context;
+  final Beacon beacon;
+  final String token;
+  final BuildingModel building;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final Function(String) setCurrentlyConfirming;
+  final String Function() getCurrentlyConfirming;
   StatefulBuilder beaconMenuDialog;
 
-  RestService _restService = RestService();
+  RestService _restService;
 
-  BeaconMenu({
-    this.beacon,
-    this.token,
-    this.building,
-    this.scaffoldKey,
-    //this.addScans,
-    this.setCurrentlyConfirming,
-    this.getCurrentlyConfirming,
+  BeaconMenu(
+    this.context, {
+    @required this.beacon,
+    @required this.token,
+    @required this.building,
+    @required this.scaffoldKey,
+    @required this.setCurrentlyConfirming,
+    @required this.getCurrentlyConfirming,
   }) {
+    _restService= RestService(context);
     beaconMenuDialog = StatefulBuilder(
       builder: (context, setState) {
         Future<void> _deleteBeacon() async {

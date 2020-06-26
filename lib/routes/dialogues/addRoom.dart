@@ -7,20 +7,23 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class AddRoom {
-  String token;
-  TextEditingController textEditingController;
-  BuildingModel building;
-  GlobalKey<ScaffoldState> scaffoldKey;
+  final BuildContext context;
+  final String token;
+  final TextEditingController textEditingController;
+  final BuildingModel building;
+  final GlobalKey<ScaffoldState> scaffoldKey;
   StatefulBuilder addRoomDialog;
 
-  RestService _restService = RestService();
+  RestService _restService;
 
-  AddRoom({
+  AddRoom(
+    this.context,{
     this.token,
     this.textEditingController,
     this.building,
     this.scaffoldKey,
   }) {
+    _restService = RestService(context);
     addRoomDialog = StatefulBuilder(
       builder: (context, setState) {
         void _submitRoom() async {
