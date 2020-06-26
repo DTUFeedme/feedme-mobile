@@ -107,10 +107,10 @@ class _UserLoginState extends State<UserLogin> {
   //   _newPasswordConfirmController.text = "test1234";
   // }
 
-  // void _setupDev2() {
-  //   _emailController.text = "test@test.com";
-  //   _passwordController.text = "test1234";
-  // }
+  void _setupDev2() {
+    _emailController.text = "test@test.com";
+    _passwordController.text = "test1234";
+  }
 
   DateTime currentBackPressTime;
 
@@ -200,6 +200,12 @@ class _UserLoginState extends State<UserLogin> {
                           "Login",
                         ),
                         onPressed: () => _authUser(),
+                      ),
+                      RaisedButton(
+                        child: Text(
+                          "asd",
+                        ),
+                        onPressed: () => _setupDev2(),
                       ),
                     ],
                   ),

@@ -1,11 +1,10 @@
-import 'package:climify/models/baseModel.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:climify/models/buildingModel.dart';
 
 part 'beacon.g.dart';
 
 @JsonSerializable(explicitToJson: true)
-class Beacon extends BaseModel {
+class Beacon {
   @JsonKey(name: '_id')
   String id;
   String name;
@@ -19,9 +18,6 @@ class Beacon extends BaseModel {
     this.uuid,
   );
 
-  @override
-  factory Beacon.fromJson(json) => _$BeaconFromJson(json);
-
-  @override
+  static Beacon fromJson(json) => _$BeaconFromJson(json);
   Map<String, dynamic> toJson() => _$BeaconToJson(this);
 }

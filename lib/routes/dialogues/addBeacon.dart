@@ -36,15 +36,20 @@ class AddBeacon {
     addBeaconDialog = StatefulBuilder(
       builder: (context, setState) {
         setState(() {});
-        APIResponse<bool> apiResponse;
+        APIResponse<String> apiResponse;
         void _submitBeacon() async {
           for (int i = 0; i < beaconList.length; i++) {
             if (list[i] == true) {
-              apiResponse = await _restService.addBeacon(
-                token,
-                Tuple2(beaconList[i].item1, beaconList[i].item2),
-                building,
-              );
+              try {
+                apiResponse = await _restService.addBeacon(
+                  Tuple2(beaconList[i].item1, beaconList[i].item2),
+                  building,
+                );
+              } catch (e) {
+                print(e);
+                apiResponse =
+                    APIResponse<String>(error: true, errorMessage: "");
+              }
               if (apiResponse.error == false) {
                 successFullyAddedBeacons = successFullyAddedBeacons + 1;
               }

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:climify/models/baseModel.dart';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/globalState.dart';
@@ -10,6 +9,7 @@ import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/services/bluetooth.dart';
+// import 'package:climify/services/rest_service_functions/addBeacon.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -19,6 +19,8 @@ import 'package:climify/models/api_response.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
+
+part 'package:climify/services/rest_service_functions/addBeacon.dart';
 
 enum RequestType {
   GET,
@@ -35,6 +37,8 @@ class RestService {
     this.context,
   ) {
     bluetooth = BluetoothServices(context);
+    addBeacon =
+        (beacon, building) => addBeaconRequest(context, beacon, building);
   }
 
   static Map<String, String> headers(
@@ -52,26 +56,28 @@ class RestService {
         headers['x-auth-token'] = token;
       } catch (_) {}
     }
-    headers.addAll(additionalParameters);
+    additionalParameters.forEach((key, value) {
+      headers[key] = value;
+    });
     return (headers);
   }
 
-  static Future<APIResponse<BaseModel>> requestServer(
-    BuildContext context, {
-    Map<String, dynamic> body,
+  static Future<APIResponse<T>> requestServer<T>(
+    BuildContext context,
+    T Function(dynamic) fromJson, {
+    String body,
     RequestType requestType,
     String route,
-    Map<String, dynamic> additionalParameters,
+    Map<String, String> additionalHeaderParameters = const {},
   }) async {
     Future<Response> responseData;
-
     switch (requestType) {
       case RequestType.GET:
         responseData = http.get(
           api + route,
           headers: headers(
             context,
-            additionalParameters: additionalParameters,
+            additionalParameters: additionalHeaderParameters,
           ),
         );
         break;
@@ -80,7 +86,7 @@ class RestService {
           api + route,
           headers: headers(
             context,
-            additionalParameters: additionalParameters,
+            additionalParameters: additionalHeaderParameters,
           ),
           body: body,
         );
@@ -90,7 +96,7 @@ class RestService {
           api + route,
           headers: headers(
             context,
-            additionalParameters: additionalParameters,
+            additionalParameters: additionalHeaderParameters,
           ),
         );
         break;
@@ -99,44 +105,41 @@ class RestService {
           api + route,
           headers: headers(
             context,
-            additionalParameters: additionalParameters,
+            additionalParameters: additionalHeaderParameters,
           ),
           body: body,
         );
         break;
       default:
-        break;
     }
-
-    await responseData.then((data) {
+    return responseData.then((data) {
       if (data.statusCode == 200) {
         dynamic json = data.body;
-        BaseModel responseObject = BaseModel.fromJson(json);
-        return APIResponse<BaseModel>(data: responseObject);
+        T responseObject = fromJson(json);
+        return APIResponse<T>(data: responseObject);
       } else {
-        return APIResponse<BaseModel>(
-            error: true, errorMessage: data.body ?? "");
+        return APIResponse<T>(
+            error: true, errorMessage: data.body ?? getErrorMessage(data));
       }
     }).catchError((_) {
-      return APIResponse<BaseModel>(
-          error: true, errorMessage: "Request failed");
+      return APIResponse<T>(error: true, errorMessage: "Request failed");
     });
   }
 
   static const api = 'http://climify-spe.compute.dtu.dk:8080/api-dev';
 
-  String getErrorMessage(Response response) {
+  static APIResponse<T> getErrorMessage<T>(Response response) {
     switch (response.statusCode) {
       case 400:
-        return "Bad request";
+        return APIResponse<T>(error: true, errorMessage: "Bad request");
       case 401:
-        return "Not authorized";
+        return APIResponse<T>(error: true, errorMessage: "Not authorized");
       case 403:
-        return "Forbidden";
+        return APIResponse<T>(error: true, errorMessage: "Forbidden");
       case 404:
-        return "Not found";
+        return APIResponse<T>(error: true, errorMessage: "Not Found");
       default:
-        return "Unknown Error";
+        return APIResponse<T>(error: true, errorMessage: "Unknown Error");
     }
   }
 
@@ -324,7 +327,7 @@ class RestService {
         return APIResponse<List<BuildingModel>>(
             data: buildings, statusCode: 200);
       } else {
-        final errorMessage = getErrorMessage(data);
+        final errorMessage = "";
         return APIResponse<List<BuildingModel>>(
             error: true,
             errorMessage: errorMessage,
@@ -593,36 +596,26 @@ class RestService {
             APIResponse<RoomModel>(error: true, errorMessage: e.toString()));
   }
 
-  Future<APIResponse<bool>> addBeacon(
-    String token,
-    Tuple2<String, String> beacon,
-    BuildingModel building,
-  ) {
-    final String body = json.encode({
-      'buildingId': building.id,
-      'name': beacon.item1,
-      'uuid': beacon.item2
-    });
-    return http
-        .post(api + '/beacons', headers: headers(context), body: body)
-        .then((data) {
-      if (data.statusCode == 200) {
-        dynamic responseBody = json.decode(data.body);
-        String answer = responseBody['name'];
-        if (answer == beacon.item1) {
-          return APIResponse<bool>(data: true);
-        }
-        return APIResponse<bool>(
-            error: true, errorMessage: "Adding beacon failed");
-      } else {
-        return APIResponse<bool>(
-            error: true, errorMessage: "Adding beacon failed");
-      }
-    }).catchError((e) {
-      return APIResponse<bool>(
-          error: true, errorMessage: "Adding beacon failed");
-    });
-  }
+  Future<APIResponse<String>> Function(Tuple2<String, String>, BuildingModel)
+      addBeacon;
+
+  // Future<APIResponse<String>> addBeacon(
+  //   Tuple2<String, String> beacon,
+  //   BuildingModel building,
+  // ) {
+  //   final String body = json.encode({
+  //     'buildingId': building.id,
+  //     'name': beacon.item1,
+  //     'uuid': beacon.item2
+  //   });
+  //   return requestServer<String>(
+  //     context,
+  //     (_) => "Success",
+  //     body: body,
+  //     requestType: RequestType.POST,
+  //     route: '/beacons',
+  //   );
+  // }
 
   Future<APIResponse<Question>> addQuestion(
     String token,
