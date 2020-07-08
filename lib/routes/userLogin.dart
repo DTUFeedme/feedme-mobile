@@ -30,7 +30,7 @@ class _UserLoginState extends State<UserLogin> {
   void initState() {
     super.initState();
     _restService = RestService(context);
-    _sharedPrefsHelper = SharedPrefsHelper(context, _restService);
+    _sharedPrefsHelper = SharedPrefsHelper(context);
   }
 
   @override
@@ -69,7 +69,7 @@ class _UserLoginState extends State<UserLogin> {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     } else {
       Provider.of<GlobalState>(context)
-          .updateAccount(apiResponse.data.email, apiResponse.data.authToken);
+          .updateAccount(apiResponse.data.email, apiResponse.data.authToken, context);
       Navigator.of(context).pushReplacementNamed("registered");
     }
     setState(() {

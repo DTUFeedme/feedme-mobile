@@ -42,7 +42,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   void initState() {
     super.initState();
     _restService = RestService(context);
-    _sharedPrefsHelper = SharedPrefsHelper(context, _restService);
+    _sharedPrefsHelper = SharedPrefsHelper(context);
     _bluetooth = BluetoothServices(context);
     _checkUserStatus();
   }
@@ -66,7 +66,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   Future<void> _setupState({
     bool forceBuildingRescan = false,
   }) async {
-    String token = await _sharedPrefsHelper.getUnauthorizedUserToken();
+    String token =
+        await _sharedPrefsHelper.getUnauthorizedUserToken(_restService);
     setState(() {
       _token = token;
     });
@@ -87,7 +88,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       scaffoldKey: _scaffoldKey,
       token: _token,
     );
-    Provider.of<GlobalState>(context).updateAccount("", token);
+    Provider.of<GlobalState>(context).updateAccount("no email", token, context);
     Provider.of<GlobalState>(context).updateBuilding(_building);
     await _scanForRoom(forceBuildingRescan);
     setState(() {
@@ -105,7 +106,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       _questions = _scanResults.questions;
     });
   }
-  
 
   Future<void> _getActiveQuestions() async {
     RoomModel room;
