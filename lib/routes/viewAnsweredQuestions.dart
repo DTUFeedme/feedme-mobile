@@ -54,20 +54,28 @@ class ViewAnsweredQuestionsWidgetState
         await _restService.getFeedback(_token, _user, _t);
     if (response.error) return;
     response.data = response.data.reversed.toList();
+
+    void _addToList(QuestionAndFeedback qf) {
+      // if (qf.answer != null && qf.question != null) {
+      _tempFeedbackList.add(qf);
+      // }
+    }
+
     for (int i = 0; i < response.data.length; i++) {
       if (_tempFeedbackList.length == 0) {
-        _tempFeedbackList.add(response.data[i]);
+        _addToList(response.data[i]);
       } else {
         for (int j = 0; j < _tempFeedbackList.length; j++) {
           if (_tempFeedbackList[j].question.id ==
               response.data[i].question.id) {
             break;
           } else if (j == (_tempFeedbackList.length - 1)) {
-            _tempFeedbackList.add(response.data[i]);
+            _addToList(response.data[i]);
           }
         }
       }
     }
+    print(_tempFeedbackList);
     setState(() {
       _feedbackList = response.data;
       _tempFeedbackList = _tempFeedbackList;

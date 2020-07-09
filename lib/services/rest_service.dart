@@ -688,17 +688,19 @@ class RestService {
           );
         }
         for (var e in resultBody) {
-          QuestionAndFeedback qF = QuestionAndFeedback(
-            e["_id"],
-            e["user"],
-            e["room"],
-            AnswerOption.fromJson(e["answer"]),
-            FeedbackQuestion.fromJson(e["question"]),
-            e["createdAt"],
-            e["updatedAt"],
-            e["__v"],
-          );
-          feedbackList.add(qF);
+          if (e['answer'] != null && e['question'] != null) {
+            QuestionAndFeedback qF = QuestionAndFeedback(
+              e["_id"],
+              e["user"],
+              e["room"],
+              AnswerOption.fromJson(e["answer"]),
+              FeedbackQuestion.fromJson(e["question"]),
+              e["createdAt"],
+              e["updatedAt"],
+              e["__v"],
+            );
+            feedbackList.add(qF);
+          }
         }
         return APIResponse<List<QuestionAndFeedback>>(
           data: feedbackList,
