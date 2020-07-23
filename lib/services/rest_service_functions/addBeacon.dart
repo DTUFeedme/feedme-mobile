@@ -12,7 +12,7 @@ Future<APIResponse<String>> addBeaconRequest(
   });
   return RestService.requestServer<String>(
     context,
-    (_) => "Success",
+    fromJson: (_) => "Success",
     body: body,
     requestType: RequestType.POST,
     route: '/beacons',

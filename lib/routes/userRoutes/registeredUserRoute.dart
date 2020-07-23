@@ -79,7 +79,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     // await Future.delayed(Duration(milliseconds: 500));
     _gettingRoom = _scanForRoom(forceBuildingRescan);
     await _gettingRoom;
-    if (_room != null) _getAndSetRoomFeedbackStats("week");
+    // if (_room != null) _getAndSetRoomFeedbackStats("week");
     setState(() {
       _loadingState = false;
     });
@@ -109,8 +109,10 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       _roomQuestionStatistics = [];
       _t = t;
     });
+    // APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
+    //     await _restService.getActiveQuestionsByRoom(_room.id, _token, t: _t);
     APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
-        await _restService.getActiveQuestionsByRoom(_room.id, _token, t: _t);
+        await _restService.getActiveQuestionsByRoom(_room.id, _t);
     if (!apiResponseQuestionsOfRoom.error) {
       questionsOfRoom = apiResponseQuestionsOfRoom.data;
       List<QuestionStatisticsModel> roomQuestionStatistics = [];

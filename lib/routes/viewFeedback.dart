@@ -104,7 +104,7 @@ class ViewFeedbackWidgetState extends State<ViewFeedbackWidget> {
               child: _user == "me"
                   ? Container(
                       child: Text(
-                        "Anwsered " +
+                        "Answered " +
                             feedback.answer.value.toString() +
                             "\n"
                                 "Date: " +

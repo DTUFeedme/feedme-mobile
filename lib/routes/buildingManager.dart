@@ -95,23 +95,7 @@ class _BuildingManagerState extends State<BuildingManager> {
       print(apiResponseBeacons.errorMessage);
     }
     _questions = [];
-    for (int i = 0; i < _building.rooms.length; i++) {
-      APIResponse<List<FeedbackQuestion>> apiResponseBuilding =
-          await _restService.getAllQuestionsByRoom(
-              _building.rooms[i].id, _token);
-      if (apiResponseBuilding.error == false) {
-        setState(() {
-          List<FeedbackQuestion> question = apiResponseBuilding.data;
-          for (int j = 0; j < question.length; j++) {
-            if (!_questions.any((item) => item.id == question[j].id)) {
-              _questions.add(question[j]);
-            }
-          }
-          _questionsRealList = _questions;
-          //_questionsRealList = question;
-        });
-      }
-    }
+    _updateQuestions();
     _updateBuilding();
   }
 
@@ -143,8 +127,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     _questions = [];
     for (int i = 0; i < _building.rooms.length; i++) {
       APIResponse<List<FeedbackQuestion>> apiResponseBuilding =
-          await _restService.getAllQuestionsByRoom(
-              _building.rooms[i].id, _token);
+          await _restService.getAllQuestionsByRoom(_building.rooms[i].id);
       if (apiResponseBuilding.error == false) {
         setState(() {
           List<FeedbackQuestion> question = apiResponseBuilding.data;

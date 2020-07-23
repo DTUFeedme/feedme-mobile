@@ -43,7 +43,10 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   void _sendFeedback() async {
     if (_chosenOption != null && (widget.question != null)) {
       APIResponse<bool> status = await _restService.postFeedback(
-          widget.token, widget.question, _chosenOption, widget.room);
+        widget.question,
+        _chosenOption,
+        widget.room,
+      );
 
       if (status.data == true) {
         print("Answer has been added");
