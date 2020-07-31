@@ -50,9 +50,8 @@ class BuildingListState extends State<BuildingList> {
   Future<void> getBuildings() async {
     await Future.delayed(Duration.zero);
     await widget.gettingRoom;
-    String token = Provider.of<GlobalState>(context).globalState['token'];
     APIResponse<List<BuildingModel>> buildingsResponse =
-        await _restService.getBuildingsWithAdminRights(token);
+        await _restService.getBuildingsWithAdminRights();
     if (buildingsResponse.error) return;
     setState(() {
       _buildings = buildingsResponse.data;

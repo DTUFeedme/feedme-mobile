@@ -27,6 +27,7 @@ part 'package:climify/services/rest_service_functions/getAllQuestionsByRoom.dart
 part 'package:climify/services/rest_service_functions/postFeedback.dart';
 part 'package:climify/services/rest_service_functions/postUser.dart';
 part 'package:climify/services/rest_service_functions/postUserLogin.dart';
+part 'package:climify/services/rest_service_functions/getBuildingsWithAdminRights.dart';
 
 enum RequestType {
   GET,
@@ -59,6 +60,8 @@ class RestService {
     postUser = (email, password) => postUserRequest(context, email, password);
 
     loginUser = (email, password) => loginUserRequest(context, email, password);
+
+    getBuildingsWithAdminRights = () => getBuildingsWithAdminRightsRequest(context);
   }
 
   static Map<String, String> headers(
@@ -190,30 +193,32 @@ class RestService {
 
   Future<APIResponse<UserModel>> Function(String, String) loginUser;
 
-  Future<APIResponse<List<BuildingModel>>> getBuildingsWithAdminRights(
-      String token) {
-    return http
-        .get(api + '/buildings?admin=me', headers: headers(context))
-        .then((data) {
-      if (data.statusCode == 200) {
-        final responseBody = json.decode(data.body);
-        List<BuildingModel> buildings = [];
-        for (int i = 0; i < responseBody.length; i++) {
-          dynamic responseBuilding = responseBody[i];
-          buildings.add(BuildingModel.fromJson(responseBuilding));
-        }
-        return APIResponse<List<BuildingModel>>(
-            data: buildings, statusCode: 200);
-      } else {
-        final errorMessage = "";
-        return APIResponse<List<BuildingModel>>(
-            error: true,
-            errorMessage: errorMessage,
-            statusCode: data.statusCode);
-      }
-    }).catchError((_) => APIResponse<List<BuildingModel>>(
-            error: true, errorMessage: 'Get Buildings failed'));
-  }
+  Future<APIResponse<List<BuildingModel>>> Function() getBuildingsWithAdminRights;
+
+  // Future<APIResponse<List<BuildingModel>>> getBuildingsWithAdminRights(
+  //     String token) {
+  //   return http
+  //       .get(api + '/buildings?admin=me', headers: headers(context))
+  //       .then((data) {
+  //     if (data.statusCode == 200) {
+  //       final responseBody = json.decode(data.body);
+  //       List<BuildingModel> buildings = [];
+  //       for (int i = 0; i < responseBody.length; i++) {
+  //         dynamic responseBuilding = responseBody[i];
+  //         buildings.add(BuildingModel.fromJson(responseBuilding));
+  //       }
+  //       return APIResponse<List<BuildingModel>>(
+  //           data: buildings, statusCode: 200);
+  //     } else {
+  //       final errorMessage = "";
+  //       return APIResponse<List<BuildingModel>>(
+  //           error: true,
+  //           errorMessage: errorMessage,
+  //           statusCode: data.statusCode);
+  //     }
+  //   }).catchError((_) => APIResponse<List<BuildingModel>>(
+  //           error: true, errorMessage: 'Get Buildings failed'));
+  // }
 
   Future<APIResponse<String>> deleteBuilding(
     String token,
