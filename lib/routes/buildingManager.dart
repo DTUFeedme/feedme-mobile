@@ -85,7 +85,7 @@ class _BuildingManagerState extends State<BuildingManager> {
       _building = Provider.of<GlobalState>(context).globalState['building'];
     });
     APIResponse<List<Beacon>> apiResponseBeacons =
-        await _restService.getBeaconsOfBuilding(_token, _building);
+        await _restService.getBeaconsOfBuilding(_building);
     if (!apiResponseBeacons.error) {
       setState(() {
         _beacons = apiResponseBeacons.data;
@@ -101,7 +101,7 @@ class _BuildingManagerState extends State<BuildingManager> {
 
   Future<void> _updateBuilding() async {
     APIResponse<BuildingModel> apiResponseBuilding =
-        await _restService.getBuilding(_token, _building.id);
+        await _restService.getBuilding(_building.id);
     if (apiResponseBuilding.error == false) {
       BuildingModel building = apiResponseBuilding.data;
       setState(() {
@@ -113,7 +113,7 @@ class _BuildingManagerState extends State<BuildingManager> {
 
   Future<void> _updateBeacon() async {
     APIResponse<List<Beacon>> apiResponseBeacons =
-        await _restService.getBeaconsOfBuilding(_token, _building);
+        await _restService.getBeaconsOfBuilding(_building);
     if (apiResponseBeacons.error == false) {
       List<Beacon> beacon = apiResponseBeacons.data;
       setState(() {
@@ -607,8 +607,6 @@ class _BuildingManagerState extends State<BuildingManager> {
                     return _addQuestion();
                   case 2:
                     return _addBeacon();
-                  case 2:
-                    return print("Impossible case as the button is hidden");
                   default:
                     return print("default case");
                 }

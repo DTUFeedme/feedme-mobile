@@ -1,20 +1,19 @@
 part of 'package:climify/services/rest_service.dart';
 
-Future<APIResponse<String>> addBeaconRequest(
+Future<APIResponse<RoomModel>> postRoomRequest(
   BuildContext context,
-  Tuple2<String, String> beacon,
+  String roomName,
   BuildingModel building,
 ) {
   final String body = json.encode({
+    'name': roomName,
     'buildingId': building.id,
-    'name': beacon.item1,
-    'uuid': beacon.item2,
   });
-  return RestService.requestServer<String>(
+  return RestService.requestServer(
     context,
-    fromJson: (_) => "Success",
+    fromJson: (json) => RoomModel.fromJson(json),
     body: body,
     requestType: RequestType.POST,
-    route: '/beacons',
+    route: '/rooms',
   );
 }

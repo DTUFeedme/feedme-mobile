@@ -92,9 +92,8 @@ class BuildingListState extends State<BuildingList> {
   }
 
   Future<void> _deleteBuilding(BuildingModel building) async {
-    String token = Provider.of<GlobalState>(context).globalState['token'];
     APIResponse<String> _deleteBuildingResponse =
-        await _restService.deleteBuilding(token, building);
+        await _restService.deleteBuilding(building);
     if (!_deleteBuildingResponse.error) {
       SnackBarError.showErrorSnackBar(
           _deleteBuildingResponse.data, _scaffoldKey);

@@ -41,7 +41,7 @@ class AddBeacon {
           for (int i = 0; i < beaconList.length; i++) {
             if (list[i] == true) {
               try {
-                apiResponse = await _restService.addBeacon(
+                apiResponse = await _restService.postBeacon(
                   Tuple2(beaconList[i].item1, beaconList[i].item2),
                   building,
                 );

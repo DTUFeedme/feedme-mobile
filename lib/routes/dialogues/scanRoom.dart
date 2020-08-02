@@ -68,10 +68,8 @@ class ScanRoom {
             return;
           }
 
-          print(beacons);
           scanResults.forEach((result) {
             String beaconName = _bluetooth.getBeaconName(result);
-            print(beaconName);
             if (beacons
                 .where((element) => element.name == beaconName)
                 .isNotEmpty) {
@@ -85,7 +83,7 @@ class ScanRoom {
 
           if (beaconsScanned > 0) {
             APIResponse<String> apiResponse =
-                await _restService.addSignalMap(token, signalMap, room.id);
+                await _restService.postSignalMap(signalMap, room.id);
             if (!apiResponse.error) {
               incrementScans();
               SnackBarError.showErrorSnackBar(

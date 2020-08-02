@@ -25,8 +25,7 @@ class AddBuilding {
       builder: (context, setState) {
         void _submitBuilding() async {
           APIResponse<BuildingModel> apiResponse =
-              await _restService.addBuilding(
-            token,
+              await _restService.postBuilding(
             textEditingController.text.trim(),
           );
           if (apiResponse.error == false) {

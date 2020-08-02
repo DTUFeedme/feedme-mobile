@@ -27,12 +27,12 @@ class BeaconMenu {
     @required this.setCurrentlyConfirming,
     @required this.getCurrentlyConfirming,
   }) {
-    _restService= RestService(context);
+    _restService = RestService(context);
     beaconMenuDialog = StatefulBuilder(
       builder: (context, setState) {
         Future<void> _deleteBeacon() async {
           APIResponse<String> deleteResponse =
-              await _restService.deleteBeacon(token, beacon.id, building);
+              await _restService.deleteBeacon(beacon.id);
           if (!deleteResponse.error) {
             SnackBarError.showErrorSnackBar(
                 "Beacon ${beacon.name} deleted from  ${building.name}",

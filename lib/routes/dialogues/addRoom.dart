@@ -17,7 +17,7 @@ class AddRoom {
   RestService _restService;
 
   AddRoom(
-    this.context,{
+    this.context, {
     this.token,
     this.textEditingController,
     this.building,
@@ -27,8 +27,7 @@ class AddRoom {
     addRoomDialog = StatefulBuilder(
       builder: (context, setState) {
         void _submitRoom() async {
-          APIResponse<RoomModel> apiResponse = await _restService.addRoom(
-            token,
+          APIResponse<RoomModel> apiResponse = await _restService.postRoom(
             textEditingController.text.trim(),
             building,
           );

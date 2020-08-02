@@ -22,32 +22,3 @@ Future<APIResponse<UserModel>> postUserRequest(
     route: '/users',
   );
 }
-
-// Future<APIResponse<UserModel>> postUser(String email, String password) {
-//   final String body = json.encode({'email': email, 'password': password});
-//   return http
-//       .post(api + '/users',
-//           headers: headers(context, noToken: true), body: body)
-//       .then((data) {
-//     if (data.statusCode == 200) {
-//       final responseBody = json.decode(data.body);
-//       final responseEmail = responseBody['email'];
-//       final responseHeaders = data.headers;
-//       final token = responseHeaders['x-auth-token'];
-//       return APIResponse<UserModel>(
-//         data: UserModel(
-//           responseEmail,
-//           token,
-//         ),
-//       );
-//     } else {
-//       return APIResponse<UserModel>(
-//         error: true,
-//         errorMessage: data.body,
-//       );
-//     }
-//   }).catchError(
-//     (_) =>
-//         APIResponse<UserModel>(error: true, errorMessage: 'Create User failed'),
-//   );
-// }

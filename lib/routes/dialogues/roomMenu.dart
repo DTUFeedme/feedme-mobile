@@ -21,7 +21,7 @@ class RoomMenu {
 
   Future<void> _deleteRoom() async {
     APIResponse<String> deleteResponse =
-        await _restService.deleteRoom(token, room.id);
+        await _restService.deleteRoom(room.id);
     if (!deleteResponse.error) {
       SnackBarError.showErrorSnackBar("Room ${room.name} deleted", scaffoldKey);
     } else {
@@ -32,7 +32,7 @@ class RoomMenu {
 
   void _deleteScans() async {
     APIResponse<String> deleteResponse =
-        await _restService.deleteSignalMapsOfRoom(token, room.id);
+        await _restService.deleteSignalMapsOfRoom(room.id);
     if (!deleteResponse.error) {
       SnackBarError.showErrorSnackBar(
           "Scans of ${room.name} deleted", scaffoldKey);

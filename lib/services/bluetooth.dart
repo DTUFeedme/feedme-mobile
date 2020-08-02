@@ -13,7 +13,7 @@ import 'package:tuple/tuple.dart';
 
 class BluetoothServices {
   final BuildContext context;
-  
+
   BluetoothServices(this.context);
 
   final FlutterBlue flutterBlue = FlutterBlue.instance;
@@ -72,7 +72,7 @@ class BluetoothServices {
 
     RestService restService = RestService(context);
     APIResponse<List<Beacon>> allBeaconsResponse =
-        await restService.getAllBeacons(token);
+        await restService.getAllBeacons();
     if (!allBeaconsResponse.error) {
       List<Beacon> allBeacons = allBeaconsResponse.data;
       Map<String, int> scannedBuildings = {};
@@ -100,7 +100,7 @@ class BluetoothServices {
       });
       if (buildingIdMostScans != "") {
         APIResponse<BuildingModel> buildingResponse =
-            await restService.getBuilding(token, buildingIdMostScans);
+            await restService.getBuilding(buildingIdMostScans);
         if (!buildingResponse.error) {
           BuildingModel building = buildingResponse.data;
           APIResponse<RoomModel> roomResponse = await getRoomFromBuilding(
@@ -108,10 +108,12 @@ class BluetoothServices {
             token,
             scanResults: scanResults,
           );
-          if(!roomResponse.error){
-            return APIResponse<Tuple2<BuildingModel, RoomModel>>(data: Tuple2(building, roomResponse.data));
+          if (!roomResponse.error) {
+            return APIResponse<Tuple2<BuildingModel, RoomModel>>(
+                data: Tuple2(building, roomResponse.data));
           } else {
-            return APIResponse<Tuple2<BuildingModel, RoomModel>>(error: true, errorMessage: roomResponse.errorMessage);
+            return APIResponse<Tuple2<BuildingModel, RoomModel>>(
+                error: true, errorMessage: roomResponse.errorMessage);
           }
         } else {
           return APIResponse<Tuple2<BuildingModel, RoomModel>>(
@@ -152,7 +154,7 @@ class BluetoothServices {
     }
 
     APIResponse<List<Beacon>> apiResponseBeacons =
-        await restService.getBeaconsOfBuilding(token, building);
+        await restService.getBeaconsOfBuilding(building);
     if (!apiResponseBeacons.error) {
       beacons = apiResponseBeacons.data;
     } else {
@@ -186,7 +188,7 @@ class BluetoothServices {
     });
 
     APIResponse<RoomModel> apiResponseRoom =
-        await restService.getRoomFromSignalMap(token, signalMap);
+        await restService.getRoomFromSignalMap(signalMap);
     if (apiResponseRoom.error == false) {
       RoomModel room = apiResponseRoom.data;
       _gettingRoom = false;
