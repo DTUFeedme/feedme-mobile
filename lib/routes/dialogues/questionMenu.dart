@@ -29,7 +29,7 @@ class QuestionMenu {
       builder: (context, setState) {
         Future<void> _makeQuestionInactive() async {
           APIResponse<String> deleteResponse = await _restService
-              .makeQuestionInactive(token, question.id, false);
+              .patchQuestionInactive(question.id, false);
           if (!deleteResponse.error) {
             SnackBarError.showErrorSnackBar(
                 "Question ${question.value} set inactive", scaffoldKey);
@@ -42,7 +42,7 @@ class QuestionMenu {
 
         Future<void> _makeQuestionActive() async {
           APIResponse<String> activeResponse =
-              await _restService.makeQuestionInactive(token, question.id, true);
+              await _restService.patchQuestionInactive(question.id, true);
           if (!activeResponse.error) {
             SnackBarError.showErrorSnackBar(
                 "Question ${question.value} set active", scaffoldKey);

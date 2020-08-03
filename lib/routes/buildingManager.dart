@@ -316,7 +316,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     setState(() {});
     String userId;
     APIResponse<String> apiResponse =
-        await _restService.getUserIdFromEmail(_token, _email);
+        await _restService.getUserIdFromEmail(_email);
     if (apiResponse.error) {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     } else {
@@ -332,8 +332,8 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _makeUserAdmin(String _userId, String _email) async {
-    APIResponse<UserModel> apiResponse =
-        await _restService.makeUserAdmin(_token, _userId, _building);
+    APIResponse<bool> apiResponse =
+        await _restService.patchUserAdmin(_userId, _building);
     if (apiResponse.error) {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     } else {

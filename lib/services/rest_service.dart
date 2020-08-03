@@ -31,13 +31,21 @@ part 'package:climify/services/rest_service_functions/getAllQuestionsByRoom.dart
 part 'package:climify/services/rest_service_functions/getBeaconsOfBuilding.dart';
 part 'package:climify/services/rest_service_functions/getBuilding.dart';
 part 'package:climify/services/rest_service_functions/getBuildingsWithAdminRights.dart';
+part 'package:climify/services/rest_service_functions/getFeedback.dart';
 part 'package:climify/services/rest_service_functions/getRoomFromSignalMap.dart';
+part 'package:climify/services/rest_service_functions/getUserIdFromEmail.dart';
+part 'package:climify/services/rest_service_functions/getQuestionStatistics.dart';
+
+part 'package:climify/services/rest_service_functions/patchQuestionInactive.dart';
+part 'package:climify/services/rest_service_functions/patchUserAdmin.dart';
 
 part 'package:climify/services/rest_service_functions/postBeacon.dart';
 part 'package:climify/services/rest_service_functions/postBuilding.dart';
 part 'package:climify/services/rest_service_functions/postFeedback.dart';
+part 'package:climify/services/rest_service_functions/postQuestion.dart';
 part 'package:climify/services/rest_service_functions/postRoom.dart';
 part 'package:climify/services/rest_service_functions/postSignalMap.dart';
+part 'package:climify/services/rest_service_functions/postUnauthorizedUser.dart';
 part 'package:climify/services/rest_service_functions/postUser.dart';
 part 'package:climify/services/rest_service_functions/postUserLogin.dart';
 
@@ -74,79 +82,83 @@ class RestService {
 
   static Future<APIResponse<T>> requestServer<T>(
     BuildContext context, {
-    T Function(dynamic) fromJson,
-    T Function(dynamic, Map<String, String>) fromJsonAndHeader,
+    T Function(dynamic json) fromJson,
+    T Function(dynamic json, Map<String, String> header) fromJsonAndHeader,
     String body,
     @required RequestType requestType,
     @required String route,
+    String errorMessage = "Could not connect to the internet",
     Map<String, String> additionalHeaderParameters = const {},
   }) async {
-    Future<Response> responseData;
-    switch (requestType) {
-      case RequestType.GET:
-        responseData = http.get(
-          api + route,
-          headers: headers(
-            context,
-            additionalParameters: additionalHeaderParameters,
-          ),
-        );
-        break;
-      case RequestType.POST:
-        responseData = http.post(
-          api + route,
-          headers: headers(
-            context,
-            additionalParameters: additionalHeaderParameters,
-          ),
-          body: body,
-        );
-        break;
-      case RequestType.DELETE:
-        responseData = http.delete(
-          api + route,
-          headers: headers(
-            context,
-            additionalParameters: additionalHeaderParameters,
-          ),
-        );
-        break;
-      case RequestType.PATCH:
-        responseData = http.patch(
-          api + route,
-          headers: headers(
-            context,
-            additionalParameters: additionalHeaderParameters,
-          ),
-          body: body,
-        );
-        break;
-      default:
-    }
-    return responseData.then((data) {
-      if (data.statusCode == 200) {
-        dynamic bodyJson = {};
-        try {
-          bodyJson = json.decode(data.body);
-        } catch (_) {
-          print("Could not convert body to json");
-        }
-        Map<String, String> headerData = data.headers;
-        T responseObject;
-        if (fromJson != null) {
-          responseObject = fromJson(bodyJson);
-        } else if (fromJsonAndHeader != null) {
-          responseObject = fromJsonAndHeader(bodyJson, headerData);
-        }
-        return APIResponse<T>(data: responseObject);
-      } else {
-        return APIResponse<T>(
-            error: true, errorMessage: data.body ?? getErrorMessage(data));
+    Response responseData;
+    try {
+      switch (requestType) {
+        case RequestType.GET:
+          responseData = await http.get(
+            api + route,
+            headers: headers(
+              context,
+              additionalParameters: additionalHeaderParameters,
+            ),
+          );
+          break;
+        case RequestType.POST:
+          responseData = await http.post(
+            api + route,
+            headers: headers(
+              context,
+              additionalParameters: additionalHeaderParameters,
+            ),
+            body: body,
+          );
+          break;
+        case RequestType.DELETE:
+          responseData = await http.delete(
+            api + route,
+            headers: headers(
+              context,
+              additionalParameters: additionalHeaderParameters,
+            ),
+          );
+          break;
+        case RequestType.PATCH:
+          responseData = await http.patch(
+            api + route,
+            headers: headers(
+              context,
+              additionalParameters: additionalHeaderParameters,
+            ),
+            body: body,
+          );
+          break;
+        default:
       }
-    }).catchError((e) {
-      print(e);
-      return APIResponse<T>(error: true, errorMessage: "Request failed");
-    });
+    } catch (e) {
+      return APIResponse<T>(
+          data: null, error: true, errorMessage: errorMessage);
+    }
+
+    if (responseData.statusCode == 200) {
+      dynamic bodyJson = {};
+      try {
+        bodyJson = json.decode(responseData.body);
+      } catch (_) {
+        print("Could not convert body to json");
+        bodyJson = responseData.body;
+      }
+      Map<String, String> headerData = responseData.headers;
+      T responseObject;
+      if (fromJson != null) {
+        responseObject = fromJson(bodyJson);
+      } else if (fromJsonAndHeader != null) {
+        responseObject = fromJsonAndHeader(bodyJson, headerData);
+      }
+      return APIResponse<T>(data: responseObject);
+    } else {
+      return APIResponse<T>(
+          error: true,
+          errorMessage: responseData?.body ?? getErrorMessage(responseData));
+    }
   }
 
   static APIResponse<T> getErrorMessage<T>(Response response) {
@@ -210,6 +222,23 @@ class RestService {
   Future<APIResponse<String>> Function(Tuple2<String, String>, BuildingModel)
       postBeacon;
 
+  Future<APIResponse<Question>> Function(List<String>, String, List<String>)
+      postQuestion;
+
+  Future<APIResponse<UserModel>> Function() postUnauthorizedUser;
+
+  Future<APIResponse<List<QuestionAndFeedback>>> Function(String, String)
+      getFeedback;
+
+  Future<APIResponse<QuestionStatisticsModel>> Function(
+      FeedbackQuestion, String) getQuestionStatistics;
+
+  Future<APIResponse<bool>> Function(String, BuildingModel) patchUserAdmin;
+
+  Future<APIResponse<String>> Function(String) getUserIdFromEmail;
+
+  Future<APIResponse<String>> Function(String, bool) patchQuestionInactive;
+
   RestService(
     this.context,
   ) {
@@ -260,199 +289,23 @@ class RestService {
 
     postBeacon =
         (beacon, building) => postBeaconRequest(context, beacon, building);
-  }
 
-  Future<APIResponse<Question>> addQuestion(
-    String token,
-    List<String> rooms,
-    String value,
-    List<String> answerOptions,
-  ) {
-    final String body = json.encode({
-      'rooms': rooms,
-      'value': value,
-      'answerOptions': answerOptions,
-    });
-    return http
-        .post(api + '/questions', headers: headers(context), body: body)
-        .then((questionData) {
-      if (questionData.statusCode == 200) {
-        dynamic resultBody = json.decode(questionData.body);
-        print(resultBody);
-        Question question = Question.fromJson(resultBody);
-        return APIResponse<Question>(data: question);
-      } else {
-        return APIResponse<Question>(
-            error: true, errorMessage: questionData.body ?? "");
-      }
-    }).catchError((e) {
-      print(e);
-      return APIResponse<Question>(
-          error: true, errorMessage: "Adding question failed");
-    });
-  }
+    postQuestion = (rooms, value, answerOptions) =>
+        postQuestionRequest(context, rooms, value, answerOptions);
 
-  Future<APIResponse<UserModel>> createUnauthorizedUser() {
-    return http
-        .post(api + '/users', headers: headers(context, noToken: true))
-        .then((data) {
-      if (data.statusCode == 200) {
-        final responseHeaders = data.headers;
-        final token = responseHeaders['x-auth-token'];
-        return APIResponse<UserModel>(
-          data: UserModel(
-            "",
-            token,
-          ),
-        );
-      } else {
-        return APIResponse<UserModel>(
-          error: true,
-          errorMessage: data.body,
-        );
-      }
-    }).catchError(
-      (_) => APIResponse<UserModel>(
-          error: true, errorMessage: 'Check your internet connection'),
-    );
-  }
+    postUnauthorizedUser = () => postUnauthorizedUserRequest(context);
 
-  Future<APIResponse<List<QuestionAndFeedback>>> getFeedback(
-      String token, String user, String t) {
-    return http
-        .get(api + '/feedback?user=' + user + '&t=' + t,
-            headers: headers(context))
-        .then((data) {
-      if (data.statusCode == 200) {
-        List<QuestionAndFeedback> feedbackList = <QuestionAndFeedback>[];
-        dynamic resultBody = json.decode(data.body);
-        if (resultBody == null || resultBody.length < 1) {
-          return APIResponse<List<QuestionAndFeedback>>(
-            error: true,
-            errorMessage: "List of answered questions were empty",
-          );
-        }
-        for (var e in resultBody) {
-          if (e['answer'] != null && e['question'] != null) {
-            QuestionAndFeedback qF = QuestionAndFeedback(
-              e["_id"],
-              e["user"],
-              e["room"],
-              AnswerOption.fromJson(e["answer"]),
-              FeedbackQuestion.fromJson(e["question"]),
-              e["createdAt"],
-              e["updatedAt"],
-              e["__v"],
-            );
-            feedbackList.add(qF);
-          }
-        }
-        return APIResponse<List<QuestionAndFeedback>>(
-          data: feedbackList,
-        );
-      } else {
-        return APIResponse<List<QuestionAndFeedback>>(
-            error: true, errorMessage: "Getting answered questions failed");
-      }
-    }).catchError((e) {
-      return APIResponse<List<QuestionAndFeedback>>(
-          error: true, errorMessage: "Getting answered questions failed");
-    });
-  }
+    getFeedback = (user, t) => getFeedbackRequest(context, user, t);
 
-  Future<APIResponse<QuestionStatisticsModel>> getQuestionStatistics(
-    String token,
-    FeedbackQuestion question, {
-    String t,
-  }) {
-    FeedbackQuestion q = question;
-    String url;
-    if (t == null) {
-      url = api + '/feedback/questionStatistics/' + q.id;
-    } else {
-      url = api + '/feedback/questionStatistics/' + q.id + '?t=' + t;
-    }
-    return http.get(url, headers: headers(context)).then((data) {
-      if (data.statusCode == 200) {
-        return APIResponse<QuestionStatisticsModel>(
-          data: QuestionStatisticsModel.fromJson(
-            q,
-            json.decode(data.body),
-          ),
-        );
-      } else {
-        return APIResponse<QuestionStatisticsModel>(
-          error: true,
-          errorMessage: "Check your internet connection",
-        );
-      }
-    });
-  }
+    getQuestionStatistics =
+        (question, t) => getQuestionStatisticsRequest(context, question, t);
 
-  Future<APIResponse<UserModel>> makeUserAdmin(
-    String token,
-    String userId,
-    BuildingModel building,
-  ) {
-    final String body =
-        json.encode({'userId': userId, 'buildingId': building.id});
-    return http
-        .patch(api + '/users/makeBuildingAdmin',
-            headers: headers(context), body: body)
-        .then((adminData) {
-      if (adminData.statusCode == 200) {
-        dynamic resultBody = json.decode(adminData.body);
-        UserModel userModel = UserModel(
-          resultBody['userId'],
-          resultBody['bulding'],
-        );
-        return APIResponse<UserModel>(data: userModel);
-      } else {
-        return APIResponse<UserModel>(
-            error: true, errorMessage: adminData.body ?? "");
-      }
-    }).catchError((e) {
-      return APIResponse<UserModel>(
-          error: true, errorMessage: "Making user admin failed");
-    });
-  }
+    patchUserAdmin =
+        (userId, building) => patchUserAdminRequest(context, userId, building);
 
-  Future<APIResponse<String>> getUserIdFromEmail(
-    String token,
-    String email,
-  ) {
-    return http
-        .get(api + '/users/getUserIdFromEmail/' + email,
-            headers: headers(context))
-        .then((userData) {
-      if (userData.statusCode == 200) {
-        return APIResponse<String>(data: userData.body);
-      } else {
-        return APIResponse<String>(
-            error: true, errorMessage: userData.body ?? "");
-      }
-    }).catchError((e) => APIResponse<String>(
-              error: true,
-              errorMessage: "Get userId Failed",
-            ));
-  }
+    getUserIdFromEmail = (email) => getUserIdFromEmailRequest(context, email);
 
-  Future<APIResponse<String>> makeQuestionInactive(
-    String token,
-    String questionId,
-    bool isActive,
-  ) {
-    final String body = json.encode({'isActive': isActive});
-    return http
-        .patch(api + '/questions/setActive/' + questionId,
-            headers: headers(context), body: body)
-        .then((questionData) {
-      if (questionData.statusCode == 200) {
-        return APIResponse<String>(data: "Question set inactive");
-      } else {
-        return APIResponse<String>(
-            error: true, errorMessage: questionData.body);
-      }
-    });
+    patchQuestionInactive = (questionId, isActive) =>
+        patchQuestionInactiveRequest(context, questionId, isActive);
   }
 }

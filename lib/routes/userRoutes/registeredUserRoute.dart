@@ -118,7 +118,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       List<QuestionStatisticsModel> roomQuestionStatistics = [];
       questionsOfRoom.forEach((q) async {
         APIResponse<QuestionStatisticsModel> apiResponseQuestionStatistics =
-            await _restService.getQuestionStatistics(_token, q, t: _t);
+            await _restService.getQuestionStatistics(q, _t);
         if (!apiResponseQuestionStatistics.error) {
           roomQuestionStatistics.add(apiResponseQuestionStatistics.data);
           roomQuestionStatistics.sort((q1, q2) =>

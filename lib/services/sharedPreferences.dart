@@ -21,7 +21,7 @@ class SharedPrefsHelper {
     String token = sharedPreferences.getString(tokenKey);
     if (token == null) {
       APIResponse<UserModel> newUserAPIResponse =
-          await restService.createUnauthorizedUser();
+          await restService.postUnauthorizedUser();
       if (!newUserAPIResponse.error) {
         token = newUserAPIResponse.data.authToken;
         sharedPreferences.setString(tokenKey, token);

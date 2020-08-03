@@ -45,8 +45,7 @@ class AddQuestion {
           for (int j = 0; j < controllerList.length; j++) {
             finalansweroptionslist.add(controllerList[j].text.toString());
           }
-          APIResponse<Question> apiResponse = await _restService.addQuestion(
-              token,
+          APIResponse<Question> apiResponse = await _restService.postQuestion(
               finalroomlist,
               textEditingController.text.trim().toString(),
               finalansweroptionslist);

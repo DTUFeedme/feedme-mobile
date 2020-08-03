@@ -1,6 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:climify/models/answerOption.dart';
-import 'package:climify/models/roomModel.dart';
 
 part 'questionModel.g.dart';
 
