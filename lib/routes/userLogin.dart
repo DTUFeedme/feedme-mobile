@@ -69,7 +69,7 @@ class _UserLoginState extends State<UserLogin> {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     } else {
       Provider.of<GlobalState>(context)
-          .updateAccount(apiResponse.data.email, apiResponse.data.authToken, context);
+          .updateAccount(apiResponse.data.email, apiResponse.data.authToken, apiResponse.data.refreshToken, context);
       Navigator.of(context).pushReplacementNamed("registered");
     }
     setState(() {

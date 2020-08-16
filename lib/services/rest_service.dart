@@ -9,6 +9,7 @@ import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/services/bluetooth.dart';
+
 // import 'package:climify/services/rest_service_functions/addBeacon.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -18,36 +19,62 @@ import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tuple/tuple.dart';
 
+import 'jwtDecoder.dart';
+
 part 'package:climify/services/rest_service_functions/deleteBeacon.dart';
+
 part 'package:climify/services/rest_service_functions/deleteBuilding.dart';
+
 part 'package:climify/services/rest_service_functions/deleteRoom.dart';
+
 part 'package:climify/services/rest_service_functions/deleteSignalMapsOfRoom.dart';
 
 part 'package:climify/services/rest_service_functions/getActiveQuestionsByRoom.dart';
+
 part 'package:climify/services/rest_service_functions/getAllBeacons.dart';
+
 part 'package:climify/services/rest_service_functions/getAllQuestionsByRoom.dart';
+
 part 'package:climify/services/rest_service_functions/getBeaconsOfBuilding.dart';
+
 part 'package:climify/services/rest_service_functions/getBuilding.dart';
+
 part 'package:climify/services/rest_service_functions/getBuildingsWithAdminRights.dart';
+
 part 'package:climify/services/rest_service_functions/getFeedback.dart';
+
 part 'package:climify/services/rest_service_functions/getRoomFromSignalMap.dart';
+
 part 'package:climify/services/rest_service_functions/getUserIdFromEmail.dart';
+
 part 'package:climify/services/rest_service_functions/getQuestionStatistics.dart';
 
 part 'package:climify/services/rest_service_functions/patchQuestionInactive.dart';
+
 part 'package:climify/services/rest_service_functions/patchUserAdmin.dart';
 
 part 'package:climify/services/rest_service_functions/postBeacon.dart';
+
 part 'package:climify/services/rest_service_functions/postBuilding.dart';
+
 part 'package:climify/services/rest_service_functions/postFeedback.dart';
+
 part 'package:climify/services/rest_service_functions/postQuestion.dart';
+
 part 'package:climify/services/rest_service_functions/postRoom.dart';
+
 part 'package:climify/services/rest_service_functions/postSignalMap.dart';
+
 part 'package:climify/services/rest_service_functions/postUnauthorizedUser.dart';
+
 part 'package:climify/services/rest_service_functions/postUser.dart';
+
 part 'package:climify/services/rest_service_functions/postUserLogin.dart';
+
+part 'package:climify/services/rest_service_functions/refreshToken.dart';
 
 enum RequestType {
   GET,
@@ -57,21 +84,25 @@ enum RequestType {
 }
 
 class RestService {
-  static const api = 'http://feedme.compute.dtu.dk/api';
+  static const api = 'http://feedme.compute.dtu.dk/api-dev';
+  static String tokenKey = "unauthorizedToken";
+  static String refreshTokenKey = "refreshToken";
 
   static Map<String, String> headers(
     BuildContext context, {
     bool noToken = false,
     Map<String, String> additionalParameters = const {},
   }) {
-    String token = "";
+    String authToken = "";
+    String refreshToken = "";
     Map<String, String> headers = {
       'Content-Type': 'application/json',
     };
     if (!noToken) {
       try {
-        token = Provider.of<GlobalState>(context).globalState['token'];
-        headers['x-auth-token'] = token;
+        authToken = Provider.of<GlobalState>(context).globalState['authToken'];
+
+        headers['x-auth-token'] = authToken;
       } catch (_) {}
     }
     additionalParameters.forEach((key, value) {
@@ -90,6 +121,42 @@ class RestService {
     String errorMessage = "Could not connect to the internet",
     Map<String, String> additionalHeaderParameters = const {},
   }) async {
+    Map<String, String> reqHeaders = headers(context);
+    String refreshToken =
+        Provider.of<GlobalState>(context).globalState['refreshToken'];
+    print(refreshToken);
+    print("hej :O");
+
+
+    String authToken = reqHeaders["x-auth-token"];
+    print(authToken);
+
+
+    // TODO: Delete circular reference.
+    // TODO: When authToken has expired a new request is made but with an expired authToken
+    if (authToken.isNotEmpty) {
+      int exp = JwtDecoder.parseJwtPayLoad(authToken)["exp"];
+
+      // check if jwt has expired
+      if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 10) {
+        print(refreshToken);
+
+        APIResponse<UserModel> refreshTokenResponse =
+            await refreshTokenRequest(context, refreshToken);
+
+        if (!refreshTokenResponse.error) {
+          SharedPreferences sharedPreferences =
+              await SharedPreferences.getInstance();
+
+          authToken = refreshTokenResponse.data.authToken;
+          sharedPreferences.setString(tokenKey, authToken);
+
+          refreshToken = refreshTokenResponse.data.refreshToken;
+          sharedPreferences.setString(refreshTokenKey, refreshToken);
+        }
+      }
+    }
+
     Response responseData;
     try {
       switch (requestType) {
@@ -227,6 +294,8 @@ class RestService {
 
   Future<APIResponse<UserModel>> Function() postUnauthorizedUser;
 
+  Future<APIResponse<UserModel>> Function(String refreshToken) refreshToken;
+
   Future<APIResponse<List<QuestionAndFeedback>>> Function(String, String)
       getFeedback;
 
@@ -244,6 +313,7 @@ class RestService {
   ) {
     bluetooth = BluetoothServices(context);
 
+    // TODO: t is the jwt but it seems like it is used as a time???
     getActiveQuestionsByRoom =
         (roomId, t) => getActiveQuestionsByRoomRequest(context, roomId, t: t);
 
@@ -294,6 +364,8 @@ class RestService {
         postQuestionRequest(context, rooms, value, answerOptions);
 
     postUnauthorizedUser = () => postUnauthorizedUserRequest(context);
+
+    refreshToken = (refreshToken) => refreshTokenRequest(context, refreshToken);
 
     getFeedback = (user, t) => getFeedbackRequest(context, user, t);
 

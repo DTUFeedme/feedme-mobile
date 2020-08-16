@@ -129,6 +129,7 @@ class BluetoothServices {
     }
   }
 
+  // TODO: Why is token a parameter here? It doesn't seem like it is used
   Future<APIResponse<RoomModel>> getRoomFromBuilding(
     BuildingModel building,
     String token, {

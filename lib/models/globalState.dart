@@ -5,16 +5,20 @@ import 'package:flutter/material.dart';
 class GlobalState extends ChangeNotifier {
   Map globalState = {
     'email': '',
-    'token': '',
+    'authToken': '',
+    'refreshToken': '',
     'building': null,
   };
 
-  void updateAccount(String email, String token, BuildContext context) {
+  void updateAccount(String email, String authToken, String refreshToken, BuildContext context) {
     final SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper(context);
 
     globalState['email'] = email;
-    globalState['token'] = token;
-    sharedPrefsHelper.setUserToken(token);
+    globalState['authToken'] = authToken;
+    globalState['refreshToken'] = refreshToken;
+    sharedPrefsHelper.setUserAuthToken(authToken);
+    sharedPrefsHelper.setUserRefreshToken(refreshToken);
+    
     notifyListeners();
   }
 

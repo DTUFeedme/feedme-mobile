@@ -3,6 +3,7 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
+import 'package:climify/models/userModel.dart';
 import 'package:climify/routes/userRoutes/scanHelper.dart';
 import 'package:climify/routes/viewAnsweredQuestions.dart';
 import 'package:climify/services/bluetooth.dart';
@@ -13,6 +14,7 @@ import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:climify/routes/feedback.dart';
+import 'package:tuple/tuple.dart';
 
 class UnregisteredUserScreen extends StatefulWidget {
   const UnregisteredUserScreen({
@@ -66,10 +68,10 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   Future<void> _setupState({
     bool forceBuildingRescan = false,
   }) async {
-    String token =
-        await _sharedPrefsHelper.getUnauthorizedUserToken(_restService);
+    Tuple2 tokens =
+        await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
     setState(() {
-      _token = token;
+      _token = tokens.item1;
     });
 
     if (_loadingState) return;
@@ -88,7 +90,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       scaffoldKey: _scaffoldKey,
       token: _token,
     );
-    Provider.of<GlobalState>(context).updateAccount("no email", token, context);
+    Provider.of<GlobalState>(context).updateAccount("no email", tokens.item1, tokens.item2, context);
     Provider.of<GlobalState>(context).updateBuilding(_building);
     await _scanForRoom(forceBuildingRescan);
     setState(() {

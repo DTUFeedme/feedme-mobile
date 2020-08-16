@@ -6,9 +6,10 @@ Future<APIResponse<UserModel>> postUnauthorizedUserRequest(
   return RestService.requestServer(
     context,
     // fromJsonAndHeader: (_, header) => UserModel("", header['x-auth-token']),
-    fromJsonAndHeader: (_, header) {
+    fromJsonAndHeader: (json, header) {
+
       print(header['x-auth-token']);
-      return UserModel("", header['x-auth-token']);
+      return UserModel("", header['x-auth-token'], refreshToken: json["refreshToken"]);
     },
     requestType: RequestType.POST,
     route: '/users',
