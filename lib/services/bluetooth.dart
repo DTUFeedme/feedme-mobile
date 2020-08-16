@@ -181,9 +181,9 @@ class BluetoothServices {
     scanResults.forEach((result) {
       String beaconName = getBeaconName(result);
       if (beacons.where((element) => element.name == beaconName).isNotEmpty) {
-        String beaconId =
-            beacons.firstWhere((element) => element.name == beaconName).id;
-        signalMap.addBeaconReading(beaconId, getRSSI(result));
+        String uuid =
+            beacons.firstWhere((element) => element.name == beaconName).uuid;
+        signalMap.addBeaconReading(uuid, getRSSI(result));
       }
     });
 

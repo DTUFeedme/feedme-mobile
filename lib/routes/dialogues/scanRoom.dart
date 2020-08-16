@@ -73,10 +73,10 @@ class ScanRoom {
             if (beacons
                 .where((element) => element.name == beaconName)
                 .isNotEmpty) {
-              String beaconId = beacons
+              String uuid = beacons
                   .firstWhere((element) => element.name == beaconName)
-                  .id;
-              signalMap.addBeaconReading(beaconId, _bluetooth.getRSSI(result));
+                  .uuid;
+              signalMap.addBeaconReading(uuid, _bluetooth.getRSSI(result));
               beaconsScanned++;
             }
           });

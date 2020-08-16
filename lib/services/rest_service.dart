@@ -57,7 +57,7 @@ enum RequestType {
 }
 
 class RestService {
-  static const api = 'http://climify-spe.compute.dtu.dk:8080/api-dev';
+  static const api = 'http://feedme.compute.dtu.dk/api';
 
   static Map<String, String> headers(
     BuildContext context, {
