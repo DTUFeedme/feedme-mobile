@@ -22,6 +22,18 @@ class GlobalState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateTokens(String authToken, String refreshToken, BuildContext context){
+    final SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper(context);
+
+    globalState['authToken'] = authToken;
+    globalState['refreshToken'] = refreshToken;
+
+    sharedPrefsHelper.setUserAuthToken(authToken);
+    sharedPrefsHelper.setUserRefreshToken(refreshToken);
+
+    notifyListeners();
+  }
+
   void updateBuilding(BuildingModel building) {
     globalState['building'] = building;
     notifyListeners();

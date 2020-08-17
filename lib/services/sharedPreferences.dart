@@ -14,48 +14,26 @@ class SharedPrefsHelper {
 
   final BuildContext context;
 
-  const SharedPrefsHelper(this.context,);
+  const SharedPrefsHelper(
+    this.context,
+  );
 
-  Future<Tuple2<String, String>> getUnauthorizedTokens(RestService restService,) async {
+  Future<Tuple2<String, String>> getUnauthorizedTokens(
+    RestService restService,
+  ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String authToken = sharedPreferences.getString(tokenKey);
     String refreshToken = sharedPreferences.getString(refreshTokenKey);
     if (authToken == null || refreshToken == null) {
-      APIResponse<UserModel> newUserAPIResponse =
-      await restService.postUnauthorizedUser();
+      APIResponse<Tuple2<String,String>> newUserAPIResponse =
+          await restService.postUnauthorizedUser();
       if (!newUserAPIResponse.error) {
-        authToken = newUserAPIResponse.data.authToken;
-        sharedPreferences.setString(tokenKey, authToken);
-
-        refreshToken = newUserAPIResponse.data.refreshToken;
-        sharedPreferences.setString(refreshTokenKey, refreshToken);
-
-        return new Tuple2(authToken, refreshToken);
+        return new Tuple2(newUserAPIResponse.data.item1, newUserAPIResponse.data.item2);
       } else {
         return null;
       }
     } else {
-      int exp = JwtDecoder.parseJwtPayLoad(authToken)["exp"];
-
-      // check if jwt has expired
-      if (DateTime
-          .now()
-          .millisecondsSinceEpoch / 1000 > exp - 10) {
-        print(refreshToken);
-
-        APIResponse<UserModel> refreshTokenResponse =
-        await restService.refreshToken(refreshToken);
-
-        if (!refreshTokenResponse.error) {
-          authToken = refreshTokenResponse.data.authToken;
-          sharedPreferences.setString(tokenKey, authToken);
-
-          refreshToken = refreshTokenResponse.data.refreshToken;
-          sharedPreferences.setString(refreshTokenKey, refreshToken);
-        }
-      }
-
-      return new Tuple2(authToken,  refreshToken);
+      return new Tuple2(authToken, refreshToken);
     }
   }
 
@@ -73,7 +51,7 @@ class SharedPrefsHelper {
 
   Future<void> setUserAuthToken(String token) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    await sharedPreferences.setString(userToken, token);
+    await sharedPreferences.setString(tokenKey, token);
     return;
   }
 

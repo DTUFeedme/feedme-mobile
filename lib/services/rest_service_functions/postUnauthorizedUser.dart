@@ -1,6 +1,6 @@
 part of 'package:climify/services/rest_service.dart';
 
-Future<APIResponse<UserModel>> postUnauthorizedUserRequest(
+Future<APIResponse<Tuple2<String,String>>> postUnauthorizedUserRequest(
   BuildContext context,
 ) {
   return RestService.requestServer(
@@ -9,7 +9,7 @@ Future<APIResponse<UserModel>> postUnauthorizedUserRequest(
     fromJsonAndHeader: (json, header) {
 
       print(header['x-auth-token']);
-      return UserModel("", header['x-auth-token'], refreshToken: json["refreshToken"]);
+      return Tuple2(header['x-auth-token'], json["refreshToken"]);
     },
     requestType: RequestType.POST,
     route: '/users',

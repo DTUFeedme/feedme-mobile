@@ -15,11 +15,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:climify/models/feedbackQuestion.dart';
-import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tuple/tuple.dart';
 
 import 'jwtDecoder.dart';
@@ -85,8 +83,6 @@ enum RequestType {
 
 class RestService {
   static const api = 'http://feedme.compute.dtu.dk/api-dev';
-  static String tokenKey = "unauthorizedToken";
-  static String refreshTokenKey = "refreshToken";
 
   static Map<String, String> headers(
     BuildContext context, {
@@ -94,14 +90,12 @@ class RestService {
     Map<String, String> additionalParameters = const {},
   }) {
     String authToken = "";
-    String refreshToken = "";
     Map<String, String> headers = {
       'Content-Type': 'application/json',
     };
     if (!noToken) {
       try {
         authToken = Provider.of<GlobalState>(context).globalState['authToken'];
-
         headers['x-auth-token'] = authToken;
       } catch (_) {}
     }
@@ -121,38 +115,31 @@ class RestService {
     String errorMessage = "Could not connect to the internet",
     Map<String, String> additionalHeaderParameters = const {},
   }) async {
-    Map<String, String> reqHeaders = headers(context);
+    Map<String, String> reqHeaders = headers(context, additionalParameters: additionalHeaderParameters);
     String refreshToken =
         Provider.of<GlobalState>(context).globalState['refreshToken'];
+    print("route: " + route);
+    print("refresh + auth");
     print(refreshToken);
-    print("hej :O");
-
 
     String authToken = reqHeaders["x-auth-token"];
     print(authToken);
-
-
-    // TODO: Delete circular reference.
-    // TODO: When authToken has expired a new request is made but with an expired authToken
-    if (authToken.isNotEmpty) {
+    print("done");
+    // Make sure authToken hasn't expired
+    if (authToken != null && authToken.isNotEmpty) {
       int exp = JwtDecoder.parseJwtPayLoad(authToken)["exp"];
 
       // check if jwt has expired
-      if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 10) {
-        print(refreshToken);
-
-        APIResponse<UserModel> refreshTokenResponse =
-            await refreshTokenRequest(context, refreshToken);
-
-        if (!refreshTokenResponse.error) {
-          SharedPreferences sharedPreferences =
-              await SharedPreferences.getInstance();
-
-          authToken = refreshTokenResponse.data.authToken;
-          sharedPreferences.setString(tokenKey, authToken);
-
-          refreshToken = refreshTokenResponse.data.refreshToken;
-          sharedPreferences.setString(refreshTokenKey, refreshToken);
+      if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 30) {
+        print("jwt expired");
+        APIResponse<Tuple2<String, String>> updatedTokensResponse =
+            await updateTokensRequest(authToken, refreshToken);
+        if (!updatedTokensResponse.error) {
+          Provider.of<GlobalState>(context).updateTokens(updatedTokensResponse.data.item1, updatedTokensResponse.data.item2, context);
+        } else {
+          print(updatedTokensResponse.errorMessage);
+          return APIResponse<T>(
+              data: null, error: true, errorMessage: updatedTokensResponse.errorMessage);
         }
       }
     }
@@ -163,44 +150,33 @@ class RestService {
         case RequestType.GET:
           responseData = await http.get(
             api + route,
-            headers: headers(
-              context,
-              additionalParameters: additionalHeaderParameters,
-            ),
+            headers: reqHeaders,
           );
           break;
         case RequestType.POST:
           responseData = await http.post(
             api + route,
-            headers: headers(
-              context,
-              additionalParameters: additionalHeaderParameters,
-            ),
+            headers: reqHeaders,
             body: body,
           );
           break;
         case RequestType.DELETE:
           responseData = await http.delete(
             api + route,
-            headers: headers(
-              context,
-              additionalParameters: additionalHeaderParameters,
-            ),
+            headers: reqHeaders,
           );
           break;
         case RequestType.PATCH:
           responseData = await http.patch(
             api + route,
-            headers: headers(
-              context,
-              additionalParameters: additionalHeaderParameters,
-            ),
+            headers: reqHeaders,
             body: body,
           );
           break;
         default:
       }
     } catch (e) {
+      print(e);
       return APIResponse<T>(
           data: null, error: true, errorMessage: errorMessage);
     }
@@ -292,9 +268,9 @@ class RestService {
   Future<APIResponse<Question>> Function(List<String>, String, List<String>)
       postQuestion;
 
-  Future<APIResponse<UserModel>> Function() postUnauthorizedUser;
+  Future<APIResponse<Tuple2<String,String>>> Function() postUnauthorizedUser;
 
-  Future<APIResponse<UserModel>> Function(String refreshToken) refreshToken;
+  Future<APIResponse<Tuple2<String,String>>> Function(String authToken, String refreshToken) updateTokens;
 
   Future<APIResponse<List<QuestionAndFeedback>>> Function(String, String)
       getFeedback;
@@ -365,7 +341,7 @@ class RestService {
 
     postUnauthorizedUser = () => postUnauthorizedUserRequest(context);
 
-    refreshToken = (refreshToken) => refreshTokenRequest(context, refreshToken);
+    updateTokens = (authToken, refreshToken) => updateTokensRequest(authToken, refreshToken);
 
     getFeedback = (user, t) => getFeedbackRequest(context, user, t);
 
