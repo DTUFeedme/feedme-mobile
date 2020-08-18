@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 
 class AddQuestion {
   final BuildContext context;
-  final String token;
   final TextEditingController textEditingController;
   final List<TextEditingController> controllerList;
   final BuildingModel building;
@@ -19,7 +18,6 @@ class AddQuestion {
 
   AddQuestion(
     this.context, {
-    this.token,
     this.textEditingController,
     this.controllerList,
     this.building,

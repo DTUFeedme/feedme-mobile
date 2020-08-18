@@ -42,7 +42,6 @@ class _BuildingManagerState extends State<BuildingManager> {
   TextEditingController _newRoomNameController = TextEditingController();
   List<Beacon> _beacons = [];
   List<Tuple2<String, String>> _beaconList = [];
-  String _token = "";
   bool _scanningSignalMap = false;
   int _signalMapScans = 0;
   // SignalMap _signalMap;
@@ -81,7 +80,6 @@ class _BuildingManagerState extends State<BuildingManager> {
   void _setBuildingState() async {
     await Future.delayed(Duration.zero);
     setState(() {
-      _token = Provider.of<GlobalState>(context).globalState['token'];
       _building = Provider.of<GlobalState>(context).globalState['building'];
     });
     APIResponse<List<Beacon>> apiResponseBeacons =
@@ -157,7 +155,6 @@ class _BuildingManagerState extends State<BuildingManager> {
       builder: (_) {
         return AddQuestion(
           context,
-          token: _token,
           textEditingController: _questionNameController,
           controllerList: controllerList,
           building: _building,
@@ -183,7 +180,6 @@ class _BuildingManagerState extends State<BuildingManager> {
       builder: (_) {
         return AddRoom(
           context,
-          token: _token,
           textEditingController: _newRoomNameController,
           building: _building,
           scaffoldKey: _scaffoldKey,
@@ -219,7 +215,6 @@ class _BuildingManagerState extends State<BuildingManager> {
         return ScanRoom(
           context,
           room: room,
-          token: _token,
           building: _building,
           scaffoldKey: _scaffoldKey,
           setScanning: (b) => setState(() {
@@ -244,7 +239,6 @@ class _BuildingManagerState extends State<BuildingManager> {
         return RoomMenu(
           context,
           room: room,
-          token: _token,
           building: _building,
           scaffoldKey: _scaffoldKey,
           addScans: _addScans,
@@ -270,7 +264,6 @@ class _BuildingManagerState extends State<BuildingManager> {
         return BeaconMenu(
           context,
           beacon: beacon,
-          token: _token,
           building: _building,
           scaffoldKey: _scaffoldKey,
           setCurrentlyConfirming: (s) => setState(() {
@@ -295,7 +288,6 @@ class _BuildingManagerState extends State<BuildingManager> {
         return QuestionMenu(
           context,
           question: question,
-          token: _token,
           scaffoldKey: _scaffoldKey,
           setCurrentlyConfirming: (s) => setState(() {
             _currentlyConfirming = s;
@@ -391,7 +383,6 @@ class _BuildingManagerState extends State<BuildingManager> {
       builder: (_) {
         return AddBeacon(
           context,
-          token: _token,
           beaconList: _beaconList,
           alreadyExistingBeacons: _beacons,
           building: _building,

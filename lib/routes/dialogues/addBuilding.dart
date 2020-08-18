@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 
 class AddBuilding {
   final BuildContext context;
-  final String token;
   final TextEditingController textEditingController;
   final GlobalKey<ScaffoldState> scaffoldKey;
   StatefulBuilder addBuildingDialog;
@@ -16,7 +15,6 @@ class AddBuilding {
 
   AddBuilding(
     this.context, {
-    this.token,
     this.textEditingController,
     this.scaffoldKey,
   }) {

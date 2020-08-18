@@ -12,13 +12,11 @@ import 'package:intl/intl.dart';
 
 class ViewAnsweredQuestionsWidget extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
-  final String token;
   final String user;
 
   const ViewAnsweredQuestionsWidget({
     Key key,
     @required this.scaffoldKey,
-    this.token,
     this.user,
   }) : super(key: key);
 
@@ -30,7 +28,6 @@ class ViewAnsweredQuestionsWidget extends StatefulWidget {
 class ViewAnsweredQuestionsWidgetState
     extends State<ViewAnsweredQuestionsWidget> {
   GlobalKey<ScaffoldState> _scaffoldKey;
-  String _token;
   RestService _restService;
   List<QuestionAndFeedback> _feedbackList = <QuestionAndFeedback>[];
   List<QuestionAndFeedback> _tempFeedbackList = <QuestionAndFeedback>[];
@@ -42,7 +39,6 @@ class ViewAnsweredQuestionsWidgetState
     super.initState();
     _restService = RestService(context);
     _scaffoldKey = widget.scaffoldKey;
-    _token = widget.token;
     _user = widget.user;
     _getFeedback();
   }
@@ -50,9 +46,12 @@ class ViewAnsweredQuestionsWidgetState
   Future<void> _getFeedback() async {
     await Future.delayed(Duration.zero);
     _tempFeedbackList = [];
+    print("getting feedback");
     APIResponse<List<QuestionAndFeedback>> response =
         await _restService.getFeedback(_user, _t);
+    print("got feedback");
     if (response.error) return;
+
     response.data = response.data.reversed.toList();
 
     void _addToList(QuestionAndFeedback qf) {

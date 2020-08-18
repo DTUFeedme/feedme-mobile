@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 class BeaconMenu {
   final BuildContext context;
   final Beacon beacon;
-  final String token;
   final BuildingModel building;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final Function(String) setCurrentlyConfirming;
@@ -21,7 +20,6 @@ class BeaconMenu {
   BeaconMenu(
     this.context, {
     @required this.beacon,
-    @required this.token,
     @required this.building,
     @required this.scaffoldKey,
     @required this.setCurrentlyConfirming,

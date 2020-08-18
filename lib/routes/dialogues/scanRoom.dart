@@ -13,7 +13,6 @@ import 'package:flutter_blue/flutter_blue.dart';
 class ScanRoom {
   final BuildContext context;
   final RoomModel room;
-  final String token;
   final BuildingModel building;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final Function(bool) setScanning;
@@ -30,7 +29,6 @@ class ScanRoom {
   ScanRoom(
     this.context, {
     @required this.room,
-    @required this.token,
     @required this.building,
     @required this.scaffoldKey,
     @required this.setScanning,

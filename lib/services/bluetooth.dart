@@ -62,9 +62,7 @@ class BluetoothServices {
   }
 
   Future<APIResponse<Tuple2<BuildingModel, RoomModel>>>
-      getBuildingAndRoomFromScan(
-    String token,
-  ) async {
+      getBuildingAndRoomFromScan() async {
     if (!await isOn) {
       return APIResponse<Tuple2<BuildingModel, RoomModel>>(
           error: true, errorMessage: "Bluetooth is not on");
@@ -105,7 +103,6 @@ class BluetoothServices {
           BuildingModel building = buildingResponse.data;
           APIResponse<RoomModel> roomResponse = await getRoomFromBuilding(
             building,
-            token,
             scanResults: scanResults,
           );
           if (!roomResponse.error) {
@@ -129,10 +126,8 @@ class BluetoothServices {
     }
   }
 
-  // TODO: Why is token a parameter here? It doesn't seem like it is used
   Future<APIResponse<RoomModel>> getRoomFromBuilding(
-    BuildingModel building,
-    String token, {
+    BuildingModel building, {
     List<ScanResult> scanResults,
   }) async {
     RestService restService = RestService(context);

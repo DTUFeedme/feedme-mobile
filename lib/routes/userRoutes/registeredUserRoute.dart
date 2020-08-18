@@ -34,7 +34,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       GlobalKey<BuildingListState>();
   BluetoothServices _bluetooth;
   RestService _restService;
-  String _token;
   String _t;
   List<QuestionStatisticsModel> _roomQuestionStatistics = [];
   TextEditingController _buildingNameTextController = TextEditingController();
@@ -65,7 +64,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     await Future.delayed(Duration.zero);
     setState(() {
       _loadingState = true;
-      _token = Provider.of<GlobalState>(context).globalState['token'];
     });
     _setSubtitle();
     if (!await _bluetooth.isOn) {
@@ -74,7 +72,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     _scanHelper = ScanHelper(
       context,
       scaffoldKey: _scaffoldKey,
-      token: _token,
     );
     // await Future.delayed(Duration(milliseconds: 500));
     _gettingRoom = _scanForRoom(forceBuildingRescan);
@@ -172,7 +169,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       builder: (_) {
         return AddBuilding(
           context,
-          token: _token,
           textEditingController: _buildingNameTextController,
           scaffoldKey: _scaffoldKey,
         ).dialog;
@@ -269,7 +265,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                                               MaterialPageRoute(
                                                 builder: (context) =>
                                                     FeedbackWidget(
-                                                        token: _token,
                                                         question:
                                                             _questions[index],
                                                         room: _room),
@@ -317,7 +312,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                   child: Container(
                     child: ViewAnsweredQuestionsWidget(
                       scaffoldKey: _scaffoldKey,
-                      token: _token,
                       user: "me",
                     ),
                   ),

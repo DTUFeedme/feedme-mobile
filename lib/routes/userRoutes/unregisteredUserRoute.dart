@@ -88,9 +88,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     _scanHelper = ScanHelper(
       context,
       scaffoldKey: _scaffoldKey,
-      token: _token,
     );
-    Provider.of<GlobalState>(context).updateAccount("no email", tokens.item1, tokens.item2, context);
+    Provider.of<GlobalState>(context)
+        .updateAccount("no email", tokens.item1, tokens.item2, context);
     Provider.of<GlobalState>(context).updateBuilding(_building);
     await _scanForRoom(forceBuildingRescan);
     setState(() {
@@ -112,8 +112,11 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   Future<void> _getActiveQuestions() async {
     RoomModel room;
 
+    print("getting all beacons");
     APIResponse<RoomModel> apiResponseRoom =
-        await _bluetooth.getRoomFromBuilding(_building, _token);
+        await _bluetooth.getRoomFromBuilding(_building);
+    print("got all beacons");
+
     if (apiResponseRoom.error) {
       SnackBarError.showErrorSnackBar(
         apiResponseRoom.errorMessage,
@@ -124,8 +127,11 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
     room = apiResponseRoom.data;
 
+    print("getting feedback");
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
-        await _restService.getActiveQuestionsByRoom(room.id, _token);
+        await _restService.getActiveQuestionsByRoom(room.id, "week");
+    print("got feedback");
+
     if (apiResponseQuestions.error) {
       SnackBarError.showErrorSnackBar(
         apiResponseQuestions.errorMessage,
@@ -271,7 +277,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                                             MaterialPageRoute(
                                                 builder: (context) =>
                                                     FeedbackWidget(
-                                                        token: _token,
                                                         question:
                                                             _questions[index],
                                                         room: _room)),
@@ -298,10 +303,10 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                 maintainState: true,
                 visible: _visibleIndex == 1,
                 child: Container(
-                  child: _token != null
+                  child: true
+                  // !_loadingState
                       ? ViewAnsweredQuestionsWidget(
                           scaffoldKey: _scaffoldKey,
-                          token: _token,
                           user: "me",
                         )
                       : Container(),

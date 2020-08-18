@@ -10,13 +10,11 @@ import 'package:tuple/tuple.dart';
 
 class ScanHelper {
   final GlobalKey<ScaffoldState> scaffoldKey;
-  final String token;
   final BuildContext context;
 
   ScanHelper(
     this.context, {
     @required this.scaffoldKey,
-    @required this.token,
   }) {
     _restService = RestService(context);
     _bluetooth = BluetoothServices(context);
@@ -31,11 +29,13 @@ class ScanHelper {
   Future<_Result> scanBuildingAndRoom({
     bool resetBuilding = false,
   }) async {
+    print("getting beacons");
     if (_building == null || resetBuilding) {
       await _getBuildingAndRoomScan();
     } else {
       await _getAndSetRoom();
     }
+    print("got beacons");
     await getActiveQuestions();
     return _Result(
       _building,
@@ -46,7 +46,7 @@ class ScanHelper {
 
   Future<void> _getBuildingAndRoomScan() async {
     APIResponse<Tuple2<BuildingModel, RoomModel>> apiResponse =
-        await _bluetooth.getBuildingAndRoomFromScan(token);
+        await _bluetooth.getBuildingAndRoomFromScan();
     if (!apiResponse.error) {
       _building = apiResponse.data.item1;
       _room = apiResponse.data.item2;
@@ -58,7 +58,7 @@ class ScanHelper {
 
   Future<void> _getAndSetRoom() async {
     APIResponse<RoomModel> apiResponse =
-        await _bluetooth.getRoomFromBuilding(_building, token);
+        await _bluetooth.getRoomFromBuilding(_building);
     if (!apiResponse.error) {
       _room = apiResponse.data;
     } else {
@@ -72,7 +72,7 @@ class ScanHelper {
       return [];
     }
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
-        await _restService.getActiveQuestionsByRoom(_room.id, token);
+        await _restService.getActiveQuestionsByRoom(_room.id, "week");
     if (!apiResponseQuestions.error) {
       _questions = apiResponseQuestions.data;
       return _questions;

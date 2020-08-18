@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
@@ -83,6 +84,7 @@ enum RequestType {
 
 class RestService {
   static const api = 'http://feedme.compute.dtu.dk/api-dev';
+  static Future<Null> mLock;
 
   static Map<String, String> headers(
     BuildContext context, {
@@ -115,7 +117,25 @@ class RestService {
     String errorMessage = "Could not connect to the internet",
     Map<String, String> additionalHeaderParameters = const {},
   }) async {
-    Map<String, String> reqHeaders = headers(context, additionalParameters: additionalHeaderParameters);
+    if (mLock != null) {
+      await mLock;
+      return requestServer(
+        context,
+        fromJson: fromJson,
+        fromJsonAndHeader: fromJsonAndHeader,
+        body: body,
+        requestType: requestType,
+        route: route,
+        errorMessage: errorMessage,
+        additionalHeaderParameters: additionalHeaderParameters,
+      );
+    }
+    //lock
+    Completer completer = Completer<Null>();
+    mLock = completer.future;
+
+    Map<String, String> reqHeaders =
+        headers(context, additionalParameters: additionalHeaderParameters);
     String refreshToken =
         Provider.of<GlobalState>(context).globalState['refreshToken'];
     print("route: " + route);
@@ -135,11 +155,16 @@ class RestService {
         APIResponse<Tuple2<String, String>> updatedTokensResponse =
             await updateTokensRequest(authToken, refreshToken);
         if (!updatedTokensResponse.error) {
-          Provider.of<GlobalState>(context).updateTokens(updatedTokensResponse.data.item1, updatedTokensResponse.data.item2, context);
+          Provider.of<GlobalState>(context).updateTokens(
+              updatedTokensResponse.data.item1,
+              updatedTokensResponse.data.item2,
+              context);
         } else {
           print(updatedTokensResponse.errorMessage);
           return APIResponse<T>(
-              data: null, error: true, errorMessage: updatedTokensResponse.errorMessage);
+              data: null,
+              error: true,
+              errorMessage: updatedTokensResponse.errorMessage);
         }
       }
     }
@@ -180,6 +205,10 @@ class RestService {
       return APIResponse<T>(
           data: null, error: true, errorMessage: errorMessage);
     }
+
+    //unlock
+    completer.complete();
+    mLock = null;
 
     if (responseData.statusCode == 200) {
       dynamic bodyJson = {};
@@ -268,9 +297,10 @@ class RestService {
   Future<APIResponse<Question>> Function(List<String>, String, List<String>)
       postQuestion;
 
-  Future<APIResponse<Tuple2<String,String>>> Function() postUnauthorizedUser;
+  Future<APIResponse<Tuple2<String, String>>> Function() postUnauthorizedUser;
 
-  Future<APIResponse<Tuple2<String,String>>> Function(String authToken, String refreshToken) updateTokens;
+  Future<APIResponse<Tuple2<String, String>>> Function(
+      String authToken, String refreshToken) updateTokens;
 
   Future<APIResponse<List<QuestionAndFeedback>>> Function(String, String)
       getFeedback;
@@ -290,6 +320,8 @@ class RestService {
     bluetooth = BluetoothServices(context);
 
     // TODO: t is the jwt but it seems like it is used as a time???
+    // t is actually the date/time filter
+    // This has now been corrected in the two user routes and defaults to week
     getActiveQuestionsByRoom =
         (roomId, t) => getActiveQuestionsByRoomRequest(context, roomId, t: t);
 
@@ -341,7 +373,8 @@ class RestService {
 
     postUnauthorizedUser = () => postUnauthorizedUserRequest(context);
 
-    updateTokens = (authToken, refreshToken) => updateTokensRequest(authToken, refreshToken);
+    updateTokens = (authToken, refreshToken) =>
+        updateTokensRequest(authToken, refreshToken);
 
     getFeedback = (user, t) => getFeedbackRequest(context, user, t);
 
