@@ -46,10 +46,8 @@ class ViewAnsweredQuestionsWidgetState
   Future<void> _getFeedback() async {
     await Future.delayed(Duration.zero);
     _tempFeedbackList = [];
-    print("getting feedback");
     APIResponse<List<QuestionAndFeedback>> response =
         await _restService.getFeedback(_user, _t);
-    print("got feedback");
     if (response.error) return;
 
     response.data = response.data.reversed.toList();

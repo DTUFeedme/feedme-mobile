@@ -29,13 +29,11 @@ class ScanHelper {
   Future<_Result> scanBuildingAndRoom({
     bool resetBuilding = false,
   }) async {
-    print("getting beacons");
     if (_building == null || resetBuilding) {
       await _getBuildingAndRoomScan();
     } else {
       await _getAndSetRoom();
     }
-    print("got beacons");
     await getActiveQuestions();
     return _Result(
       _building,
