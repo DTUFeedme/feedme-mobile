@@ -43,6 +43,13 @@ class ViewAnsweredQuestionsWidgetState
     _getFeedback();
   }
 
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
   Future<void> _getFeedback() async {
     await Future.delayed(Duration.zero);
     _tempFeedbackList = [];
@@ -111,7 +118,6 @@ class ViewAnsweredQuestionsWidgetState
     return Container(
       child: RefreshIndicator(
         onRefresh: () {
-
           return _getFeedback();
         },
         child: Column(

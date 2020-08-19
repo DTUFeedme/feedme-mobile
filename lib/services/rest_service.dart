@@ -134,14 +134,21 @@ class RestService {
     Completer completer = Completer<Null>();
     mLock = completer.future;
 
-    Map<String, String> reqHeaders =
-        headers(context, additionalParameters: additionalHeaderParameters);
-    String refreshToken =
-        Provider.of<GlobalState>(context).globalState['refreshToken'];
+    Map<String, String> reqHeaders;
+    String refreshToken;
+
+    try {
+      reqHeaders =
+          headers(context, additionalParameters: additionalHeaderParameters);
+      refreshToken =
+          Provider.of<GlobalState>(context).globalState['refreshToken'];
+    } catch (e) {
+      print(e);
+      return APIResponse<T>(error: true, errorMessage: "");
+    }
 
     print("route");
     print(route);
-
 
     String authToken = reqHeaders["x-auth-token"];
     print(authToken);
