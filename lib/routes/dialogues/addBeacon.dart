@@ -8,7 +8,6 @@ import 'package:tuple/tuple.dart';
 
 class AddBeacon {
   final BuildContext context;
-  final String token;
   final BuildingModel building;
   final List<Tuple2<String, String>> beaconList;
   final List<Beacon> alreadyExistingBeacons;
@@ -20,7 +19,6 @@ class AddBeacon {
 
   AddBeacon(
     this.context, {
-    this.token,
     this.beaconList,
     this.alreadyExistingBeacons,
     this.building,
@@ -52,6 +50,8 @@ class AddBeacon {
               }
               if (apiResponse.error == false) {
                 successFullyAddedBeacons = successFullyAddedBeacons + 1;
+              } else {
+                print(apiResponse.errorMessage);
               }
             }
           }

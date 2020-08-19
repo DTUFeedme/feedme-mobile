@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 class RoomMenu {
   final BuildContext context;
   final RoomModel room;
-  final String token;
   final BuildingModel building;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final Function(RoomModel) addScans;
@@ -20,8 +19,7 @@ class RoomMenu {
   RestService _restService;
 
   Future<void> _deleteRoom() async {
-    APIResponse<String> deleteResponse =
-        await _restService.deleteRoom(room.id);
+    APIResponse<String> deleteResponse = await _restService.deleteRoom(room.id);
     if (!deleteResponse.error) {
       SnackBarError.showErrorSnackBar("Room ${room.name} deleted", scaffoldKey);
     } else {
@@ -44,7 +42,6 @@ class RoomMenu {
   RoomMenu(
     this.context, {
     @required this.room,
-    @required this.token,
     @required this.building,
     @required this.scaffoldKey,
     @required this.addScans,

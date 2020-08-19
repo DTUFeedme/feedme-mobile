@@ -15,6 +15,7 @@ Future<APIResponse<UserModel>> postUserRequest(
       return UserModel(
         json['email'],
         header['x-auth-token'],
+        refreshToken: json["refreshToken"]
       );
     },
     body: body,

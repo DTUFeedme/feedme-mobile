@@ -8,17 +8,17 @@ class SignalMap {
     beacons = [];
   }
 
-  void addBeaconReading(String beaconId, int signalStrength) {
+  void addBeaconReading(String uuid, int signalStrength) {
     if (beacons
         .where(
-            (element) => element['beaconId'].toString() == beaconId.toString())
+            (element) => element['uuid'].toString() == uuid.toString())
         .isNotEmpty) {
       beacons
-          .firstWhere((element) => element['beaconId'] == beaconId)['signals']
+          .firstWhere((element) => element['uuid'] == uuid)['signals']
           .add(signalStrength);
     } else {
       beacons.add({
-        "beaconId": beaconId,
+        "uuid": uuid,
         "signals": [signalStrength]
       });
     }

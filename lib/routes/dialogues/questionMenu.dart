@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 class QuestionMenu {
   final BuildContext context;
   final FeedbackQuestion question;
-  final String token;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final Function(String) setCurrentlyConfirming;
   final String Function() getCurrentlyConfirming;
@@ -19,7 +18,6 @@ class QuestionMenu {
   QuestionMenu(
     this.context, {
     @required this.question,
-    @required this.token,
     @required this.scaffoldKey,
     @required this.setCurrentlyConfirming,
     @required this.getCurrentlyConfirming,

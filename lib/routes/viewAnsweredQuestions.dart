@@ -12,13 +12,11 @@ import 'package:intl/intl.dart';
 
 class ViewAnsweredQuestionsWidget extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
-  final String token;
   final String user;
 
   const ViewAnsweredQuestionsWidget({
     Key key,
     @required this.scaffoldKey,
-    this.token,
     this.user,
   }) : super(key: key);
 
@@ -30,7 +28,6 @@ class ViewAnsweredQuestionsWidget extends StatefulWidget {
 class ViewAnsweredQuestionsWidgetState
     extends State<ViewAnsweredQuestionsWidget> {
   GlobalKey<ScaffoldState> _scaffoldKey;
-  String _token;
   RestService _restService;
   List<QuestionAndFeedback> _feedbackList = <QuestionAndFeedback>[];
   List<QuestionAndFeedback> _tempFeedbackList = <QuestionAndFeedback>[];
@@ -42,9 +39,15 @@ class ViewAnsweredQuestionsWidgetState
     super.initState();
     _restService = RestService(context);
     _scaffoldKey = widget.scaffoldKey;
-    _token = widget.token;
     _user = widget.user;
     _getFeedback();
+  }
+
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
   }
 
   Future<void> _getFeedback() async {
@@ -53,6 +56,7 @@ class ViewAnsweredQuestionsWidgetState
     APIResponse<List<QuestionAndFeedback>> response =
         await _restService.getFeedback(_user, _t);
     if (response.error) return;
+
     response.data = response.data.reversed.toList();
 
     void _addToList(QuestionAndFeedback qf) {
@@ -113,7 +117,9 @@ class ViewAnsweredQuestionsWidgetState
   Widget build(BuildContext context) {
     return Container(
       child: RefreshIndicator(
-        onRefresh: () => _getFeedback(),
+        onRefresh: () {
+          return _getFeedback();
+        },
         child: Column(
           children: [
             Container(
