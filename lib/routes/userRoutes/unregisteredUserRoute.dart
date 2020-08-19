@@ -32,8 +32,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   BluetoothServices _bluetooth;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _visibleIndex = 0;
-  bool _fetchingBeacons = false;
   bool _fetchingTokens = true;
+  bool _gettingRoom = false;
   BuildingModel _building;
   List<FeedbackQuestion> _questions = [];
   RoomModel _room;
@@ -62,30 +62,36 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     if (alreadyUser) {
       _gotoLogin();
     } else {
-      await _setupState();
+      setState(() {
+        _fetchingTokens = true;
+      });
+
+      Tuple2 tokens =
+          await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
+
+      Provider.of<GlobalState>(context)
+          .updateAccount("no email", tokens.item1, tokens.item2, context);
+      Provider.of<GlobalState>(context).updateBuilding(_building);
+      print("auth token set");
+      print(tokens.item1);
+
+      setState(() {
+        _fetchingTokens = false;
+      });
+      await _getAndSetRoom();
     }
   }
 
-  Future<void> _setupState({
+  Future<void> _getAndSetRoom({
     bool forceBuildingRescan = false,
   }) async {
+    if (_gettingRoom) return;
     setState(() {
-      _fetchingTokens = true;
+      _gettingRoom = true;
     });
-
-    Tuple2 tokens =
-        await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
-
-    setState(() {
-      _fetchingTokens = false;
-    });
-//    if (_loadingState) return;
 
     await Future.delayed(Duration.zero);
 
-    setState(() {
-      _fetchingBeacons = true;
-    });
     _setSubtitle();
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
@@ -94,15 +100,11 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       context,
       scaffoldKey: _scaffoldKey,
     );
-    Provider.of<GlobalState>(context)
-        .updateAccount("no email", tokens.item1, tokens.item2, context);
-    Provider.of<GlobalState>(context).updateBuilding(_building);
-    print("auth token set");
-    print(tokens.item1);
 
     await _scanForRoom(forceBuildingRescan);
+
     setState(() {
-      _fetchingBeacons = false;
+      _gettingRoom = false;
     });
     _setSubtitle();
   }
@@ -162,7 +164,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
   void _setSubtitle() {
     setState(() {
-      _subtitle = _fetchingBeacons
+      _subtitle = _gettingRoom
           ? "Room: scanning..."
           : _room == null
               ? "Failed scanning room, tap to retry"
@@ -207,8 +209,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       key: _scaffoldKey,
       appBar: AppBar(
         title: InkWell(
-          onTap: () => _setupState(),
-          onLongPress: () => _setupState(forceBuildingRescan: true),
+          onTap: () => _getAndSetRoom(),
+          onLongPress: () => _getAndSetRoom(forceBuildingRescan: true),
           child: Row(
             children: [
               Expanded(
@@ -227,7 +229,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                   ],
                 ),
               ),
-              _fetchingBeacons
+              _gettingRoom
                   ? CircularProgressIndicator(
                       value: null,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
