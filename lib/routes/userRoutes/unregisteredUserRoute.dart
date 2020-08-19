@@ -30,10 +30,10 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   SharedPrefsHelper _sharedPrefsHelper;
   RestService _restService;
   BluetoothServices _bluetooth;
-  String _token;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _visibleIndex = 0;
-  bool _loadingState = false;
+  bool _fetchingBeacons = false;
+  bool _fetchingTokens = true;
   BuildingModel _building;
   List<FeedbackQuestion> _questions = [];
   RoomModel _room;
@@ -43,6 +43,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   @override
   void initState() {
     super.initState();
+
     _restService = RestService(context);
     _sharedPrefsHelper = SharedPrefsHelper(context);
     _bluetooth = BluetoothServices(context);
@@ -68,18 +69,22 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   Future<void> _setupState({
     bool forceBuildingRescan = false,
   }) async {
-    Tuple2 tokens =
-        await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
     setState(() {
-      _token = tokens.item1;
+      _fetchingTokens = true;
     });
 
-    if (_loadingState) return;
+    Tuple2 tokens =
+        await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
+
+    setState(() {
+      _fetchingTokens = false;
+    });
+//    if (_loadingState) return;
 
     await Future.delayed(Duration.zero);
 
     setState(() {
-      _loadingState = true;
+      _fetchingBeacons = true;
     });
     _setSubtitle();
     if (!await _bluetooth.isOn) {
@@ -92,9 +97,12 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     Provider.of<GlobalState>(context)
         .updateAccount("no email", tokens.item1, tokens.item2, context);
     Provider.of<GlobalState>(context).updateBuilding(_building);
+    print("auth token set");
+    print(tokens.item1);
+
     await _scanForRoom(forceBuildingRescan);
     setState(() {
-      _loadingState = false;
+      _fetchingBeacons = false;
     });
     _setSubtitle();
   }
@@ -154,7 +162,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
   void _setSubtitle() {
     setState(() {
-      _subtitle = _loadingState
+      _subtitle = _fetchingBeacons
           ? "Room: scanning..."
           : _room == null
               ? "Failed scanning room, tap to retry"
@@ -219,7 +227,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                   ],
                 ),
               ),
-              _loadingState
+              _fetchingBeacons
                   ? CircularProgressIndicator(
                       value: null,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -303,13 +311,12 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                 maintainState: true,
                 visible: _visibleIndex == 1,
                 child: Container(
-                  child: true
-                  // !_loadingState
-                      ? ViewAnsweredQuestionsWidget(
+                  child: _fetchingTokens
+                      ? Container()
+                      : ViewAnsweredQuestionsWidget(
                           scaffoldKey: _scaffoldKey,
                           user: "me",
-                        )
-                      : Container(),
+                        ),
                 ),
               ),
             ],

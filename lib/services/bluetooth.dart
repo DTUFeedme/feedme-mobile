@@ -76,6 +76,7 @@ class BluetoothServices {
       Map<String, int> scannedBuildings = {};
       List<ScanResult> scanResults = await scanForDevices(2000);
       scanResults.forEach((result) {
+        print(result);
         String beaconName = getBeaconName(result);
         List<Beacon> matchingBeacons = allBeacons
             .where((listBeacon) => listBeacon.name == beaconName)

@@ -138,27 +138,30 @@ class RestService {
         headers(context, additionalParameters: additionalHeaderParameters);
     String refreshToken =
         Provider.of<GlobalState>(context).globalState['refreshToken'];
-    print("route: " + route);
-    print("refresh + auth");
-    print(refreshToken);
+
+    print("route");
+    print(route);
+
 
     String authToken = reqHeaders["x-auth-token"];
     print(authToken);
-    print("done");
+
     // Make sure authToken hasn't expired
     if (authToken != null && authToken.isNotEmpty) {
       int exp = JwtDecoder.parseJwtPayLoad(authToken)["exp"];
 
       // check if jwt has expired
       if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 30) {
-        print("jwt expired");
         APIResponse<Tuple2<String, String>> updatedTokensResponse =
             await updateTokensRequest(authToken, refreshToken);
+
         if (!updatedTokensResponse.error) {
           Provider.of<GlobalState>(context).updateTokens(
               updatedTokensResponse.data.item1,
               updatedTokensResponse.data.item2,
               context);
+          // Update the auth token for the current request
+          reqHeaders["x-auth-token"] = updatedTokensResponse.data.item1;
         } else {
           print(updatedTokensResponse.errorMessage);
           return APIResponse<T>(

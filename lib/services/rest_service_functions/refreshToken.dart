@@ -17,12 +17,10 @@ Future<APIResponse<Tuple2<String,String>>> updateTokensRequest(
 
   if (response.statusCode == 200) {
     dynamic responseBody = json.decode(response.body);
-    print(responseBody);
     String newRefreshToken = responseBody["refreshToken"];
     String newAuthToken = response.headers["x-auth-token"];
     return APIResponse<Tuple2<String,String>>(data: new Tuple2(newAuthToken, newRefreshToken));
   } else {
-    print("reason");
     print(response.reasonPhrase);
     return APIResponse<Tuple2<String,String>>(error: true, errorMessage: response.body ?? response.reasonPhrase);
   }

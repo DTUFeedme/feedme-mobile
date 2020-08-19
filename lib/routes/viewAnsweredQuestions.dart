@@ -110,7 +110,10 @@ class ViewAnsweredQuestionsWidgetState
   Widget build(BuildContext context) {
     return Container(
       child: RefreshIndicator(
-        onRefresh: () => _getFeedback(),
+        onRefresh: () {
+
+          return _getFeedback();
+        },
         child: Column(
           children: [
             Container(
