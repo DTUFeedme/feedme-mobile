@@ -125,7 +125,7 @@ class BluetoothServices {
       }
     } else {
       return APIResponse<Tuple2<BuildingModel, RoomModel>>(
-          error: true, errorMessage: "Failed getting beacons from database");
+          error: true, errorMessage: allBeaconsResponse.errorMessage);
     }
   }
 

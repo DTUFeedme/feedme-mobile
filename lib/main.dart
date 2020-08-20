@@ -1,11 +1,15 @@
 import 'dart:convert';
 
 import 'package:background_fetch/background_fetch.dart';
+import 'package:climify/models/api_response.dart';
+import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/routes/buildingManager.dart';
 import 'package:climify/routes/userRoutes/registeredUserRoute.dart';
 import 'package:climify/routes/userRoutes/unregisteredUserRoute.dart';
 import 'package:climify/routes/userLogin.dart';
+import 'package:climify/services/bluetooth.dart';
+import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/sharedPreferences.dart';
 
 //import 'package:climify/test/testQuestion.dart';
@@ -13,8 +17,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-const EVENTS_KEY = "fetch_events";
+import 'package:tuple/tuple.dart';
 
+import 'models/roomModel.dart';
+
+const EVENTS_KEY = "fetch_events";
 
 /// This "Headless Task" is run when app is terminated.
 void backgroundFetchHeadlessTask(String taskId) async {
@@ -28,25 +35,22 @@ void backgroundFetchHeadlessTask(String taskId) async {
   String json = prefs.getString(EVENTS_KEY);
   if (json != null) {
     events = jsonDecode(json).cast<String>();
-
   }
   // Add new event.
   events.insert(0, "$taskId@$timestamp [Headless]");
   // Persist fetch events in SharedPreferences
   prefs.setString(EVENTS_KEY, jsonEncode(events));
-
-  BackgroundFetch.finish(taskId);
-
   if (taskId == 'flutter_background_fetch') {
     BackgroundFetch.scheduleTask(TaskConfig(
-        taskId: "com.transistorsoft.customtask",
+        taskId: "flutter_test",
         delay: 5000,
         periodic: false,
         forceAlarmManager: true,
         stopOnTerminate: false,
-        enableHeadless: true
-    ));
+        enableHeadless: true));
   }
+
+  BackgroundFetch.finish(taskId);
 }
 
 void main() {
@@ -89,7 +93,6 @@ class _MyHomePageState extends State<MyHomePage> {
     initPlatformState();
   }
 
-
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     // Load persisted fetch events from SharedPreferences
@@ -102,23 +105,25 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     // Configure BackgroundFetch.
-    BackgroundFetch.configure(BackgroundFetchConfig(
-      minimumFetchInterval: 15,
-      forceAlarmManager: false,
-      stopOnTerminate: false,
-      startOnBoot: true,
-      enableHeadless: true,
-      requiresBatteryNotLow: false,
-      requiresCharging: false,
-      requiresStorageNotLow: false,
-      requiresDeviceIdle: false,
-      requiredNetworkType: NetworkType.NONE,
-    ), _onBackgroundFetch).then((int status) {
+    BackgroundFetch.configure(
+            BackgroundFetchConfig(
+              minimumFetchInterval: 15,
+              forceAlarmManager: false,
+              stopOnTerminate: false,
+              startOnBoot: true,
+              enableHeadless: true,
+              requiresBatteryNotLow: false,
+              requiresCharging: false,
+              requiresStorageNotLow: false,
+              requiresDeviceIdle: false,
+              requiredNetworkType: NetworkType.NONE,
+            ),
+            _onBackgroundFetch)
+        .then((int status) {
       print('[BackgroundFetch] configure success: $status');
       setState(() {
         _status = status;
       });
-
     }).catchError((e) {
       print('[BackgroundFetch] configure ERROR: $e');
       setState(() {
@@ -135,8 +140,15 @@ class _MyHomePageState extends State<MyHomePage> {
         periodic: false,
         forceAlarmManager: true,
         stopOnTerminate: false,
-        enableHeadless: true
-    ));
+        enableHeadless: true));
+
+    BackgroundFetch.scheduleTask(TaskConfig(
+        taskId: "send_location",
+        delay: 6500,
+        periodic: false,
+        forceAlarmManager: true,
+        stopOnTerminate: false,
+        enableHeadless: true));
 
     // Optionally query the current BackgroundFetch status.
     int status = await BackgroundFetch.status;
@@ -161,16 +173,41 @@ class _MyHomePageState extends State<MyHomePage> {
     // Persist fetch events in SharedPreferences
     prefs.setString(EVENTS_KEY, jsonEncode(_events));
 
-    if (taskId == "flutter_background_fetch") {
-      // Schedule a one-shot task when fetch event received (for testing).
+    // if (taskId == "flutter_background_fetch") {
+    //   // Schedule a one-shot task when fetch event received (for testing).
+    //   BackgroundFetch.scheduleTask(TaskConfig(
+    //       taskId: "flutter_test",
+    //       delay: 5000,
+    //       periodic: false,
+    //       forceAlarmManager: true,
+    //       stopOnTerminate: false,
+    //       enableHeadless: true));
+    // }
+
+    if (taskId == "send_location") {
+      print("sending stuff");
+      SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper(context);
+      RestService _restService = RestService(context);
+      String _token =
+          await sharedPrefsHelper.getUnauthorizedUserToken(_restService);
+      print("printing token");
+      print("$_token");
+      BluetoothServices _bluetoothServices = BluetoothServices(context);
+      SharedPreferences _sp = await SharedPreferences.getInstance();
+      await _sp.setString("testToken", _token);
+      APIResponse<Tuple2<BuildingModel, RoomModel>> apiResponse =
+          await _bluetoothServices.getBuildingAndRoomFromScan(_token);
+      print(apiResponse.errorMessage ?? "no error");
+      RoomModel _room = apiResponse?.data?.item2;
+      print(_room);
+      print(_room?.name);
       BackgroundFetch.scheduleTask(TaskConfig(
-          taskId: "com.transistorsoft.customtask",
-          delay: 5000,
+          taskId: "send_location",
+          delay: 10000,
           periodic: false,
-          forceAlarmManager: true,
+          forceAlarmManager: false,
           stopOnTerminate: false,
-          enableHeadless: true
-      ));
+          enableHeadless: true));
     }
 
     // IMPORTANT:  You must signal completion of your fetch task or the OS can punish your app
@@ -213,46 +250,51 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    const EMPTY_TEXT = Center(child: Text('Waiting for fetch events.  Simulate one.\n [Android] \$ ./scripts/simulate-fetch\n [iOS] XCode->Debug->Simulate Background Fetch'));
+    const EMPTY_TEXT = Center(
+        child: Text(
+            'Waiting for fetch events.  Simulate one.\n [Android] \$ ./scripts/simulate-fetch\n [iOS] XCode->Debug->Simulate Background Fetch'));
 
     return new MaterialApp(
       home: new Scaffold(
         appBar: new AppBar(
-            title: const Text('BackgroundFetch Example', style: TextStyle(color: Colors.black)),
+            title: const Text('BackgroundFetch Example',
+                style: TextStyle(color: Colors.black)),
             backgroundColor: Colors.amberAccent,
             brightness: Brightness.light,
             actions: <Widget>[
               Switch(value: _enabled, onChanged: _onClickEnable),
-            ]
-        ),
-        body: (_events.isEmpty) ? EMPTY_TEXT : Container(
-          child: new ListView.builder(
-              itemCount: _events.length,
-              itemBuilder: (BuildContext context, int index) {
-                List<String> event = _events[index].split("@");
-                return InputDecorator(
-                    decoration: InputDecoration(
-                        contentPadding: EdgeInsets.only(left: 5.0, top: 5.0, bottom: 5.0),
-                        labelStyle: TextStyle(color: Colors.blue, fontSize: 20.0),
-                        labelText: "[${event[0].toString()}]"
-                    ),
-                    child: new Text(event[1], style: TextStyle(color: Colors.black, fontSize: 16.0))
-                );
-              }
-          ),
-        ),
+            ]),
+        body: (_events.isEmpty)
+            ? EMPTY_TEXT
+            : Container(
+                child: new ListView.builder(
+                    itemCount: _events.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      List<String> event = _events[index].split("@");
+                      return InputDecorator(
+                          decoration: InputDecoration(
+                              contentPadding: EdgeInsets.only(
+                                  left: 5.0, top: 5.0, bottom: 5.0),
+                              labelStyle:
+                                  TextStyle(color: Colors.blue, fontSize: 20.0),
+                              labelText: "[${event[0].toString()}]"),
+                          child: new Text(event[1],
+                              style: TextStyle(
+                                  color: Colors.black, fontSize: 16.0)));
+                    }),
+              ),
         bottomNavigationBar: BottomAppBar(
             child: Container(
-                padding: EdgeInsets.only(left: 5.0, right:5.0),
+                padding: EdgeInsets.only(left: 5.0, right: 5.0),
                 child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      RaisedButton(onPressed: _onClickStatus, child: Text('Status: $_status')),
-                      RaisedButton(onPressed: _onClickClear, child: Text('Clear'))
-                    ]
-                )
-            )
-        ),
+                      RaisedButton(
+                          onPressed: _onClickStatus,
+                          child: Text('Status: $_status')),
+                      RaisedButton(
+                          onPressed: _onClickClear, child: Text('Clear'))
+                    ]))),
       ),
     );
   }

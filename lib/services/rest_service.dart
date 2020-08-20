@@ -9,6 +9,7 @@ import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/services/bluetooth.dart';
+import 'package:climify/services/sharedPreferences.dart';
 // import 'package:climify/services/rest_service_functions/addBeacon.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -18,6 +19,7 @@ import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tuple/tuple.dart';
 
 part 'package:climify/services/rest_service_functions/deleteBeacon.dart';
@@ -59,20 +61,27 @@ enum RequestType {
 class RestService {
   static const api = 'http://climify-spe.compute.dtu.dk:8080/api-dev';
 
-  static Map<String, String> headers(
+  static Future<Map<String, String>> headers(
     BuildContext context, {
-    bool noToken = false,
     Map<String, String> additionalParameters = const {},
-  }) {
+  }) async {
     String token = "";
     Map<String, String> headers = {
       'Content-Type': 'application/json',
     };
-    if (!noToken) {
+    try {
+      token = Provider.of<GlobalState>(context).globalState['token'];
+      headers['x-auth-token'] = token;
+    } catch (e) {
+      print(e);
       try {
-        token = Provider.of<GlobalState>(context).globalState['token'];
+        SharedPreferences _sharedPreferences =
+            await SharedPreferences.getInstance();
+        token = _sharedPreferences.getString("testToken");
         headers['x-auth-token'] = token;
-      } catch (_) {}
+      } catch (e) {
+        print(e);
+      }
     }
     additionalParameters.forEach((key, value) {
       headers[key] = value;
@@ -92,42 +101,34 @@ class RestService {
   }) async {
     Response responseData;
     try {
+      Map<String, String> requestHeaders = await headers(
+        context,
+        additionalParameters: additionalHeaderParameters,
+      );
       switch (requestType) {
         case RequestType.GET:
           responseData = await http.get(
             api + route,
-            headers: headers(
-              context,
-              additionalParameters: additionalHeaderParameters,
-            ),
+            headers: requestHeaders,
           );
           break;
         case RequestType.POST:
           responseData = await http.post(
             api + route,
-            headers: headers(
-              context,
-              additionalParameters: additionalHeaderParameters,
-            ),
+            headers: requestHeaders,
             body: body,
           );
           break;
         case RequestType.DELETE:
           responseData = await http.delete(
             api + route,
-            headers: headers(
-              context,
-              additionalParameters: additionalHeaderParameters,
-            ),
+            headers: requestHeaders,
           );
           break;
         case RequestType.PATCH:
           responseData = await http.patch(
             api + route,
-            headers: headers(
-              context,
-              additionalParameters: additionalHeaderParameters,
-            ),
+            headers: requestHeaders,
             body: body,
           );
           break;
