@@ -3,11 +3,29 @@ import 'package:climify/routes/buildingManager.dart';
 import 'package:climify/routes/userRoutes/registeredUserRoute.dart';
 import 'package:climify/routes/userRoutes/unregisteredUserRoute.dart';
 import 'package:climify/routes/userLogin.dart';
+import 'package:climify/services/sharedPreferences.dart';
+
 //import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
 
-void main() => runApp(MyApp());
+void callbackDispatcher()  {
+  Workmanager.executeTask((task, inputData) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    print("hej");
+//    print(prefs);
+    print(
+        "Native called background task: $task"); //simpleTask will be emitted here.
+    return Future.value(true);
+  });
+}
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -34,6 +52,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
+
+    Workmanager.initialize(
+        callbackDispatcher, // The top level function, aka callbackDispatcher
+        isInDebugMode: true // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
+    );
+
+    Workmanager.registerOneOffTask("1", "simpleTask", initialDelay: Duration(seconds: 5)); //Android only (see below)
+
     return ChangeNotifierProvider<GlobalState>(
       create: (context) => GlobalState(),
       child: MaterialApp(
