@@ -1,7 +1,6 @@
 part of 'package:climify/services/rest_service.dart';
 
 Future<APIResponse<String>> postBeaconRequest(
-  BuildContext context,
   Tuple2<String, String> beacon,
   BuildingModel building,
 ) {
@@ -11,7 +10,6 @@ Future<APIResponse<String>> postBeaconRequest(
     'uuid': beacon.item2,
   });
   return RestService.requestServer<String>(
-    context,
     fromJson: (_) => "Success",
     body: body,
     requestType: RequestType.POST,

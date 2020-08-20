@@ -1,7 +1,6 @@
 part of 'package:climify/services/rest_service.dart';
 
 Future<APIResponse<String>> postSignalMapRequest(
-  BuildContext context,
   SignalMap signalMap,
   String roomId,
 ) {
@@ -11,7 +10,6 @@ Future<APIResponse<String>> postSignalMapRequest(
     'buildingId': signalMap.buildingId,
   });
   return RestService.requestServer(
-    context,
     fromJson: (_) {
       return "Scan added";
     },

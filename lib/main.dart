@@ -19,14 +19,23 @@ const EVENTS_KEY = "fetch_events";
 /// This "Headless Task" is run when app is terminated.
 void backgroundFetchHeadlessTask(String taskId) async {
   print("[BackgroundFetch] Headless event received: $taskId");
-  BackgroundFetch.scheduleTask(TaskConfig(
-      taskId: "send_location",
-      delay: 25000,
-      periodic: false,
-      forceAlarmManager: true,
-      stopOnTerminate: false,
-      enableHeadless: true));
-  BackgroundFetch.finish(taskId);
+  if (taskId == 'flutter_background_fetch') {
+    BackgroundFetch.finish(taskId);
+    BackgroundFetch.scheduleTask(TaskConfig(
+        taskId: "send_location",
+        delay: 10,
+        periodic: false,
+        forceAlarmManager: true,
+        stopOnTerminate: false,
+        enableHeadless: true));
+  }
+  // BackgroundFetch.scheduleTask(TaskConfig(
+  //     taskId: "send_location",
+  //     delay: 5000,
+  //     periodic: false,
+  //     forceAlarmManager: true,
+  //     stopOnTerminate: false,
+  //     enableHeadless: true));
 }
 
 void main() {
@@ -56,6 +65,24 @@ class MyHomePage extends StatefulWidget {
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
+
+// class _MyHomePageState extends State<MyHomePage> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return ChangeNotifierProvider<GlobalState>(
+//       create: (context) => GlobalState(),
+//       child: MaterialApp(
+//         home: UnregisteredUserScreen(),
+//         routes: {
+//           "unregistered": (context) => UnregisteredUserScreen(),
+//           "login": (context) => UserLogin(),
+//           "registered": (context) => RegisteredUserScreen(),
+//           "buildingManager": (context) => BuildingManager(),
+//         },
+//       ),
+//     );
+//   }
+// }
 
 class _MyHomePageState extends State<MyHomePage> {
   int _status = 0;
@@ -87,7 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // Configure BackgroundFetch.
     BackgroundFetch.configure(
             BackgroundFetchConfig(
-              minimumFetchInterval: 15,
+              minimumFetchInterval: 1,
               forceAlarmManager: true,
               stopOnTerminate: false,
               startOnBoot: true,
@@ -98,7 +125,7 @@ class _MyHomePageState extends State<MyHomePage> {
               requiresDeviceIdle: false,
               requiredNetworkType: NetworkType.ANY,
             ),
-            _onBackgroundFetch)
+            _fetchRoomLocationBackground)
         .then((int status) {
       print('[BackgroundFetch] configure success: $status');
       setState(() {
@@ -122,13 +149,13 @@ class _MyHomePageState extends State<MyHomePage> {
     //     stopOnTerminate: false,
     //     enableHeadless: true));
 
-    BackgroundFetch.scheduleTask(TaskConfig(
-        taskId: "send_location",
-        delay: 10000,
-        periodic: false,
-        forceAlarmManager: true,
-        stopOnTerminate: false,
-        enableHeadless: true));
+    // BackgroundFetch.scheduleTask(TaskConfig(
+    //     taskId: "send_location",
+    //     delay: 3500,
+    //     periodic: false,
+    //     forceAlarmManager: true,
+    //     stopOnTerminate: false,
+    //     enableHeadless: true));
 
     // Optionally query the current BackgroundFetch status.
     int status = await BackgroundFetch.status;
@@ -142,6 +169,39 @@ class _MyHomePageState extends State<MyHomePage> {
     if (!mounted) return;
   }
 
+  void _fetchRoomLocationBackground(String taskId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    DateTime timestamp = new DateTime.now();
+    // This is the fetch-event callback.
+    print("[BackgroundFetch] Event received: $taskId");
+    setState(() {
+      _events.insert(0, "$taskId@${timestamp.toString()}");
+    });
+    // Persist fetch events in SharedPreferences
+    prefs.setString(EVENTS_KEY, jsonEncode(_events));
+
+    print("sending stuff");
+    SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+    RestService _restService = RestService();
+    Tuple2<String, String> _tokens =
+        await sharedPrefsHelper.getUnauthorizedTokens(_restService);
+    BluetoothServices _bluetoothServices = BluetoothServices();
+    SharedPreferences _sp = await SharedPreferences.getInstance();
+    await sharedPrefsHelper.setUserTokens(_tokens);
+    APIResponse<Tuple2<BuildingModel, RoomModel>> apiResponse =
+        await _bluetoothServices.getBuildingAndRoomFromScan();
+    print(apiResponse.errorMessage ?? "no error");
+    RoomModel _room = apiResponse?.data?.item2;
+    print(_room);
+    print(_room?.name);
+    if (_room?.name == "Funny") {
+      int i = _sp.getInt("testInt") ?? 0;
+      await _sp.setInt("testInt", i + 1);
+    }
+
+    BackgroundFetch.finish(taskId);
+  }
+
   void _onBackgroundFetch(String taskId) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     DateTime timestamp = new DateTime.now();
@@ -153,40 +213,43 @@ class _MyHomePageState extends State<MyHomePage> {
     // Persist fetch events in SharedPreferences
     prefs.setString(EVENTS_KEY, jsonEncode(_events));
 
-    // if (taskId == "flutter_background_fetch") {
-    //   // Schedule a one-shot task when fetch event received (for testing).
-    //   BackgroundFetch.scheduleTask(TaskConfig(
-    //       taskId: "flutter_test",
-    //       delay: 5000,
-    //       periodic: false,
-    //       forceAlarmManager: true,
-    //       stopOnTerminate: false,
-    //       enableHeadless: true));
-    // }
+    if (taskId == "flutter_background_fetch") {
+      // Schedule a one-shot task when fetch event received (for testing).
+      BackgroundFetch.scheduleTask(TaskConfig(
+          taskId: "flutter_test",
+          delay: 5000,
+          periodic: false,
+          forceAlarmManager: true,
+          stopOnTerminate: false,
+          enableHeadless: true));
+    }
 
     if (taskId == "send_location") {
       print("sending stuff");
-      SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper(context);
-      RestService _restService = RestService(context);
+      SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+      RestService _restService = RestService();
       Tuple2<String, String> _tokens =
           await sharedPrefsHelper.getUnauthorizedTokens(_restService);
-      BluetoothServices _bluetoothServices = BluetoothServices(context);
+      BluetoothServices _bluetoothServices = BluetoothServices();
       SharedPreferences _sp = await SharedPreferences.getInstance();
-      await _sp.setString("testToken1", _tokens.item1);
-      await _sp.setString("testToken2", _tokens.item2);
+      await sharedPrefsHelper.setUserTokens(_tokens);
       APIResponse<Tuple2<BuildingModel, RoomModel>> apiResponse =
           await _bluetoothServices.getBuildingAndRoomFromScan();
       print(apiResponse.errorMessage ?? "no error");
       RoomModel _room = apiResponse?.data?.item2;
       print(_room);
       print(_room?.name);
-      BackgroundFetch.scheduleTask(TaskConfig(
-          taskId: "send_location",
-          delay: 10000,
-          periodic: false,
-          forceAlarmManager: false,
-          stopOnTerminate: false,
-          enableHeadless: true));
+      if (_room?.name == "Funny") {
+        int i = _sp.getInt("testInt");
+        await _sp.setInt("testInt", i + 1);
+      }
+      // BackgroundFetch.scheduleTask(TaskConfig(
+      //     taskId: "send_location",
+      //     delay: 10000,
+      //     periodic: false,
+      //     forceAlarmManager: true,
+      //     stopOnTerminate: false,
+      //     enableHeadless: true));
     }
 
     // IMPORTANT:  You must signal completion of your fetch task or the OS can punish your app
@@ -268,6 +331,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
+                      RaisedButton(
+                          onPressed: () async {
+                            SharedPreferences _sp =
+                                await SharedPreferences.getInstance();
+                            setState(() {
+                              _testInt = _sp.getInt("testInt");
+                            });
+                          },
+                          child: Text('test: $_testInt')),
                       RaisedButton(
                           onPressed: _onClickStatus,
                           child: Text('Status: $_status')),

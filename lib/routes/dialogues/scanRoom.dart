@@ -37,8 +37,8 @@ class ScanRoom {
     @required this.getNumberOfScans,
     @required this.beacons,
   }) {
-    _restService = RestService(context);
-    _bluetooth = BluetoothServices(context);
+    _restService = RestService();
+    _bluetooth = BluetoothServices();
     scanRoomDialog = StatefulBuilder(
       key: _dialogKey,
       builder: (context, setState) {

@@ -29,7 +29,7 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
   @override
   void initState() {
     super.initState();
-    _restService = RestService(context);
+    _restService = RestService();
   }
 
   void _setChosenOption(int option) {

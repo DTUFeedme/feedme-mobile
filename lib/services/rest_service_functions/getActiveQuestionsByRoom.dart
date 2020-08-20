@@ -1,12 +1,10 @@
 part of 'package:climify/services/rest_service.dart';
 
 Future<APIResponse<List<FeedbackQuestion>>> getActiveQuestionsByRoomRequest(
-  BuildContext context,
   String roomId, {
   String t,
 }) {
   return RestService.requestServer(
-    context,
     fromJson: (json) {
       List<FeedbackQuestion> feedbackList = [];
       List<dynamic> jsonData = json;

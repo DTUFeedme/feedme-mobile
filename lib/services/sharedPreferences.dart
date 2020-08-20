@@ -7,33 +7,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tuple/tuple.dart';
 
 class SharedPrefsHelper {
-  final String tokenKey = "unauthorizedToken";
+  final String unregisteredAuthTokenKey = "unauthorizedToken";
+  final String tokenKey = "authToken";
   final String refreshTokenKey = "refreshToken";
   final String startOnLogin = "alreadyUser";
   final String userToken = "userToken";
 
-  final BuildContext context;
-
-  const SharedPrefsHelper(
-    this.context,
-  );
+  const SharedPrefsHelper();
 
   Future<Tuple2<String, String>> getUnauthorizedTokens(
     RestService restService,
   ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    String authToken = sharedPreferences.getString(tokenKey);
+    String unregisteredAuthToken =
+        sharedPreferences.getString(unregisteredAuthTokenKey);
     String refreshToken = sharedPreferences.getString(refreshTokenKey);
-    if (authToken == null || refreshToken == null) {
-      APIResponse<Tuple2<String,String>> newUserAPIResponse =
+    if (unregisteredAuthToken == null || refreshToken == null) {
+      APIResponse<Tuple2<String, String>> newUserAPIResponse =
           await restService.postUnauthorizedUser();
       if (!newUserAPIResponse.error) {
-        return new Tuple2(newUserAPIResponse.data.item1, newUserAPIResponse.data.item2);
+        return new Tuple2(
+            newUserAPIResponse.data.item1, newUserAPIResponse.data.item2);
       } else {
         return null;
       }
     } else {
-      return new Tuple2(authToken, refreshToken);
+      return new Tuple2(unregisteredAuthToken, refreshToken);
     }
   }
 
@@ -52,6 +51,14 @@ class SharedPrefsHelper {
   Future<void> setUserAuthToken(String token) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     await sharedPreferences.setString(tokenKey, token);
+    return;
+  }
+
+  Future<void> setUserTokens(Tuple2<String, String> token) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    await sharedPreferences.setString(tokenKey, token.item1);
+    await sharedPreferences.setString(refreshTokenKey, token.item2);
+    print(token.item2);
     return;
   }
 

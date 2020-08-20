@@ -44,9 +44,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   void initState() {
     super.initState();
 
-    _restService = RestService(context);
-    _sharedPrefsHelper = SharedPrefsHelper(context);
-    _bluetooth = BluetoothServices(context);
+    _restService = RestService();
+    _sharedPrefsHelper = SharedPrefsHelper();
+    _bluetooth = BluetoothServices();
     _checkUserStatus();
   }
 
@@ -69,8 +69,12 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       Tuple2 tokens =
           await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
 
-      Provider.of<GlobalState>(context)
-          .updateAccount("no email", tokens.item1, tokens.item2, context);
+      // Provider.of<GlobalState>(context)
+      //     .updateAccount("no email", tokens.item1, tokens.item2, context);
+      SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+      sharedPrefsHelper.setUserAuthToken(tokens.item1);
+      sharedPrefsHelper.setUserRefreshToken(tokens.item2);
+
       Provider.of<GlobalState>(context).updateBuilding(_building);
       print("auth token set");
       print(tokens.item1);

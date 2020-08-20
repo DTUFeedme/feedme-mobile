@@ -44,8 +44,8 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   @override
   void initState() {
     super.initState();
-    _restService = RestService(context);
-    _bluetooth = BluetoothServices(context);
+    _restService = RestService();
+    _bluetooth = BluetoothServices();
     _setupState();
   }
 
