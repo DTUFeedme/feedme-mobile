@@ -3,19 +3,12 @@ import 'dart:convert';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
-import 'package:climify/models/globalState.dart';
-import 'package:climify/routes/buildingManager.dart';
-import 'package:climify/routes/userRoutes/registeredUserRoute.dart';
-import 'package:climify/routes/userRoutes/unregisteredUserRoute.dart';
-import 'package:climify/routes/userLogin.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/sharedPreferences.dart';
 
 //import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tuple/tuple.dart';
 
@@ -26,30 +19,13 @@ const EVENTS_KEY = "fetch_events";
 /// This "Headless Task" is run when app is terminated.
 void backgroundFetchHeadlessTask(String taskId) async {
   print("[BackgroundFetch] Headless event received: $taskId");
-  DateTime timestamp = DateTime.now();
-
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-
-  // Read fetch_events from SharedPreferences
-  List<String> events = [];
-  String json = prefs.getString(EVENTS_KEY);
-  if (json != null) {
-    events = jsonDecode(json).cast<String>();
-  }
-  // Add new event.
-  events.insert(0, "$taskId@$timestamp [Headless]");
-  // Persist fetch events in SharedPreferences
-  prefs.setString(EVENTS_KEY, jsonEncode(events));
-  if (taskId == 'flutter_background_fetch') {
-    BackgroundFetch.scheduleTask(TaskConfig(
-        taskId: "flutter_test",
-        delay: 5000,
-        periodic: false,
-        forceAlarmManager: true,
-        stopOnTerminate: false,
-        enableHeadless: true));
-  }
-
+  BackgroundFetch.scheduleTask(TaskConfig(
+      taskId: "send_location",
+      delay: 25000,
+      periodic: false,
+      forceAlarmManager: true,
+      stopOnTerminate: false,
+      enableHeadless: true));
   BackgroundFetch.finish(taskId);
 }
 
@@ -85,6 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _status = 0;
   List<String> _events = [];
   bool _enabled = true;
+  int _testInt = 0;
 
   @override
   void initState() {
@@ -97,6 +74,9 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> initPlatformState() async {
     // Load persisted fetch events from SharedPreferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    _testInt = prefs.getInt("testInt") ?? 0;
+
     String json = prefs.getString(EVENTS_KEY);
     if (json != null) {
       setState(() {
@@ -108,7 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
     BackgroundFetch.configure(
             BackgroundFetchConfig(
               minimumFetchInterval: 15,
-              forceAlarmManager: false,
+              forceAlarmManager: true,
               stopOnTerminate: false,
               startOnBoot: true,
               enableHeadless: true,
@@ -116,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
               requiresCharging: false,
               requiresStorageNotLow: false,
               requiresDeviceIdle: false,
-              requiredNetworkType: NetworkType.NONE,
+              requiredNetworkType: NetworkType.ANY,
             ),
             _onBackgroundFetch)
         .then((int status) {
@@ -134,17 +114,17 @@ class _MyHomePageState extends State<MyHomePage> {
     // Schedule a "one-shot" custom-task in 10000ms.
     // These are fairly reliable on Android (particularly with forceAlarmManager) but not iOS,
     // where device must be powered (and delay will be throttled by the OS).
-    BackgroundFetch.scheduleTask(TaskConfig(
-        taskId: "com.transistorsoft.customtask",
-        delay: 10000,
-        periodic: false,
-        forceAlarmManager: true,
-        stopOnTerminate: false,
-        enableHeadless: true));
+    // BackgroundFetch.scheduleTask(TaskConfig(
+    //     taskId: "com.transistorsoft.customtask",
+    //     delay: 10000,
+    //     periodic: false,
+    //     forceAlarmManager: true,
+    //     stopOnTerminate: false,
+    //     enableHeadless: true));
 
     BackgroundFetch.scheduleTask(TaskConfig(
         taskId: "send_location",
-        delay: 6500,
+        delay: 10000,
         periodic: false,
         forceAlarmManager: true,
         stopOnTerminate: false,
@@ -190,9 +170,6 @@ class _MyHomePageState extends State<MyHomePage> {
       RestService _restService = RestService(context);
       Tuple2<String, String> _tokens =
           await sharedPrefsHelper.getUnauthorizedTokens(_restService);
-      print("printing tokens");
-      print(_tokens.item1);
-      print(_tokens.item2);
       BluetoothServices _bluetoothServices = BluetoothServices(context);
       SharedPreferences _sp = await SharedPreferences.getInstance();
       await _sp.setString("testToken1", _tokens.item1);
