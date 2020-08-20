@@ -188,15 +188,17 @@ class _MyHomePageState extends State<MyHomePage> {
       print("sending stuff");
       SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper(context);
       RestService _restService = RestService(context);
-      String _token =
-          await sharedPrefsHelper.getUnauthorizedUserToken(_restService);
-      print("printing token");
-      print("$_token");
+      Tuple2<String, String> _tokens =
+          await sharedPrefsHelper.getUnauthorizedTokens(_restService);
+      print("printing tokens");
+      print(_tokens.item1);
+      print(_tokens.item2);
       BluetoothServices _bluetoothServices = BluetoothServices(context);
       SharedPreferences _sp = await SharedPreferences.getInstance();
-      await _sp.setString("testToken", _token);
+      await _sp.setString("testToken1", _tokens.item1);
+      await _sp.setString("testToken2", _tokens.item2);
       APIResponse<Tuple2<BuildingModel, RoomModel>> apiResponse =
-          await _bluetoothServices.getBuildingAndRoomFromScan(_token);
+          await _bluetoothServices.getBuildingAndRoomFromScan();
       print(apiResponse.errorMessage ?? "no error");
       RoomModel _room = apiResponse?.data?.item2;
       print(_room);

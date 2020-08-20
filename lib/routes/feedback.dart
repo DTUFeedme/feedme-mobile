@@ -11,11 +11,9 @@ import 'package:climify/services/rest_service.dart';
 class FeedbackWidget extends StatefulWidget {
   final FeedbackQuestion question;
   final RoomModel room;
-  final String token;
 
   const FeedbackWidget({
     Key key,
-    @required this.token,
     this.question,
     this.room,
   }) : super(key: key);

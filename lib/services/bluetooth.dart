@@ -62,9 +62,7 @@ class BluetoothServices {
   }
 
   Future<APIResponse<Tuple2<BuildingModel, RoomModel>>>
-      getBuildingAndRoomFromScan(
-    String token,
-  ) async {
+      getBuildingAndRoomFromScan() async {
     if (!await isOn) {
       return APIResponse<Tuple2<BuildingModel, RoomModel>>(
           error: true, errorMessage: "Bluetooth is not on");
@@ -78,6 +76,7 @@ class BluetoothServices {
       Map<String, int> scannedBuildings = {};
       List<ScanResult> scanResults = await scanForDevices(2000);
       scanResults.forEach((result) {
+        print(result);
         String beaconName = getBeaconName(result);
         List<Beacon> matchingBeacons = allBeacons
             .where((listBeacon) => listBeacon.name == beaconName)
@@ -105,7 +104,6 @@ class BluetoothServices {
           BuildingModel building = buildingResponse.data;
           APIResponse<RoomModel> roomResponse = await getRoomFromBuilding(
             building,
-            token,
             scanResults: scanResults,
           );
           if (!roomResponse.error) {
@@ -130,8 +128,7 @@ class BluetoothServices {
   }
 
   Future<APIResponse<RoomModel>> getRoomFromBuilding(
-    BuildingModel building,
-    String token, {
+    BuildingModel building, {
     List<ScanResult> scanResults,
   }) async {
     RestService restService = RestService(context);
@@ -181,9 +178,9 @@ class BluetoothServices {
     scanResults.forEach((result) {
       String beaconName = getBeaconName(result);
       if (beacons.where((element) => element.name == beaconName).isNotEmpty) {
-        String beaconId =
-            beacons.firstWhere((element) => element.name == beaconName).id;
-        signalMap.addBeaconReading(beaconId, getRSSI(result));
+        String uuid =
+            beacons.firstWhere((element) => element.name == beaconName).uuid;
+        signalMap.addBeaconReading(uuid, getRSSI(result));
       }
     });
 

@@ -3,6 +3,7 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
+import 'package:climify/models/userModel.dart';
 import 'package:climify/routes/userRoutes/scanHelper.dart';
 import 'package:climify/routes/viewAnsweredQuestions.dart';
 import 'package:climify/services/bluetooth.dart';
@@ -13,6 +14,7 @@ import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:climify/routes/feedback.dart';
+import 'package:tuple/tuple.dart';
 
 class UnregisteredUserScreen extends StatefulWidget {
   const UnregisteredUserScreen({
@@ -28,10 +30,10 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   SharedPrefsHelper _sharedPrefsHelper;
   RestService _restService;
   BluetoothServices _bluetooth;
-  String _token;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _visibleIndex = 0;
-  bool _loadingState = false;
+  bool _fetchingTokens = true;
+  bool _gettingRoom = false;
   BuildingModel _building;
   List<FeedbackQuestion> _questions = [];
   RoomModel _room;
@@ -41,6 +43,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   @override
   void initState() {
     super.initState();
+
     _restService = RestService(context);
     _sharedPrefsHelper = SharedPrefsHelper(context);
     _bluetooth = BluetoothServices(context);
@@ -59,26 +62,36 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     if (alreadyUser) {
       _gotoLogin();
     } else {
-      await _setupState();
+      setState(() {
+        _fetchingTokens = true;
+      });
+
+      Tuple2 tokens =
+          await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
+
+      Provider.of<GlobalState>(context)
+          .updateAccount("no email", tokens.item1, tokens.item2, context);
+      Provider.of<GlobalState>(context).updateBuilding(_building);
+      print("auth token set");
+      print(tokens.item1);
+
+      setState(() {
+        _fetchingTokens = false;
+      });
+      await _getAndSetRoom();
     }
   }
 
-  Future<void> _setupState({
+  Future<void> _getAndSetRoom({
     bool forceBuildingRescan = false,
   }) async {
-    String token =
-        await _sharedPrefsHelper.getUnauthorizedUserToken(_restService);
+    if (_gettingRoom) return;
     setState(() {
-      _token = token;
+      _gettingRoom = true;
     });
-
-    if (_loadingState) return;
 
     await Future.delayed(Duration.zero);
 
-    setState(() {
-      _loadingState = true;
-    });
     _setSubtitle();
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
@@ -86,13 +99,12 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     _scanHelper = ScanHelper(
       context,
       scaffoldKey: _scaffoldKey,
-      token: _token,
     );
-    Provider.of<GlobalState>(context).updateAccount("no email", token, context);
-    Provider.of<GlobalState>(context).updateBuilding(_building);
+
     await _scanForRoom(forceBuildingRescan);
+
     setState(() {
-      _loadingState = false;
+      _gettingRoom = false;
     });
     _setSubtitle();
   }
@@ -110,8 +122,11 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   Future<void> _getActiveQuestions() async {
     RoomModel room;
 
+    print("getting all beacons");
     APIResponse<RoomModel> apiResponseRoom =
-        await _bluetooth.getRoomFromBuilding(_building, _token);
+        await _bluetooth.getRoomFromBuilding(_building);
+    print("got all beacons");
+
     if (apiResponseRoom.error) {
       SnackBarError.showErrorSnackBar(
         apiResponseRoom.errorMessage,
@@ -122,8 +137,11 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
     room = apiResponseRoom.data;
 
+    print("getting feedback");
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
-        await _restService.getActiveQuestionsByRoom(room.id, _token);
+        await _restService.getActiveQuestionsByRoom(room.id, "week");
+    print("got feedback");
+
     if (apiResponseQuestions.error) {
       SnackBarError.showErrorSnackBar(
         apiResponseQuestions.errorMessage,
@@ -146,7 +164,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
   void _setSubtitle() {
     setState(() {
-      _subtitle = _loadingState
+      _subtitle = _gettingRoom
           ? "Room: scanning..."
           : _room == null
               ? "Failed scanning room, tap to retry"
@@ -191,8 +209,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       key: _scaffoldKey,
       appBar: AppBar(
         title: InkWell(
-          onTap: () => _setupState(),
-          onLongPress: () => _setupState(forceBuildingRescan: true),
+          onTap: () => _getAndSetRoom(),
+          onLongPress: () => _getAndSetRoom(forceBuildingRescan: true),
           child: Row(
             children: [
               Expanded(
@@ -211,7 +229,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                   ],
                 ),
               ),
-              _loadingState
+              _gettingRoom
                   ? CircularProgressIndicator(
                       value: null,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -269,7 +287,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                                             MaterialPageRoute(
                                                 builder: (context) =>
                                                     FeedbackWidget(
-                                                        token: _token,
                                                         question:
                                                             _questions[index],
                                                         room: _room)),
@@ -296,13 +313,12 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                 maintainState: true,
                 visible: _visibleIndex == 1,
                 child: Container(
-                  child: _token != null
-                      ? ViewAnsweredQuestionsWidget(
+                  child: _fetchingTokens
+                      ? Container()
+                      : ViewAnsweredQuestionsWidget(
                           scaffoldKey: _scaffoldKey,
-                          token: _token,
                           user: "me",
-                        )
-                      : Container(),
+                        ),
                 ),
               ),
             ],

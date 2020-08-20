@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
@@ -15,41 +16,65 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:climify/models/feedbackQuestion.dart';
-import 'package:climify/models/answerOption.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tuple/tuple.dart';
 
+import 'jwtDecoder.dart';
+
 part 'package:climify/services/rest_service_functions/deleteBeacon.dart';
+
 part 'package:climify/services/rest_service_functions/deleteBuilding.dart';
+
 part 'package:climify/services/rest_service_functions/deleteRoom.dart';
+
 part 'package:climify/services/rest_service_functions/deleteSignalMapsOfRoom.dart';
 
 part 'package:climify/services/rest_service_functions/getActiveQuestionsByRoom.dart';
+
 part 'package:climify/services/rest_service_functions/getAllBeacons.dart';
+
 part 'package:climify/services/rest_service_functions/getAllQuestionsByRoom.dart';
+
 part 'package:climify/services/rest_service_functions/getBeaconsOfBuilding.dart';
+
 part 'package:climify/services/rest_service_functions/getBuilding.dart';
+
 part 'package:climify/services/rest_service_functions/getBuildingsWithAdminRights.dart';
+
 part 'package:climify/services/rest_service_functions/getFeedback.dart';
+
 part 'package:climify/services/rest_service_functions/getRoomFromSignalMap.dart';
+
 part 'package:climify/services/rest_service_functions/getUserIdFromEmail.dart';
+
 part 'package:climify/services/rest_service_functions/getQuestionStatistics.dart';
 
 part 'package:climify/services/rest_service_functions/patchQuestionInactive.dart';
+
 part 'package:climify/services/rest_service_functions/patchUserAdmin.dart';
 
 part 'package:climify/services/rest_service_functions/postBeacon.dart';
+
 part 'package:climify/services/rest_service_functions/postBuilding.dart';
+
 part 'package:climify/services/rest_service_functions/postFeedback.dart';
+
 part 'package:climify/services/rest_service_functions/postQuestion.dart';
+
 part 'package:climify/services/rest_service_functions/postRoom.dart';
+
 part 'package:climify/services/rest_service_functions/postSignalMap.dart';
+
 part 'package:climify/services/rest_service_functions/postUnauthorizedUser.dart';
+
 part 'package:climify/services/rest_service_functions/postUser.dart';
+
 part 'package:climify/services/rest_service_functions/postUserLogin.dart';
+
+part 'package:climify/services/rest_service_functions/refreshToken.dart';
 
 enum RequestType {
   GET,
@@ -59,26 +84,28 @@ enum RequestType {
 }
 
 class RestService {
-  static const api = 'http://climify-spe.compute.dtu.dk:8080/api-dev';
+  static const api = 'http://feedme.compute.dtu.dk/api-dev';
+  static Future<Null> mLock;
 
   static Future<Map<String, String>> headers(
     BuildContext context, {
     Map<String, String> additionalParameters = const {},
   }) async {
-    String token = "";
+    String authToken = "";
     Map<String, String> headers = {
       'Content-Type': 'application/json',
     };
     try {
-      token = Provider.of<GlobalState>(context).globalState['token'];
-      headers['x-auth-token'] = token;
+      authToken = Provider.of<GlobalState>(context).globalState['token'];
+      headers['x-auth-token'] = authToken;
     } catch (e) {
-      print(e);
+      // print(e);
+      print("provider in headers");
       try {
         SharedPreferences _sharedPreferences =
             await SharedPreferences.getInstance();
-        token = _sharedPreferences.getString("testToken");
-        headers['x-auth-token'] = token;
+        authToken = _sharedPreferences.getString("testToken1");
+        headers['x-auth-token'] = authToken;
       } catch (e) {
         print(e);
       }
@@ -99,6 +126,82 @@ class RestService {
     String errorMessage = "Could not connect to the internet",
     Map<String, String> additionalHeaderParameters = const {},
   }) async {
+    if (mLock != null) {
+      await mLock;
+      return requestServer(
+        context,
+        fromJson: fromJson,
+        fromJsonAndHeader: fromJsonAndHeader,
+        body: body,
+        requestType: requestType,
+        route: route,
+        errorMessage: errorMessage,
+        additionalHeaderParameters: additionalHeaderParameters,
+      );
+    }
+    //lock
+    Completer completer = Completer<Null>();
+    mLock = completer.future;
+
+    Map<String, String> reqHeaders;
+    String refreshToken;
+    SharedPreferences _sp = await SharedPreferences.getInstance();
+
+    try {
+      reqHeaders = await headers(context,
+          additionalParameters: additionalHeaderParameters);
+      refreshToken =
+          Provider.of<GlobalState>(context).globalState['refreshToken'];
+    } catch (e) {
+      // print(e);
+      try {
+        reqHeaders = await headers(context,
+            additionalParameters: additionalHeaderParameters);
+        refreshToken = _sp.getString("testToken2");
+      } catch (e) {
+        return APIResponse<T>(error: true, errorMessage: "");
+      }
+    }
+
+    print("route");
+    print(route);
+
+    String authToken = reqHeaders["x-auth-token"];
+    print(authToken);
+
+    // Make sure authToken hasn't expired
+    if (authToken != null && authToken.isNotEmpty) {
+      int exp = JwtDecoder.parseJwtPayLoad(authToken)["exp"];
+
+      // check if jwt has expired
+      if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 30) {
+        APIResponse<Tuple2<String, String>> updatedTokensResponse =
+            await updateTokensRequest(authToken, refreshToken);
+
+        if (!updatedTokensResponse.error) {
+          try {
+            Provider.of<GlobalState>(context).updateTokens(
+                updatedTokensResponse.data.item1,
+                updatedTokensResponse.data.item2,
+                context);
+          } catch (e) {
+            SharedPreferences _sp = await SharedPreferences.getInstance();
+            _sp.setString("testToken1", updatedTokensResponse.data.item1);
+            _sp.setString("testToken2", updatedTokensResponse.data.item2);
+            print(e);
+          }
+          // Update the auth token for the current request
+          reqHeaders["x-auth-token"] = updatedTokensResponse.data.item1;
+        } else {
+          print(updatedTokensResponse.errorMessage);
+          return APIResponse<T>(
+              data: null,
+              error: true,
+              errorMessage: updatedTokensResponse.errorMessage);
+        }
+      }
+    }
+
     Response responseData;
     try {
       Map<String, String> requestHeaders = await headers(
@@ -135,9 +238,14 @@ class RestService {
         default:
       }
     } catch (e) {
+      print(e);
       return APIResponse<T>(
           data: null, error: true, errorMessage: errorMessage);
     }
+
+    //unlock
+    completer.complete();
+    mLock = null;
 
     if (responseData.statusCode == 200) {
       dynamic bodyJson = {};
@@ -226,7 +334,10 @@ class RestService {
   Future<APIResponse<Question>> Function(List<String>, String, List<String>)
       postQuestion;
 
-  Future<APIResponse<UserModel>> Function() postUnauthorizedUser;
+  Future<APIResponse<Tuple2<String, String>>> Function() postUnauthorizedUser;
+
+  Future<APIResponse<Tuple2<String, String>>> Function(
+      String authToken, String refreshToken) updateTokens;
 
   Future<APIResponse<List<QuestionAndFeedback>>> Function(String, String)
       getFeedback;
@@ -245,6 +356,9 @@ class RestService {
   ) {
     bluetooth = BluetoothServices(context);
 
+    // TODO: t is the jwt but it seems like it is used as a time???
+    // t is actually the date/time filter
+    // This has now been corrected in the two user routes and defaults to week
     getActiveQuestionsByRoom =
         (roomId, t) => getActiveQuestionsByRoomRequest(context, roomId, t: t);
 
@@ -295,6 +409,9 @@ class RestService {
         postQuestionRequest(context, rooms, value, answerOptions);
 
     postUnauthorizedUser = () => postUnauthorizedUserRequest(context);
+
+    updateTokens = (authToken, refreshToken) =>
+        updateTokensRequest(authToken, refreshToken);
 
     getFeedback = (user, t) => getFeedbackRequest(context, user, t);
 

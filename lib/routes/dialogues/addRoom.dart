@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 
 class AddRoom {
   final BuildContext context;
-  final String token;
   final TextEditingController textEditingController;
   final BuildingModel building;
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -18,7 +17,6 @@ class AddRoom {
 
   AddRoom(
     this.context, {
-    this.token,
     this.textEditingController,
     this.building,
     this.scaffoldKey,
