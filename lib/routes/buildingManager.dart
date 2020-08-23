@@ -6,7 +6,6 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
-import 'package:climify/models/userModel.dart';
 import 'package:climify/routes/dialogues/addBeacon.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
 import 'package:climify/routes/dialogues/roomMenu.dart';
@@ -17,7 +16,6 @@ import 'package:climify/widgets/customDialog.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tuple/tuple.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 
 import 'dialogues/scanRoom.dart';
@@ -41,7 +39,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   List<FeedbackQuestion> _questions = [];
   TextEditingController _newRoomNameController = TextEditingController();
   List<Beacon> _beacons = [];
-  List<Tuple2<String, String>> _beaconList = [];
+  List<String> _beaconList = [];
   bool _scanningSignalMap = false;
   int _signalMapScans = 0;
   // SignalMap _signalMap;
@@ -344,7 +342,7 @@ class _BuildingManagerState extends State<BuildingManager> {
       return;
     }
     if (await _bluetooth.isOn == false) return;
-    List<Tuple2<String, String>> beaconList = [];
+    List<String> beaconList = [];
     setState(() {
       _scanningBeacons = true;
     });
@@ -359,11 +357,8 @@ class _BuildingManagerState extends State<BuildingManager> {
       // String beaconId = serviceUuids.isNotEmpty ? serviceUuids[0] : "";
       RegExp regex = RegExp(r'^[a-zA-Z0-9]{4,6}$');
       if (beaconName != "" && regex.hasMatch(beaconName)) {
-        String beaconId = result.advertisementData.serviceData.keys.first;
-        Tuple2<String, String> item =
-            new Tuple2<String, String>(beaconName, beaconId);
-        beaconList.add(item);
-        print('beaconId' + beaconId);
+        beaconList.add(beaconName);
+        print('beacon name' + beaconName);
       }
     });
     setState(() {

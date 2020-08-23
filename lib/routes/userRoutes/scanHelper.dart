@@ -1,11 +1,13 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
+import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
 
 class ScanHelper {
@@ -46,6 +48,7 @@ class ScanHelper {
     APIResponse<Tuple2<BuildingModel, RoomModel>> apiResponse =
         await _bluetooth.getBuildingAndRoomFromScan();
     if (!apiResponse.error) {
+      Provider.of<GlobalState>(context).updateBuilding(_building);
       _building = apiResponse.data.item1;
       _room = apiResponse.data.item2;
     } else {

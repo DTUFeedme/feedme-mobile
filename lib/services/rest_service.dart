@@ -293,7 +293,7 @@ class RestService {
 
   Future<APIResponse<RoomModel>> Function(SignalMap) getRoomFromSignalMap;
 
-  Future<APIResponse<String>> Function(Tuple2<String, String>, BuildingModel)
+  Future<APIResponse<String>> Function(String, BuildingModel)
       postBeacon;
 
   Future<APIResponse<Question>> Function(List<String>, String, List<String>)
@@ -366,7 +366,7 @@ class RestService {
         (signalMap) => getRoomFromSignalMapRequest(context, signalMap);
 
     postBeacon =
-        (beacon, building) => postBeaconRequest(context, beacon, building);
+        (beaconName, building) => postBeaconRequest(context, beaconName, building);
 
     postQuestion = (rooms, value, answerOptions) =>
         postQuestionRequest(context, rooms, value, answerOptions);
