@@ -33,8 +33,6 @@ part 'package:climify/services/rest_service_functions/deleteSignalMapsOfRoom.dar
 
 part 'package:climify/services/rest_service_functions/getActiveQuestionsByRoom.dart';
 
-part 'package:climify/services/rest_service_functions/getAllBeacons.dart';
-
 part 'package:climify/services/rest_service_functions/getAllQuestionsByRoom.dart';
 
 part 'package:climify/services/rest_service_functions/getBeaconsOfBuilding.dart';
@@ -147,11 +145,7 @@ class RestService {
       return APIResponse<T>(error: true, errorMessage: "");
     }
 
-    print("route");
-    print(route);
-
     String authToken = reqHeaders["x-auth-token"];
-    print(authToken);
 
     // Make sure authToken hasn't expired
     if (authToken != null && authToken.isNotEmpty) {
@@ -283,8 +277,6 @@ class RestService {
   Future<APIResponse<List<Beacon>>> Function(BuildingModel)
       getBeaconsOfBuilding;
 
-  Future<APIResponse<List<Beacon>>> Function() getAllBeacons;
-
   Future<APIResponse<BuildingModel>> Function(String) getBuilding;
 
   Future<APIResponse<BuildingModel>> Function(String) postBuilding;
@@ -352,8 +344,6 @@ class RestService {
 
     getBeaconsOfBuilding =
         (building) => getBeaconsOfBuildingRequest(context, building);
-
-    getAllBeacons = () => getAllBeaconsRequest(context);
 
     getBuilding = (buildingId) => getBuildingRequest(context, buildingId);
 

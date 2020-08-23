@@ -4,10 +4,17 @@ Future<APIResponse<RoomModel>> getRoomFromSignalMapRequest(
   BuildContext context,
   SignalMap signalMap,
 ) {
-  final String body = json.encode({
-    'beacons': signalMap.beacons,
-    'buildingId': signalMap.buildingId,
-  });
+  String body;
+  if (signalMap.buildingId != null && signalMap.buildingId.isNotEmpty) {
+    body = json.encode({
+      'beacons': signalMap.beacons,
+      'buildingId': signalMap.buildingId,
+    });
+  } else {
+    body = json.encode({
+      'beacons': signalMap.beacons,
+    });
+  }
   return RestService.requestServer(
     context,
     body: body,

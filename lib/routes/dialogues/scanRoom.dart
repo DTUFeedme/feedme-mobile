@@ -58,7 +58,7 @@ class ScanRoom {
           setScanning(true);
           setState(() {});
 
-          SignalMap signalMap = SignalMap(building.id);
+          SignalMap signalMap = SignalMap();
           int beaconsScanned = 0;
           List<ScanResult> scanResults = await _bluetooth.scanForDevices(3000);
 
@@ -68,15 +68,8 @@ class ScanRoom {
 
           scanResults.forEach((result) {
             String beaconName = _bluetooth.getBeaconName(result);
-            if (beacons
-                .where((element) => element.name == beaconName)
-                .isNotEmpty) {
-              String uuid = beacons
-                  .firstWhere((element) => element.name == beaconName)
-                  .uuid;
-              signalMap.addBeaconReading(uuid, _bluetooth.getRSSI(result));
-              beaconsScanned++;
-            }
+            beaconsScanned++;
+            signalMap.addBeaconReading(beaconName, _bluetooth.getRSSI(result));
           });
 
           if (beaconsScanned > 0) {

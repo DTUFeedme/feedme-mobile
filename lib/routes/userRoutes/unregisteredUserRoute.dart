@@ -72,9 +72,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       Provider.of<GlobalState>(context)
           .updateAccount("no email", tokens.item1, tokens.item2, context);
       Provider.of<GlobalState>(context).updateBuilding(_building);
-      print("auth token set");
-      print(tokens.item1);
-
       setState(() {
         _fetchingTokens = false;
       });

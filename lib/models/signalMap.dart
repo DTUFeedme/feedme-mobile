@@ -2,23 +2,20 @@ class SignalMap {
   List<Map<String, dynamic>> beacons;
   String buildingId;
 
-  SignalMap(
-    this.buildingId,
-  ) {
+  SignalMap({this.buildingId}) {
     beacons = [];
   }
 
-  void addBeaconReading(String uuid, int signalStrength) {
+  void addBeaconReading(String name, int signalStrength) {
     if (beacons
-        .where(
-            (element) => element['uuid'].toString() == uuid.toString())
+        .where((element) => element['name'].toString() == name.toString())
         .isNotEmpty) {
       beacons
-          .firstWhere((element) => element['uuid'] == uuid)['signals']
+          .firstWhere((element) => element['name'] == name)['signals']
           .add(signalStrength);
     } else {
       beacons.add({
-        "uuid": uuid,
+        "name": name,
         "signals": [signalStrength]
       });
     }
