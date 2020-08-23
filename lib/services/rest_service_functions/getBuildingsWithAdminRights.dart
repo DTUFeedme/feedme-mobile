@@ -9,7 +9,11 @@ Future<APIResponse<List<BuildingModel>>> getBuildingsWithAdminRightsRequest(
       List<BuildingModel> buildingList = [];
       for (int i = 0; i < json.length; i++) {
         dynamic responseBuilding = json[i];
+        print("responseBuldiigni");
+        print(responseBuilding);
+
         buildingList.add(BuildingModel.fromJson(responseBuilding));
+        print(responseBuilding.toString());
       }
       return buildingList;
     },

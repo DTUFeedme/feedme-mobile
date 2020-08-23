@@ -57,8 +57,15 @@ class BluetoothServices {
         await restService.getRoomFromSignalMap(signalMap);
 
     if (!roomResponse.error) {
-      return APIResponse<Tuple2<BuildingModel, RoomModel>>(
-          data: Tuple2(roomResponse.data.building, roomResponse.data));
+      APIResponse<BuildingModel> buildingResponse =
+          await restService.getBuilding(roomResponse.data.building);
+      if (!buildingResponse.error){
+        return APIResponse<Tuple2<BuildingModel, RoomModel>>(
+            data: Tuple2(buildingResponse.data, roomResponse.data));
+      }else {
+        return APIResponse<Tuple2<BuildingModel, RoomModel>>(
+            error: true, errorMessage: buildingResponse.errorMessage);
+      }
     } else {
       return APIResponse<Tuple2<BuildingModel, RoomModel>>(
           error: true, errorMessage: roomResponse.errorMessage);

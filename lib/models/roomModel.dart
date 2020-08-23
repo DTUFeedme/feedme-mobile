@@ -8,7 +8,7 @@ class RoomModel {
   @JsonKey(name: '_id')
   String id;
   String name;
-  BuildingModel building;
+  String building;
 
   RoomModel(this.id, this.name, {this.building});
 

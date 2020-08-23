@@ -10,7 +10,7 @@ RoomModel _$RoomModelFromJson(Map<String, dynamic> json) {
   return RoomModel(
     json['_id'] as String,
     json['name'] as String,
-    building: json['building'] == null ? null : BuildingModel.fromJson(json['building']),
+    building: json['building'] as String,
   );
 }
 
