@@ -58,7 +58,8 @@ class ScanRoom {
           setScanning(true);
           setState(() {});
 
-          SignalMap signalMap = SignalMap();
+          SignalMap signalMap =
+              SignalMap.withInitBeacons(beacons, buildingId: building.id);
           int beaconsScanned = 0;
           List<ScanResult> scanResults = await _bluetooth.scanForDevices(3000);
 
@@ -68,11 +69,15 @@ class ScanRoom {
 
           scanResults.forEach((result) {
             String beaconName = _bluetooth.getBeaconName(result);
-            beaconsScanned++;
-            signalMap.addBeaconReading(beaconName, _bluetooth.getRSSI(result));
+            if (beaconName.isNotEmpty) {
+              beaconsScanned++;
+              signalMap.addBeaconReading(
+                  beaconName, _bluetooth.getRSSI(result));
+            }
           });
 
           if (beaconsScanned > 0) {
+            print("sending these scans: ${signalMap.beacons}");
             APIResponse<String> apiResponse =
                 await _restService.postSignalMap(signalMap, room.id);
             if (!apiResponse.error) {

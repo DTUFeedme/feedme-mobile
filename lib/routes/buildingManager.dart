@@ -196,10 +196,6 @@ class _BuildingManagerState extends State<BuildingManager> {
     setState(() {
       _scanningSignalMap = false;
       _signalMapScans = 0;
-      // Map<String, List<int>> beacons = {};
-      // beacons.addEntries(
-      //     _beacons.map((b) => MapEntry<String, List<int>>(b.id, [])));
-      // _signalMap = SignalMap(_building.id);
     });
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
