@@ -4,7 +4,6 @@ import 'package:climify/models/api_response.dart';
 import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
-import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/routes/dialogues/addBeacon.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
@@ -15,7 +14,6 @@ import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 
 import 'dialogues/scanRoom.dart';
@@ -77,8 +75,9 @@ class _BuildingManagerState extends State<BuildingManager> {
 
   void _setBuildingState() async {
     await Future.delayed(Duration.zero);
+    BuildingModel argBuilding = ModalRoute.of(context).settings.arguments;
     setState(() {
-      _building = Provider.of<GlobalState>(context).globalState['building'];
+      _building = argBuilding;
     });
     APIResponse<List<Beacon>> apiResponseBeacons =
         await _restService.getBeaconsOfBuilding(_building);
