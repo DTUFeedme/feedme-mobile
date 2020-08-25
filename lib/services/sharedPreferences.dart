@@ -62,13 +62,11 @@ class SharedPrefsHelper {
     return token;
   }
 
-  // Future<void> setUserTokens(Tuple2<String, String> token) async {
-  //   SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-  //   await sharedPreferences.setString(tokenKey, token.item1);
-  //   await sharedPreferences.setString(refreshTokenKey, token.item2);
-  //   print(token.item2);
-  //   return;
-  // }
+  Future<void> setUserTokens(Tuple2<String, String> tokens) async {
+    await setUserAuthToken(tokens.item1);
+    await setUserRefreshToken(tokens.item2);
+    return;
+  }
 
   Future<void> setUserRefreshToken(String token) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();

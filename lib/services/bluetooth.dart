@@ -107,8 +107,10 @@ class BluetoothServices {
       return APIResponse<RoomModel>(data: room);
     } else {
       _gettingRoom = false;
+      // return APIResponse<RoomModel>(
+      //     error: true, errorMessage: "Failed to assess room based on readings");
       return APIResponse<RoomModel>(
-          error: true, errorMessage: "Failed to assess room based on readings");
+          error: true, errorMessage: apiResponseRoom.errorMessage);
     }
   }
 
