@@ -6,6 +6,7 @@ import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:tuple/tuple.dart';
 
@@ -20,16 +21,25 @@ class BluetoothServices {
       return [];
     }
     List<ScanResult> finalResults = [];
-    flutterBlue.startScan(timeout: Duration(milliseconds: timeoutms));
+    try {
+      flutterBlue.startScan(
+          timeout: Duration(milliseconds: timeoutms));
 
-    flutterBlue.scanResults
-        .distinct((e1, e2) => listEquals(e1, e2))
-        .listen((scanResult) {
-      finalResults = scanResult;
-    });
+      flutterBlue.scanResults
+          .distinct((e1, e2) => listEquals(e1, e2))
+          .listen((scanResult) {
+        finalResults = scanResult;
+      });
 
-    flutterBlue.stopScan();
+      flutterBlue.stopScan();
+    } catch (e) {
+      print(e);
+    }
     await Future.delayed(Duration(milliseconds: timeoutms));
+    print("final results:");
+    finalResults.forEach((element) {
+      print(getBeaconName(element));
+    });
     return finalResults;
   }
 
