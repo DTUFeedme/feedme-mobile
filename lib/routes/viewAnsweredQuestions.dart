@@ -37,7 +37,7 @@ class ViewAnsweredQuestionsWidgetState
   @override
   void initState() {
     super.initState();
-    _restService = RestService(context);
+    _restService = RestService();
     _scaffoldKey = widget.scaffoldKey;
     _user = widget.user;
     _getFeedback();

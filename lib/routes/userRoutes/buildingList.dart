@@ -1,14 +1,10 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
-import 'package:climify/models/globalState.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
-import 'package:provider/provider.dart';
-import 'package:tuple/tuple.dart';
 
 class BuildingList extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -26,7 +22,6 @@ class BuildingList extends StatefulWidget {
 
 class BuildingListState extends State<BuildingList> {
   GlobalKey<ScaffoldState> _scaffoldKey;
-  BluetoothServices _bluetooth;
   RestService _restService;
   List<BuildingModel> _buildings;
   String buildingId = "";
@@ -34,8 +29,7 @@ class BuildingListState extends State<BuildingList> {
   @override
   void initState() {
     super.initState();
-    _restService = RestService(context);
-    _bluetooth = BluetoothServices(context);
+    _restService = RestService();
     _scaffoldKey = widget.scaffoldKey;
     getBuildings();
   }
@@ -59,9 +53,11 @@ class BuildingListState extends State<BuildingList> {
   }
 
   void _focusBuilding(BuildingModel building) {
-    Provider.of<GlobalState>(context).updateBuilding(building);
     Navigator.of(context)
-        .pushNamed("buildingManager")
+        .pushNamed(
+          "buildingManager",
+          arguments: building,
+        )
         .then((value) => getBuildings());
   }
 

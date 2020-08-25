@@ -1,7 +1,6 @@
 part of 'package:climify/services/rest_service.dart';
 
 Future<APIResponse<UserModel>> postUserRequest(
-  BuildContext context,
   String email,
   String password,
 ) {
@@ -10,7 +9,6 @@ Future<APIResponse<UserModel>> postUserRequest(
     'password': password,
   });
   return RestService.requestServer(
-    context,
     fromJsonAndHeader: (json, header) {
       return UserModel(
         json['email'],
@@ -21,5 +19,6 @@ Future<APIResponse<UserModel>> postUserRequest(
     body: body,
     requestType: RequestType.POST,
     route: '/users',
+    skipRefreshValidation: true,
   );
 }

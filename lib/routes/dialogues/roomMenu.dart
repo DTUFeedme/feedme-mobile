@@ -48,7 +48,7 @@ class RoomMenu {
     @required this.setCurrentlyConfirming,
     @required this.getCurrentlyConfirming,
   }) {
-    _restService = RestService(context);
+    _restService = RestService();
     roomMenuDialog = StatefulBuilder(
       builder: (context, setState) {
         return SimpleDialog(

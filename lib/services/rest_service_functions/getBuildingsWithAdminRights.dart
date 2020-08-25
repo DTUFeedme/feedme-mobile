@@ -1,10 +1,8 @@
 part of 'package:climify/services/rest_service.dart';
 
 Future<APIResponse<List<BuildingModel>>> getBuildingsWithAdminRightsRequest(
-  BuildContext context,
 ) {
   return RestService.requestServer(
-    context,
     fromJson: (json) {
       List<BuildingModel> buildingList = [];
       for (int i = 0; i < json.length; i++) {

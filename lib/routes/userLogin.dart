@@ -6,6 +6,7 @@ import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserLogin extends StatefulWidget {
   @override
@@ -29,8 +30,8 @@ class _UserLoginState extends State<UserLogin> {
   @override
   void initState() {
     super.initState();
-    _restService = RestService(context);
-    _sharedPrefsHelper = SharedPrefsHelper(context);
+    _restService = RestService();
+    _sharedPrefsHelper = SharedPrefsHelper();
   }
 
   @override
@@ -68,8 +69,12 @@ class _UserLoginState extends State<UserLogin> {
     if (apiResponse.error) {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     } else {
-      Provider.of<GlobalState>(context)
-          .updateAccount(apiResponse.data.email, apiResponse.data.authToken, apiResponse.data.refreshToken, context);
+      SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+      print("tokens directly");
+      print(apiResponse.data.authToken);
+      print(apiResponse.data.refreshToken);
+      await sharedPrefsHelper.setUserAuthToken(apiResponse.data.authToken);
+      await sharedPrefsHelper.setUserRefreshToken(apiResponse.data.refreshToken);
       Navigator.of(context).pushReplacementNamed("registered");
     }
     setState(() {

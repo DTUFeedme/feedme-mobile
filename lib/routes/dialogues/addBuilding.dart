@@ -18,7 +18,7 @@ class AddBuilding {
     this.textEditingController,
     this.scaffoldKey,
   }) {
-    _restService = RestService(context);
+    _restService = RestService();
     addBuildingDialog = StatefulBuilder(
       builder: (context, setState) {
         void _submitBuilding() async {

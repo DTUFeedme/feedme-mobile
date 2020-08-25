@@ -1,26 +1,60 @@
+import 'package:climify/models/beacon.dart';
+
 class SignalMap {
   List<Map<String, dynamic>> beacons;
   String buildingId;
 
-  SignalMap(
+  SignalMap({
     this.buildingId,
-  ) {
+    // this.beacons,
+  }) {
     beacons = [];
   }
 
-  void addBeaconReading(String uuid, int signalStrength) {
-    if (beacons
-        .where(
-            (element) => element['uuid'].toString() == uuid.toString())
-        .isNotEmpty) {
-      beacons
-          .firstWhere((element) => element['uuid'] == uuid)['signals']
-          .add(signalStrength);
-    } else {
+  // Old functionality when buildings had beacons attached
+  // factory SignalMap.withInitBeacons(
+  //   List<Beacon> beaconNames, {
+  //   String buildingId,
+  // }) {
+  //   List<Map<String, dynamic>> signalMapBeacons = [];
+  //   beaconNames.forEach((b) {
+  //     signalMapBeacons.add({
+  //       'name': b.name,
+  //       'signals': [],
+  //     });
+  //   });
+  //   return SignalMap(
+  //     buildingId: buildingId,
+  //     beacons: signalMapBeacons,
+  //   );
+  // }
+
+  void addBeaconReading(String name, int signalStrength) {
+    // if (beacons == null) beacons = [];
+    // Map<String, dynamic> first = beacons.firstWhere(
+    //     (element) => element.containsValue(name),
+    //     orElse: () => null);
+    // if (first != null) {
+    //   first['signals'].add(signalStrength);
+    // } else if (name.isNotEmpty) {
+    //   beacons.add({
+    //     'name': name,
+    //     'signals': [signalStrength],
+    //   });
+    // }
+    if (name.isNotEmpty) {
       beacons.add({
-        "uuid": uuid,
-        "signals": [signalStrength]
+        'name': name,
+        'signals': [signalStrength],
       });
     }
+    print("current beacons: $beacons");
+    // if (name != "") {
+    //   print("adding $name with RSSI: $signalStrength to map");
+    //   beacons.add({
+    //     "name": name,
+    //     "signals": [signalStrength]
+    //   });
+    // }
   }
 }

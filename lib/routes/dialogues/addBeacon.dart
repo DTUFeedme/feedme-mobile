@@ -4,12 +4,11 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tuple/tuple.dart';
 
 class AddBeacon {
   final BuildContext context;
   final BuildingModel building;
-  final List<Tuple2<String, String>> beaconList;
+  final List<String> beaconList;
   final List<Beacon> alreadyExistingBeacons;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final void Function(int) setBeaconsAdded;
@@ -25,7 +24,7 @@ class AddBeacon {
     this.scaffoldKey,
     this.setBeaconsAdded,
   }) {
-    _restService = RestService(context);
+    _restService = RestService();
     List<bool> list = [];
     for (int i = 0; i < beaconList.length; i++) {
       list.add(false);
@@ -40,7 +39,7 @@ class AddBeacon {
             if (list[i] == true) {
               try {
                 apiResponse = await _restService.postBeacon(
-                  Tuple2(beaconList[i].item1, beaconList[i].item2),
+                  beaconList[i],
                   building,
                 );
               } catch (e) {
@@ -89,11 +88,11 @@ class AddBeacon {
                         color: list[index] == true
                             ? Colors.grey[300]
                             : (alreadyExistingBeacons.any((beacon) =>
-                                    beacon.name == beaconList[index].item1)
+                                    beacon.name == beaconList[index])
                                 ? Colors.brown[200]
                                 : Colors.white),
                         child: ListTile(
-                          title: Text(beaconList[index].item1),
+                          title: Text(beaconList[index]),
                         ),
                       ),
                     );

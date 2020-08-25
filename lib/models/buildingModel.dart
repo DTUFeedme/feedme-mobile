@@ -18,4 +18,9 @@ class BuildingModel {
 
   factory BuildingModel.fromJson(json) => _$BuildingModelFromJson(json);
   Map<String, dynamic> toJson() => _$BuildingModelToJson(this);
+
+  @override
+  String toString() {
+    return 'BuildingModel{id: $id, name: $name, rooms: $rooms}';
+  }
 }

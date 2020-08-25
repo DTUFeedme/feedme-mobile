@@ -1,7 +1,6 @@
 part of 'package:climify/services/rest_service.dart';
 
 Future<APIResponse<bool>> postFeedbackRequest(
-  BuildContext context,
   FeedbackQuestion question,
   int choosenOption,
   RoomModel room,
@@ -12,7 +11,6 @@ Future<APIResponse<bool>> postFeedbackRequest(
     'questionId': question.id
   });
   return RestService.requestServer(
-    context,
     fromJson: (json) {
       if (json != null) {
         return true;
