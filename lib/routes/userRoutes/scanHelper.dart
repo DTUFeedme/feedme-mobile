@@ -28,14 +28,8 @@ class ScanHelper {
   RoomModel _room;
   List<FeedbackQuestion> _questions;
 
-  Future<_Result> scanBuildingAndRoom({
-    bool resetBuilding = false,
-  }) async {
-    if (_building == null || resetBuilding) {
-      await _getBuildingAndRoomScan();
-    } else {
-      await _getAndSetRoom();
-    }
+  Future<_Result> scanForRoom() async {
+    await _getAndSetRoom();
     await getActiveQuestions();
     return _Result(
       _building,
@@ -44,22 +38,21 @@ class ScanHelper {
     );
   }
 
-  Future<void> _getBuildingAndRoomScan() async {
-    APIResponse<Tuple2<BuildingModel, RoomModel>> apiResponse =
-        await _bluetooth.getBuildingAndRoomFromScan();
-    if (!apiResponse.error) {
-      Provider.of<GlobalState>(context).updateBuilding(_building);
-      _building = apiResponse.data.item1;
-      _room = apiResponse.data.item2;
-    } else {
-      SnackBarError.showErrorSnackBar(apiResponse.errorMessage, scaffoldKey);
-    }
-    return;
-  }
+  // Future<void> _getBuildingAndRoomScan() async {
+  //   APIResponse<Tuple2<BuildingModel, RoomModel>> apiResponse =
+  //       await _bluetooth.getBuildingAndRoomFromScan();
+  //   if (!apiResponse.error) {
+  //     Provider.of<GlobalState>(context).updateBuilding(_building);
+  //     _building = apiResponse.data.item1;
+  //     _room = apiResponse.data.item2;
+  //   } else {
+  //     SnackBarError.showErrorSnackBar(apiResponse.errorMessage, scaffoldKey);
+  //   }
+  //   return;
+  // }
 
   Future<void> _getAndSetRoom() async {
-    APIResponse<RoomModel> apiResponse =
-        await _bluetooth.getRoomFromBuilding(_building);
+    APIResponse<RoomModel> apiResponse = await _bluetooth.getRoomFromScan();
     if (!apiResponse.error) {
       _room = apiResponse.data;
     } else {

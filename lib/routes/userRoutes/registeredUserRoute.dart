@@ -74,18 +74,17 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       scaffoldKey: _scaffoldKey,
     );
     // await Future.delayed(Duration(milliseconds: 500));
-    _gettingRoom = _scanForRoom(forceBuildingRescan);
+    _gettingRoom = _scanForRoom();
     await _gettingRoom;
-    // if (_room != null) _getAndSetRoomFeedbackStats("week");
+    if (_room != null) _getAndSetRoomFeedbackStats("week");
     setState(() {
       _loadingState = false;
     });
     _setSubtitle();
   }
 
-  Future<void> _scanForRoom(bool forceBuildingRescan) async {
-    var _scanResults = await _scanHelper.scanBuildingAndRoom(
-        resetBuilding: forceBuildingRescan);
+  Future<void> _scanForRoom() async {
+    var _scanResults = await _scanHelper.scanForRoom();
     setState(() {
       _room = _scanResults.room;
       _questions = _scanResults.questions;

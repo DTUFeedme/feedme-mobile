@@ -79,9 +79,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     }
   }
 
-  Future<void> _getAndSetRoom({
-    bool forceBuildingRescan = false,
-  }) async {
+  Future<void> _getAndSetRoom() async {
     if (_gettingRoom) return;
     setState(() {
       _gettingRoom = true;
@@ -98,7 +96,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       scaffoldKey: _scaffoldKey,
     );
 
-    await _scanForRoom(forceBuildingRescan);
+    await _scanForRoom();
 
     setState(() {
       _gettingRoom = false;
@@ -106,9 +104,10 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     _setSubtitle();
   }
 
-  Future<void> _scanForRoom(bool forceBuildingRescan) async {
-    var _scanResults = await _scanHelper.scanBuildingAndRoom(
-        resetBuilding: forceBuildingRescan);
+  Future<void> _scanForRoom() async {
+    // var _scanResults = await _scanHelper.scanBuildingAndRoom(
+    //     resetBuilding: forceBuildingRescan);
+    var _scanResults = await _scanHelper.scanForRoom();
     setState(() {
       _building = _scanResults.building;
       _room = _scanResults.room;
@@ -119,10 +118,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   Future<void> _getActiveQuestions() async {
     RoomModel room;
 
-    print("getting all beacons");
-    APIResponse<RoomModel> apiResponseRoom =
-        await _bluetooth.getRoomFromBuilding(_building);
-    print("got all beacons");
+    APIResponse<RoomModel> apiResponseRoom = await _bluetooth.getRoomFromScan();
 
     if (apiResponseRoom.error) {
       SnackBarError.showErrorSnackBar(
@@ -134,10 +130,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
 
     room = apiResponseRoom.data;
 
-    print("getting feedback");
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, "week");
-    print("got feedback");
 
     if (apiResponseQuestions.error) {
       SnackBarError.showErrorSnackBar(
@@ -207,7 +201,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       appBar: AppBar(
         title: InkWell(
           onTap: () => _getAndSetRoom(),
-          onLongPress: () => _getAndSetRoom(forceBuildingRescan: true),
           child: Row(
             children: [
               Expanded(

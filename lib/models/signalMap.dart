@@ -3,9 +3,11 @@ import 'package:climify/models/beacon.dart';
 class SignalMap {
   List<Map<String, dynamic>> beacons;
   String buildingId;
-  bool rigidBeaconNames;
 
-  SignalMap({this.buildingId, this.beacons, this.rigidBeaconNames = false});
+  SignalMap({
+    this.buildingId,
+    this.beacons,
+  });
 
   factory SignalMap.withInitBeacons(
     List<Beacon> beaconNames, {
@@ -19,9 +21,9 @@ class SignalMap {
       });
     });
     return SignalMap(
-        buildingId: buildingId,
-        beacons: signalMapBeacons,
-        rigidBeaconNames: true);
+      buildingId: buildingId,
+      beacons: signalMapBeacons,
+    );
   }
 
   void addBeaconReading(String name, int signalStrength) {
@@ -31,7 +33,7 @@ class SignalMap {
         orElse: () => null);
     if (first != null) {
       first['signals'].add(signalStrength);
-    } else if (!rigidBeaconNames && name.isNotEmpty) {
+    } else if (name.isNotEmpty) {
       beacons.add({
         'name': name,
         'signals': [signalStrength],

@@ -36,48 +36,48 @@ class BluetoothServices {
     return finalResults;
   }
 
-  Future<APIResponse<Tuple2<BuildingModel, RoomModel>>>
-      getBuildingAndRoomFromScan() async {
-    if (!await isOn) {
-      return APIResponse<Tuple2<BuildingModel, RoomModel>>(
-          error: true, errorMessage: "Bluetooth is not on");
-    }
+  // Future<APIResponse<Tuple2<BuildingModel, RoomModel>>>
+  //     getBuildingAndRoomFromScan() async {
+  //   if (!await isOn) {
+  //     return APIResponse<Tuple2<BuildingModel, RoomModel>>(
+  //         error: true, errorMessage: "Bluetooth is not on");
+  //   }
 
-    RestService restService = RestService(context);
-    SignalMap signalMap = SignalMap();
+  //   RestService restService = RestService(context);
+  //   SignalMap signalMap = SignalMap();
 
-    List<ScanResult> scanResults = await scanForDevices(2000);
-    scanResults.forEach((result) {
-      String beaconName = getBeaconName(result);
-      if (beaconName.isNotEmpty)
-        signalMap.addBeaconReading(beaconName, getRSSI(result));
-    });
+  //   List<ScanResult> scanResults = await scanForDevices(2000);
+  //   scanResults.forEach((result) {
+  //     String beaconName = getBeaconName(result);
+  //     if (beaconName.isNotEmpty)
+  //       signalMap.addBeaconReading(beaconName, getRSSI(result));
+  //   });
 
-    APIResponse<RoomModel> roomResponse =
-        await restService.getRoomFromSignalMap(signalMap);
+  //   APIResponse<RoomModel> roomResponse =
+  //       await restService.getRoomFromSignalMap(signalMap);
 
-    if (!roomResponse.error) {
-      APIResponse<BuildingModel> buildingResponse =
-          await restService.getBuilding(roomResponse.data.building);
-      if (!buildingResponse.error){
-        return APIResponse<Tuple2<BuildingModel, RoomModel>>(
-            data: Tuple2(buildingResponse.data, roomResponse.data));
-      }else {
-        return APIResponse<Tuple2<BuildingModel, RoomModel>>(
-            error: true, errorMessage: buildingResponse.errorMessage);
-      }
-    } else {
-      return APIResponse<Tuple2<BuildingModel, RoomModel>>(
-          error: true, errorMessage: roomResponse.errorMessage);
-    }
-  }
+  //   if (!roomResponse.error) {
+  //     APIResponse<BuildingModel> buildingResponse =
+  //         await restService.getBuilding(roomResponse.data.building);
+  //     if (!buildingResponse.error){
+  //       return APIResponse<Tuple2<BuildingModel, RoomModel>>(
+  //           data: Tuple2(buildingResponse.data, roomResponse.data));
+  //     }else {
+  //       return APIResponse<Tuple2<BuildingModel, RoomModel>>(
+  //           error: true, errorMessage: buildingResponse.errorMessage);
+  //     }
+  //   } else {
+  //     return APIResponse<Tuple2<BuildingModel, RoomModel>>(
+  //         error: true, errorMessage: roomResponse.errorMessage);
+  //   }
+  // }
 
-  Future<APIResponse<RoomModel>> getRoomFromBuilding(
-    BuildingModel building, {
+  Future<APIResponse<RoomModel>> getRoomFromScan({
     List<ScanResult> scanResults,
   }) async {
     RestService restService = RestService(context);
-    SignalMap signalMap = SignalMap(buildingId: building.id);
+    // SignalMap signalMap = SignalMap(buildingId: building.id);
+    SignalMap signalMap = SignalMap();
 
     if (_gettingRoom)
       return APIResponse<RoomModel>(
