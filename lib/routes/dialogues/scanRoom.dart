@@ -37,8 +37,8 @@ class ScanRoom {
     @required this.getNumberOfScans,
     @required this.beacons,
   }) {
-    _restService = RestService(context);
-    _bluetooth = BluetoothServices(context);
+    _restService = RestService();
+    _bluetooth = BluetoothServices();
     scanRoomDialog = StatefulBuilder(
       key: _dialogKey,
       builder: (context, setState) {
@@ -58,8 +58,9 @@ class ScanRoom {
           setScanning(true);
           setState(() {});
 
-          SignalMap signalMap =
-              SignalMap.withInitBeacons(beacons, buildingId: building.id);
+          // SignalMap signalMap =
+          //     SignalMap.withInitBeacons(beacons, buildingId: building.id);
+          SignalMap signalMap = SignalMap(buildingId: building.id);
           int beaconsScanned = 0;
           List<ScanResult> scanResults = await _bluetooth.scanForDevices(3000);
 

@@ -10,7 +10,7 @@ import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/services/bluetooth.dart';
-
+import 'package:climify/services/sharedPreferences.dart';
 // import 'package:climify/services/rest_service_functions/addBeacon.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -19,6 +19,7 @@ import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tuple/tuple.dart';
 
 import 'jwtDecoder.dart';
@@ -84,20 +85,19 @@ class RestService {
   static const api = 'http://feedme.compute.dtu.dk/api-dev';
   static Future<Null> mLock;
 
-  static Map<String, String> headers(
-    BuildContext context, {
-    bool noToken = false,
+  static Future<Map<String, String>> headers({
     Map<String, String> additionalParameters = const {},
-  }) {
+  }) async {
     String authToken = "";
     Map<String, String> headers = {
       'Content-Type': 'application/json',
     };
-    if (!noToken) {
-      try {
-        authToken = Provider.of<GlobalState>(context).globalState['authToken'];
-        headers['x-auth-token'] = authToken;
-      } catch (_) {}
+    try {
+      SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+      authToken = await sharedPrefsHelper.getUserAuthToken();
+      headers['x-auth-token'] = authToken;
+    } catch (e) {
+      print(e);
     }
     additionalParameters.forEach((key, value) {
       headers[key] = value;
@@ -105,8 +105,7 @@ class RestService {
     return (headers);
   }
 
-  static Future<APIResponse<T>> requestServer<T>(
-    BuildContext context, {
+  static Future<APIResponse<T>> requestServer<T>({
     T Function(dynamic json) fromJson,
     T Function(dynamic json, Map<String, String> header) fromJsonAndHeader,
     String body,
@@ -114,11 +113,11 @@ class RestService {
     @required String route,
     String errorMessage = "Could not connect to the internet",
     Map<String, String> additionalHeaderParameters = const {},
+    bool skipRefreshValidation = false,
   }) async {
     if (mLock != null) {
       await mLock;
       return requestServer(
-        context,
         fromJson: fromJson,
         fromJsonAndHeader: fromJsonAndHeader,
         body: body,
@@ -134,12 +133,13 @@ class RestService {
 
     Map<String, String> reqHeaders;
     String refreshToken;
+    SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
 
     try {
       reqHeaders =
-          headers(context, additionalParameters: additionalHeaderParameters);
-      refreshToken =
-          Provider.of<GlobalState>(context).globalState['refreshToken'];
+          await headers(additionalParameters: additionalHeaderParameters);
+      refreshToken = await sharedPrefsHelper.getUserRefreshToken();
+      print(refreshToken);
     } catch (e) {
       print(e);
       return APIResponse<T>(error: true, errorMessage: "");
@@ -148,23 +148,30 @@ class RestService {
     String authToken = reqHeaders["x-auth-token"];
 
     // Make sure authToken hasn't expired
-    if (authToken != null && authToken.isNotEmpty) {
+    if (authToken != null && authToken.isNotEmpty && !skipRefreshValidation) {
       int exp = JwtDecoder.parseJwtPayLoad(authToken)["exp"];
 
       // check if jwt has expired
       if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 30) {
+        print("expired");
+        print(refreshToken);
         APIResponse<Tuple2<String, String>> updatedTokensResponse =
             await updateTokensRequest(authToken, refreshToken);
 
         if (!updatedTokensResponse.error) {
-          Provider.of<GlobalState>(context).updateTokens(
-              updatedTokensResponse.data.item1,
-              updatedTokensResponse.data.item2,
-              context);
+          try {
+            sharedPrefsHelper.setUserAuthToken(updatedTokensResponse.data.item1);            
+            sharedPrefsHelper.setUserRefreshToken(updatedTokensResponse.data.item2);            
+          } catch (e) {
+            print(e);
+          }
           // Update the auth token for the current request
           reqHeaders["x-auth-token"] = updatedTokensResponse.data.item1;
         } else {
           print(updatedTokensResponse.errorMessage);
+          //unlock
+          completer.complete();
+          mLock = null;
           return APIResponse<T>(
               data: null,
               error: true,
@@ -175,36 +182,42 @@ class RestService {
 
     Response responseData;
     try {
+      Map<String, String> requestHeaders = await headers(
+        additionalParameters: additionalHeaderParameters,
+      );
       switch (requestType) {
         case RequestType.GET:
           responseData = await http.get(
             api + route,
-            headers: reqHeaders,
+            headers: requestHeaders,
           );
           break;
         case RequestType.POST:
           responseData = await http.post(
             api + route,
-            headers: reqHeaders,
+            headers: requestHeaders,
             body: body,
           );
           break;
         case RequestType.DELETE:
           responseData = await http.delete(
             api + route,
-            headers: reqHeaders,
+            headers: requestHeaders,
           );
           break;
         case RequestType.PATCH:
           responseData = await http.patch(
             api + route,
-            headers: reqHeaders,
+            headers: requestHeaders,
             body: body,
           );
           break;
         default:
       }
     } catch (e) {
+      //unlock
+      completer.complete();
+      mLock = null;
       print(e);
       return APIResponse<T>(
           data: null, error: true, errorMessage: errorMessage);
@@ -252,8 +265,6 @@ class RestService {
     }
   }
 
-  final BuildContext context;
-
   BluetoothServices bluetooth;
 
   Future<APIResponse<List<FeedbackQuestion>>> Function(String, String)
@@ -293,8 +304,7 @@ class RestService {
 
   Future<APIResponse<RoomModel>> Function(SignalMap) getRoomFromSignalMap;
 
-  Future<APIResponse<String>> Function(String, BuildingModel)
-      postBeacon;
+  Future<APIResponse<String>> Function(String, BuildingModel) postBeacon;
 
   Future<APIResponse<Question>> Function(List<String>, String, List<String>)
       postQuestion;
@@ -316,77 +326,70 @@ class RestService {
 
   Future<APIResponse<String>> Function(String, bool) patchQuestionInactive;
 
-  RestService(
-    this.context,
-  ) {
-    bluetooth = BluetoothServices(context);
+  RestService() {
+    bluetooth = BluetoothServices();
 
     // TODO: t is the jwt but it seems like it is used as a time???
     // t is actually the date/time filter
     // This has now been corrected in the two user routes and defaults to week
     getActiveQuestionsByRoom =
-        (roomId, t) => getActiveQuestionsByRoomRequest(context, roomId, t: t);
+        (roomId, t) => getActiveQuestionsByRoomRequest(roomId, t: t);
 
-    getAllQuestionsByRoom =
-        (roomId) => getAllQuestionsByRoomRequest(context, roomId);
+    getAllQuestionsByRoom = (roomId) => getAllQuestionsByRoomRequest(roomId);
 
     postFeedback = (question, choosenOption, room) =>
-        postFeedbackRequest(context, question, choosenOption, room);
+        postFeedbackRequest(question, choosenOption, room);
 
-    postUser = (email, password) => postUserRequest(context, email, password);
+    postUser = (email, password) => postUserRequest(email, password);
 
-    loginUser = (email, password) => loginUserRequest(context, email, password);
+    loginUser = (email, password) => loginUserRequest(email, password);
 
-    getBuildingsWithAdminRights =
-        () => getBuildingsWithAdminRightsRequest(context);
+    getBuildingsWithAdminRights = () => getBuildingsWithAdminRightsRequest();
 
-    deleteBuilding = (building) => deleteBuildingRequest(context, building);
+    deleteBuilding = (building) => deleteBuildingRequest(building);
 
-    getBeaconsOfBuilding =
-        (building) => getBeaconsOfBuildingRequest(context, building);
+    getBeaconsOfBuilding = (building) => getBeaconsOfBuildingRequest(building);
 
-    getBuilding = (buildingId) => getBuildingRequest(context, buildingId);
+    getBuilding = (buildingId) => getBuildingRequest(buildingId);
 
-    postBuilding = (buildingName) => postBuildingRequest(context, buildingName);
+    postBuilding = (buildingName) => postBuildingRequest(buildingName);
 
-    postRoom =
-        (roomName, building) => postRoomRequest(context, roomName, building);
+    postRoom = (roomName, building) => postRoomRequest(roomName, building);
 
-    deleteRoom = (roomId) => deleteRoomRequest(context, roomId);
+    deleteRoom = (roomId) => deleteRoomRequest(roomId);
 
-    deleteBeacon = (beaconId) => deleteBeaconRequest(context, beaconId);
+    deleteBeacon = (beaconId) => deleteBeaconRequest(beaconId);
 
     postSignalMap =
-        (signalMap, roomId) => postSignalMapRequest(context, signalMap, roomId);
+        (signalMap, roomId) => postSignalMapRequest(signalMap, roomId);
 
-    deleteSignalMapsOfRoom =
-        (roomId) => deleteSignalMapsOfRoomRequest(context, roomId);
+    deleteSignalMapsOfRoom = (roomId) => deleteSignalMapsOfRoomRequest(roomId);
 
     getRoomFromSignalMap =
-        (signalMap) => getRoomFromSignalMapRequest(context, signalMap);
+        (signalMap) => getRoomFromSignalMapRequest(signalMap);
 
     postBeacon =
-        (beaconName, building) => postBeaconRequest(context, beaconName, building);
+        (beaconName, building) => postBeaconRequest(beaconName, building);
 
     postQuestion = (rooms, value, answerOptions) =>
-        postQuestionRequest(context, rooms, value, answerOptions);
+        postQuestionRequest(rooms, value, answerOptions);
 
-    postUnauthorizedUser = () => postUnauthorizedUserRequest(context);
+    postUnauthorizedUser = () => postUnauthorizedUserRequest();
 
     updateTokens = (authToken, refreshToken) =>
         updateTokensRequest(authToken, refreshToken);
 
-    getFeedback = (user, t) => getFeedbackRequest(context, user, t);
+    getFeedback = (user, t) => getFeedbackRequest(user, t);
 
     getQuestionStatistics =
-        (question, t) => getQuestionStatisticsRequest(context, question, t);
+        (question, t) => getQuestionStatisticsRequest(question, t);
 
     patchUserAdmin =
-        (userId, building) => patchUserAdminRequest(context, userId, building);
+        (userId, building) => patchUserAdminRequest(userId, building);
 
-    getUserIdFromEmail = (email) => getUserIdFromEmailRequest(context, email);
+    getUserIdFromEmail = (email) => getUserIdFromEmailRequest(email);
 
     patchQuestionInactive = (questionId, isActive) =>
-        patchQuestionInactiveRequest(context, questionId, isActive);
+        patchQuestionInactiveRequest(questionId, isActive);
   }
 }

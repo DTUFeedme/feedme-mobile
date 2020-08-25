@@ -25,7 +25,7 @@ class BeaconMenu {
     @required this.setCurrentlyConfirming,
     @required this.getCurrentlyConfirming,
   }) {
-    _restService = RestService(context);
+    _restService = RestService();
     beaconMenuDialog = StatefulBuilder(
       builder: (context, setState) {
         Future<void> _deleteBeacon() async {

@@ -18,8 +18,8 @@ class ScanHelper {
     this.context, {
     @required this.scaffoldKey,
   }) {
-    _restService = RestService(context);
-    _bluetooth = BluetoothServices(context);
+    _restService = RestService();
+    _bluetooth = BluetoothServices();
   }
 
   BluetoothServices _bluetooth;

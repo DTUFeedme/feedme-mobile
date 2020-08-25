@@ -53,8 +53,8 @@ class _BuildingManagerState extends State<BuildingManager> {
   @override
   void initState() {
     super.initState();
-    _bluetooth = BluetoothServices(context);
-    _restService = RestService(context);
+    _bluetooth = BluetoothServices();
+    _restService = RestService();
     _setBuildingState();
   }
 

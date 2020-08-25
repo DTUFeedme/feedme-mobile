@@ -44,8 +44,8 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   @override
   void initState() {
     super.initState();
-    _restService = RestService(context);
-    _bluetooth = BluetoothServices(context);
+    _restService = RestService();
+    _bluetooth = BluetoothServices();
     _setupState();
   }
 
@@ -107,6 +107,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     });
     // APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
     //     await _restService.getActiveQuestionsByRoom(_room.id, _token, t: _t);
+    if(_room == null) return;
     APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
         await _restService.getActiveQuestionsByRoom(_room.id, _t);
     if (!apiResponseQuestionsOfRoom.error) {

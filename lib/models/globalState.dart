@@ -11,7 +11,7 @@ class GlobalState extends ChangeNotifier {
   };
 
   void updateAccount(String email, String authToken, String refreshToken, BuildContext context) {
-    final SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper(context);
+    final SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
 
     globalState['email'] = email;
     globalState['authToken'] = authToken;
@@ -23,7 +23,7 @@ class GlobalState extends ChangeNotifier {
   }
 
   void updateTokens(String authToken, String refreshToken, BuildContext context){
-    final SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper(context);
+    final SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
 
     globalState['authToken'] = authToken;
     globalState['refreshToken'] = refreshToken;

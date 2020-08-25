@@ -6,14 +6,11 @@ import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:tuple/tuple.dart';
 
 class BluetoothServices {
-  final BuildContext context;
-
-  BluetoothServices(this.context);
+  BluetoothServices();
 
   final FlutterBlue flutterBlue = FlutterBlue.instance;
   bool _gettingRoom = false;
@@ -75,7 +72,7 @@ class BluetoothServices {
   Future<APIResponse<RoomModel>> getRoomFromScan({
     List<ScanResult> scanResults,
   }) async {
-    RestService restService = RestService(context);
+    RestService restService = RestService();
     // SignalMap signalMap = SignalMap(buildingId: building.id);
     SignalMap signalMap = SignalMap();
 

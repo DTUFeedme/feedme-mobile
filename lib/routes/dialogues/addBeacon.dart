@@ -24,7 +24,7 @@ class AddBeacon {
     this.scaffoldKey,
     this.setBeaconsAdded,
   }) {
-    _restService = RestService(context);
+    _restService = RestService();
     List<bool> list = [];
     for (int i = 0; i < beaconList.length; i++) {
       list.add(false);
