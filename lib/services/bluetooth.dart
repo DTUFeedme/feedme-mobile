@@ -6,6 +6,7 @@ import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:tuple/tuple.dart';
 
@@ -20,16 +21,29 @@ class BluetoothServices {
       return [];
     }
     List<ScanResult> finalResults = [];
-    flutterBlue.startScan(timeout: Duration(milliseconds: timeoutms));
+    try {
+      flutterBlue.startScan(
+          timeout: Duration(milliseconds: timeoutms));
 
-    flutterBlue.scanResults
-        .distinct((e1, e2) => listEquals(e1, e2))
-        .listen((scanResult) {
-      finalResults = scanResult;
-    });
+      flutterBlue.scanResults
+          .distinct((e1, e2) => listEquals(e1, e2))
+          .listen((scanResult) {
+        finalResults = scanResult;
+      });
 
-    flutterBlue.stopScan();
+      flutterBlue.stopScan();
+    } catch (e) {
+      print(e);
+    }
     await Future.delayed(Duration(milliseconds: timeoutms));
+    print("final results:");
+    finalResults.forEach((element) {
+      if (getBeaconName(element) != null) {
+        print(getBeaconName(element));
+        print("serviceUuids: " +
+            (element.advertisementData.serviceUuids).toString());
+      }
+    });
     return finalResults;
   }
 
@@ -107,20 +121,24 @@ class BluetoothServices {
       return APIResponse<RoomModel>(data: room);
     } else {
       _gettingRoom = false;
+      // return APIResponse<RoomModel>(
+      //     error: true, errorMessage: "Failed to assess room based on readings");
       return APIResponse<RoomModel>(
-          error: true, errorMessage: "Failed to assess room based on readings");
+          error: true, errorMessage: apiResponseRoom.errorMessage);
     }
   }
 
   Future<bool> get isOn async => await flutterBlue.isOn;
 
   String getBeaconName(ScanResult scanResult) {
+    RegExp regex = RegExp("[a-zA-Z0-9]");
     try {
       String name = "";
       String firstKey = scanResult.advertisementData.serviceData.keys.first;
       for (int i = 0; i < 4; i++) {
         String character = String.fromCharCode(
             scanResult.advertisementData.serviceData[firstKey][i]);
+        if (!regex.hasMatch(character)) return "";
         name = name + character;
       }
       return name;
