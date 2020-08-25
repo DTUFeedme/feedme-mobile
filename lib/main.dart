@@ -12,7 +12,6 @@ import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/sharedPreferences.dart';
 
-
 //import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -196,9 +195,10 @@ class _MyHomePageState extends State<MyHomePage> {
         enableHeadless: true));
 
     print("sending stuff");
-    
+
     SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
     RestService _restService = RestService();
+    await sharedPrefsHelper.setUserLoginType(false);
     Tuple2<String, String> _tokens =
         await sharedPrefsHelper.getUnauthorizedTokens(_restService);
     BluetoothServices _bluetoothServices = BluetoothServices();

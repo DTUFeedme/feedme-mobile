@@ -38,7 +38,11 @@ class BluetoothServices {
     await Future.delayed(Duration(milliseconds: timeoutms));
     print("final results:");
     finalResults.forEach((element) {
-      print(getBeaconName(element));
+      if (getBeaconName(element) != null) {
+        print(getBeaconName(element));
+        print("serviceUuids: " +
+            (element.advertisementData.serviceUuids).toString());
+      }
     });
     return finalResults;
   }
@@ -127,12 +131,14 @@ class BluetoothServices {
   Future<bool> get isOn async => await flutterBlue.isOn;
 
   String getBeaconName(ScanResult scanResult) {
+    RegExp regex = RegExp("[a-zA-Z0-9]");
     try {
       String name = "";
       String firstKey = scanResult.advertisementData.serviceData.keys.first;
       for (int i = 0; i < 4; i++) {
         String character = String.fromCharCode(
             scanResult.advertisementData.serviceData[firstKey][i]);
+        if (!regex.hasMatch(character)) return "";
         name = name + character;
       }
       return name;

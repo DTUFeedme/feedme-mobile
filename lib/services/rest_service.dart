@@ -139,7 +139,7 @@ class RestService {
       reqHeaders =
           await headers(additionalParameters: additionalHeaderParameters);
       refreshToken = await sharedPrefsHelper.getUserRefreshToken();
-      print(refreshToken);
+      print("refresh token: $refreshToken");
     } catch (e) {
       print(e);
       return APIResponse<T>(error: true, errorMessage: "");
@@ -153,8 +153,7 @@ class RestService {
 
       // check if jwt has expired
       if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 30) {
-        print("expired");
-        print(refreshToken);
+        print("expired refresh token");
         APIResponse<Tuple2<String, String>> updatedTokensResponse =
             await updateTokensRequest(authToken, refreshToken);
 
