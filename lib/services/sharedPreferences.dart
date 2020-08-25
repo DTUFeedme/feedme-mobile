@@ -23,11 +23,16 @@ class SharedPrefsHelper {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String unregisteredAuthToken =
         sharedPreferences.getString(unregisteredAuthTokenKey);
-    String refreshToken = sharedPreferences.getString(unregisteredAuthToken);
+    String refreshToken =
+        sharedPreferences.getString(unregisteredRefreshTokenKey);
     if (unregisteredAuthToken == null || refreshToken == null) {
       APIResponse<Tuple2<String, String>> newUserAPIResponse =
           await restService.postUnauthorizedUser();
       if (!newUserAPIResponse.error) {
+        await sharedPreferences.setString(
+            unregisteredAuthToken, newUserAPIResponse.data.item1);
+        await sharedPreferences.setString(
+            unregisteredRefreshTokenKey, newUserAPIResponse.data.item2);
         return new Tuple2(
             newUserAPIResponse.data.item1, newUserAPIResponse.data.item2);
       } else {
@@ -52,14 +57,25 @@ class SharedPrefsHelper {
 
   Future<void> setUserAuthToken(String token) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    await sharedPreferences.setString(tokenKey, token);
+    // await sharedPreferences.setString(tokenKey, token);
+    if (await getStartOnLogin()) {
+      await sharedPreferences.setString(tokenKey, token);
+    } else {
+      await sharedPreferences.setString(unregisteredAuthTokenKey, token);
+    }
     return;
   }
 
   Future<String> getUserAuthToken() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    String token = sharedPreferences.getString(tokenKey);
-    return token;
+    print("registered: ${await getStartOnLogin()}");
+    if (await getStartOnLogin()) {
+      return sharedPreferences.getString(tokenKey);
+    } else {
+      return sharedPreferences.getString(unregisteredAuthTokenKey);
+    }
+    // String token = sharedPreferences.getString(tokenKey);
+    // return token;
   }
 
   // Future<void> setUserTokens(Tuple2<String, String> token) async {

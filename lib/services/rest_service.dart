@@ -152,7 +152,7 @@ class RestService {
       int exp = JwtDecoder.parseJwtPayLoad(authToken)["exp"];
 
       // check if jwt has expired
-      if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 30) {
+      if (DateTime.now().millisecondsSinceEpoch / 1000 > 1 - 30) {
         print("expired");
         print(refreshToken);
         APIResponse<Tuple2<String, String>> updatedTokensResponse =
