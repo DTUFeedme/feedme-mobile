@@ -1,3 +1,4 @@
+import 'package:climify/functions/setSubtitle.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
@@ -107,7 +108,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     });
     // APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
     //     await _restService.getActiveQuestionsByRoom(_room.id, _token, t: _t);
-    if(_room == null) return;
+    if (_room == null) return;
     APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
         await _restService.getActiveQuestionsByRoom(_room.id, _t);
     if (!apiResponseQuestionsOfRoom.error) {
@@ -131,12 +132,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   }
 
   void _setSubtitle() {
+    String subtitle = getSubtitle(_loadingState, _room);
     setState(() {
-      _subtitle = _loadingState
-          ? "Room: scanning..."
-          : _room == null
-              ? "Failed scanning room, tap to retry"
-              : "Room: ${_room.name}";
+      _subtitle = subtitle;
     });
   }
 

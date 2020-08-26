@@ -1,3 +1,4 @@
+import 'package:climify/functions/setSubtitle.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
@@ -119,19 +120,21 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   }
 
   Future<void> _getActiveQuestions() async {
-    RoomModel room;
+    // RoomModel room;
 
-    APIResponse<RoomModel> apiResponseRoom = await _bluetooth.getRoomFromScan();
+    // APIResponse<RoomModel> apiResponseRoom = await _bluetooth.getRoomFromScan();
 
-    if (apiResponseRoom.error) {
-      SnackBarError.showErrorSnackBar(
-        apiResponseRoom.errorMessage,
-        _scaffoldKey,
-      );
-      return;
-    }
+    // if (apiResponseRoom.error) {
+    //   SnackBarError.showErrorSnackBar(
+    //     apiResponseRoom.errorMessage,
+    //     _scaffoldKey,
+    //   );
+    //   return;
+    // }
 
-    room = apiResponseRoom.data;
+    // room = apiResponseRoom.data;
+
+    RoomModel room = _room;
 
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, "week");
@@ -157,12 +160,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   }
 
   void _setSubtitle() {
+    String subtitle = getSubtitle(_gettingRoom, _room);
     setState(() {
-      _subtitle = _gettingRoom
-          ? "Room: scanning..."
-          : _room == null
-              ? "Failed scanning room, tap to retry"
-              : "Room: ${_room.name}";
+      _subtitle = subtitle;
     });
   }
 

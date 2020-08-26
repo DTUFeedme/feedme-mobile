@@ -19,7 +19,6 @@ class ScanRoom {
   final Function incrementScans;
   final bool Function() getScanning;
   final int Function() getNumberOfScans;
-  final List<Beacon> beacons;
   StatefulBuilder scanRoomDialog;
 
   RestService _restService;
@@ -35,7 +34,6 @@ class ScanRoom {
     @required this.incrementScans,
     @required this.getScanning,
     @required this.getNumberOfScans,
-    @required this.beacons,
   }) {
     _restService = RestService();
     _bluetooth = BluetoothServices();
@@ -60,7 +58,7 @@ class ScanRoom {
 
           // SignalMap signalMap =
           //     SignalMap.withInitBeacons(beacons, buildingId: building.id);
-          SignalMap signalMap = SignalMap(buildingId: building.id);
+          SignalMap signalMap = SignalMap();
           int beaconsScanned = 0;
           List<ScanResult> scanResults = await _bluetooth.scanForDevices(3000);
 

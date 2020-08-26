@@ -229,6 +229,7 @@ class RestService {
 
     if (responseData.statusCode == 200) {
       dynamic bodyJson = {};
+      print("body: ${responseData.body}");
       try {
         bodyJson = json.decode(responseData.body);
       } catch (_) {

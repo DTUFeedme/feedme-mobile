@@ -9,8 +9,9 @@ class RoomModel {
   String id;
   String name;
   String building;
+  int certainty;
 
-  RoomModel(this.id, this.name, {this.building});
+  RoomModel(this.id, this.name, {this.building, this.certainty});
 
   factory RoomModel.fromJson(json) => _$RoomModelFromJson(json);
 
