@@ -14,6 +14,8 @@ import 'package:climify/services/sharedPreferences.dart';
 
 //import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_blue/flutter_blue.dart';
+import 'package:package_info/package_info.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tuple/tuple.dart';
@@ -21,12 +23,36 @@ import 'package:tuple/tuple.dart';
 import 'models/roomModel.dart';
 
 const EVENTS_KEY = "fetch_events";
+final BluetoothServices _bluetoothServices = BluetoothServices();
+
+void _sendLocation() async {
+  print("sending stuff");
+
+  SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+  RestService _restService = RestService();
+  await sharedPrefsHelper.setUserLoginType(false);
+  Tuple2<String, String> _tokens =
+      await sharedPrefsHelper.getUnauthorizedTokens(_restService);
+  print("bluetooth is up");
+  SharedPreferences _sp = await SharedPreferences.getInstance();
+  await sharedPrefsHelper.setUserTokens(_tokens);
+  print("Scanning room");
+  APIResponse<RoomModel> apiResponse =
+      await _bluetoothServices.getRoomFromScan();
+  print(apiResponse.errorMessage ?? "no error");
+  RoomModel _room = apiResponse?.data;
+  print(_room);
+  print(_room?.name);
+  if (_room?.name == "Funny") {
+    int i = _sp.getInt("testInt") ?? 0;
+    await _sp.setInt("testInt", i + 1);
+  }
+}
 
 /// This "Headless Task" is run when app is terminated.
 void backgroundFetchHeadlessTask(String taskId) async {
   print("[BackgroundFetch] Headless event received: $taskId");
   if (taskId == 'flutter_background_fetch') {
-    BackgroundFetch.finish(taskId);
     BackgroundFetch.scheduleTask(TaskConfig(
         taskId: "send_location",
         delay: 10,
@@ -34,6 +60,10 @@ void backgroundFetchHeadlessTask(String taskId) async {
         forceAlarmManager: true,
         stopOnTerminate: false,
         enableHeadless: true));
+    BackgroundFetch.finish(taskId);
+  } else if (taskId == "send_location") {
+    print("sending stuff");
+    _sendLocation();
   }
   // BackgroundFetch.scheduleTask(TaskConfig(
   //     taskId: "send_location",
@@ -107,6 +137,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> initPlatformState() async {
     // Load persisted fetch events from SharedPreferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    PackageInfo info = await PackageInfo.fromPlatform();
+    print(info.packageName);
 
     _testInt = prefs.getInt("testInt") ?? 0;
 
@@ -120,8 +152,8 @@ class _MyHomePageState extends State<MyHomePage> {
     // Configure BackgroundFetch.
     BackgroundFetch.configure(
             BackgroundFetchConfig(
-              minimumFetchInterval: 1,
-              forceAlarmManager: true,
+              minimumFetchInterval: 15,
+              forceAlarmManager: false,
               stopOnTerminate: false,
               startOnBoot: true,
               enableHeadless: true,
@@ -155,13 +187,13 @@ class _MyHomePageState extends State<MyHomePage> {
     //     stopOnTerminate: false,
     //     enableHeadless: true));
 
-    BackgroundFetch.scheduleTask(TaskConfig(
-        taskId: "send_location",
-        delay: 3500,
-        periodic: false,
-        forceAlarmManager: true,
-        stopOnTerminate: false,
-        enableHeadless: true));
+    // BackgroundFetch.scheduleTask(TaskConfig(
+    //     taskId: "send_location",
+    //     delay: 3500,
+    //     periodic: false,
+    //     forceAlarmManager: true,
+    //     stopOnTerminate: false,
+    //     enableHeadless: true));
 
     // Optionally query the current BackgroundFetch status.
     int status = await BackgroundFetch.status;
@@ -186,34 +218,15 @@ class _MyHomePageState extends State<MyHomePage> {
     // Persist fetch events in SharedPreferences
     prefs.setString(EVENTS_KEY, jsonEncode(_events));
 
-    BackgroundFetch.scheduleTask(TaskConfig(
-        taskId: "send_location",
-        delay: 7500,
-        periodic: false,
-        forceAlarmManager: true,
-        stopOnTerminate: false,
-        enableHeadless: true));
+    // BackgroundFetch.scheduleTask(TaskConfig(
+    //     taskId: "send_location",
+    //     delay: 7500,
+    //     periodic: false,
+    //     forceAlarmManager: true,
+    //     stopOnTerminate: false,
+    //     enableHeadless: true));
 
-    print("sending stuff");
-
-    SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
-    RestService _restService = RestService();
-    await sharedPrefsHelper.setUserLoginType(false);
-    Tuple2<String, String> _tokens =
-        await sharedPrefsHelper.getUnauthorizedTokens(_restService);
-    BluetoothServices _bluetoothServices = BluetoothServices();
-    SharedPreferences _sp = await SharedPreferences.getInstance();
-    await sharedPrefsHelper.setUserTokens(_tokens);
-    APIResponse<RoomModel> apiResponse =
-        await _bluetoothServices.getRoomFromScan();
-    print(apiResponse.errorMessage ?? "no error");
-    RoomModel _room = apiResponse?.data;
-    print(_room);
-    print(_room?.name);
-    if (_room?.name == "Funny") {
-      int i = _sp.getInt("testInt") ?? 0;
-      await _sp.setInt("testInt", i + 1);
-    }
+    _sendLocation();
 
     BackgroundFetch.finish(taskId);
   }

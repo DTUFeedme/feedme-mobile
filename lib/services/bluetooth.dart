@@ -22,16 +22,22 @@ class BluetoothServices {
     }
     List<ScanResult> finalResults = [];
     try {
-      flutterBlue.startScan(
-          timeout: Duration(milliseconds: timeoutms));
-
-      flutterBlue.scanResults
-          .distinct((e1, e2) => listEquals(e1, e2))
+      flutterBlue
+          .scan(timeout: Duration(milliseconds: timeoutms))
           .listen((scanResult) {
-        finalResults = scanResult;
+        // Only add the result if the beacon has not already been scanned
+        if (!finalResults.any(
+            (element) => getBeaconName(element) == getBeaconName(scanResult))) {
+          finalResults.add(scanResult);
+        }
       });
 
-      flutterBlue.stopScan();
+      // flutterBlue.scanResults
+      //     .distinct((e1, e2) => listEquals(e1, e2))
+      //     .listen((scanResult) {
+      //   finalResults = scanResult;
+      // });
+
     } catch (e) {
       print(e);
     }
