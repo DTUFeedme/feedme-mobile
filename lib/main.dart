@@ -25,7 +25,7 @@ import 'models/roomModel.dart';
 const EVENTS_KEY = "fetch_events";
 final BluetoothServices _bluetoothServices = BluetoothServices();
 
-void _sendLocation() async {
+Future<void> _sendLocation() async {
   print("sending stuff");
 
   SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
@@ -43,27 +43,19 @@ void _sendLocation() async {
   RoomModel _room = apiResponse?.data;
   print(_room);
   print(_room?.name);
-  if (_room?.name == "Funny") {
+  if (_room?.name != null) {
     int i = _sp.getInt("testInt") ?? 0;
     await _sp.setInt("testInt", i + 1);
   }
+  return;
 }
 
 /// This "Headless Task" is run when app is terminated.
 void backgroundFetchHeadlessTask(String taskId) async {
   print("[BackgroundFetch] Headless event received: $taskId");
   if (taskId == 'flutter_background_fetch') {
-    BackgroundFetch.scheduleTask(TaskConfig(
-        taskId: "send_location",
-        delay: 10,
-        periodic: false,
-        forceAlarmManager: true,
-        stopOnTerminate: false,
-        enableHeadless: true));
+    await _sendLocation();
     BackgroundFetch.finish(taskId);
-  } else if (taskId == "send_location") {
-    print("sending stuff");
-    _sendLocation();
   }
   // BackgroundFetch.scheduleTask(TaskConfig(
   //     taskId: "send_location",
@@ -226,7 +218,7 @@ class _MyHomePageState extends State<MyHomePage> {
     //     stopOnTerminate: false,
     //     enableHeadless: true));
 
-    _sendLocation();
+    await _sendLocation();
 
     BackgroundFetch.finish(taskId);
   }
