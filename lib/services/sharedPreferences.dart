@@ -59,11 +59,9 @@ class SharedPrefsHelper {
 
   Future<void> setUserAuthToken(String token) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    print("registered: ${await getStartOnLogin()}");
-    if (await getStartOnLogin()) {
-      await sharedPreferences.setString(registeredRefreshTokenKey, token);
-    } else {
-      await sharedPreferences.setString(unregisteredRefreshTokenKey, token);
+    await sharedPreferences.setString(tokenKey, token);
+    if (!await getStartOnLogin()) {
+      await sharedPreferences.setString(unregisteredAuthTokenKey, token);
     }
     return;
   }
@@ -82,7 +80,6 @@ class SharedPrefsHelper {
 
   Future<void> setUserRefreshToken(String token) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    print("registered: ${await getStartOnLogin()}");
     if (await getStartOnLogin()) {
       await sharedPreferences.setString(registeredRefreshTokenKey, token);
     } else {
