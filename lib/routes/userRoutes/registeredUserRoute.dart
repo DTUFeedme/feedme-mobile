@@ -1,3 +1,4 @@
+import 'package:climify/functions/setSubtitle.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/globalState.dart';
@@ -44,8 +45,8 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   @override
   void initState() {
     super.initState();
-    _restService = RestService(context);
-    _bluetooth = BluetoothServices(context);
+    _restService = RestService();
+    _bluetooth = BluetoothServices();
     _setupState();
   }
 
@@ -74,18 +75,17 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       scaffoldKey: _scaffoldKey,
     );
     // await Future.delayed(Duration(milliseconds: 500));
-    _gettingRoom = _scanForRoom(forceBuildingRescan);
+    _gettingRoom = _scanForRoom();
     await _gettingRoom;
-    // if (_room != null) _getAndSetRoomFeedbackStats("week");
+    if (_room != null) _getAndSetRoomFeedbackStats("week");
     setState(() {
       _loadingState = false;
     });
     _setSubtitle();
   }
 
-  Future<void> _scanForRoom(bool forceBuildingRescan) async {
-    var _scanResults = await _scanHelper.scanBuildingAndRoom(
-        resetBuilding: forceBuildingRescan);
+  Future<void> _scanForRoom() async {
+    var _scanResults = await _scanHelper.scanForRoom();
     setState(() {
       _room = _scanResults.room;
       _questions = _scanResults.questions;
@@ -108,6 +108,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     });
     // APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
     //     await _restService.getActiveQuestionsByRoom(_room.id, _token, t: _t);
+    if (_room == null) return;
     APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
         await _restService.getActiveQuestionsByRoom(_room.id, _t);
     if (!apiResponseQuestionsOfRoom.error) {
@@ -131,12 +132,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   }
 
   void _setSubtitle() {
+    String subtitle = getSubtitle(_loadingState, _room);
     setState(() {
-      _subtitle = _loadingState
-          ? "Room: scanning..."
-          : _room == null
-              ? "Failed scanning room, tap to retry"
-              : "Room: ${_room.name}";
+      _subtitle = subtitle;
     });
   }
 

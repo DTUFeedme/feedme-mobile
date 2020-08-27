@@ -21,7 +21,7 @@ class AddRoom {
     this.building,
     this.scaffoldKey,
   }) {
-    _restService = RestService(context);
+    _restService = RestService();
     addRoomDialog = StatefulBuilder(
       builder: (context, setState) {
         void _submitRoom() async {

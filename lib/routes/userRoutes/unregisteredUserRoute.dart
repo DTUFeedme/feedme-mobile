@@ -1,3 +1,4 @@
+import 'package:climify/functions/setSubtitle.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
@@ -44,9 +45,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   void initState() {
     super.initState();
 
-    _restService = RestService(context);
-    _sharedPrefsHelper = SharedPrefsHelper(context);
-    _bluetooth = BluetoothServices(context);
+    _restService = RestService();
+    _sharedPrefsHelper = SharedPrefsHelper();
+    _bluetooth = BluetoothServices();
     _checkUserStatus();
   }
 
@@ -69,11 +70,11 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       Tuple2 tokens =
           await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
 
-      Provider.of<GlobalState>(context)
-          .updateAccount("no email", tokens.item1, tokens.item2, context);
-      Provider.of<GlobalState>(context).updateBuilding(_building);
-      print("auth token set");
-      print(tokens.item1);
+      // Provider.of<GlobalState>(context)
+      //     .updateAccount("no email", tokens.item1, tokens.item2, context);
+      SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+      sharedPrefsHelper.setUserAuthToken(tokens.item1);
+      sharedPrefsHelper.setUserRefreshToken(tokens.item2);
 
       setState(() {
         _fetchingTokens = false;
@@ -82,9 +83,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     }
   }
 
-  Future<void> _getAndSetRoom({
-    bool forceBuildingRescan = false,
-  }) async {
+  Future<void> _getAndSetRoom() async {
     if (_gettingRoom) return;
     setState(() {
       _gettingRoom = true;
@@ -101,7 +100,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       scaffoldKey: _scaffoldKey,
     );
 
-    await _scanForRoom(forceBuildingRescan);
+    await _scanForRoom();
 
     setState(() {
       _gettingRoom = false;
@@ -109,9 +108,10 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     _setSubtitle();
   }
 
-  Future<void> _scanForRoom(bool forceBuildingRescan) async {
-    var _scanResults = await _scanHelper.scanBuildingAndRoom(
-        resetBuilding: forceBuildingRescan);
+  Future<void> _scanForRoom() async {
+    // var _scanResults = await _scanHelper.scanBuildingAndRoom(
+    //     resetBuilding: forceBuildingRescan);
+    var _scanResults = await _scanHelper.scanForRoom();
     setState(() {
       _building = _scanResults.building;
       _room = _scanResults.room;
@@ -120,27 +120,24 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   }
 
   Future<void> _getActiveQuestions() async {
-    RoomModel room;
+    // RoomModel room;
 
-    print("getting all beacons");
-    APIResponse<RoomModel> apiResponseRoom =
-        await _bluetooth.getRoomFromBuilding(_building);
-    print("got all beacons");
+    // APIResponse<RoomModel> apiResponseRoom = await _bluetooth.getRoomFromScan();
 
-    if (apiResponseRoom.error) {
-      SnackBarError.showErrorSnackBar(
-        apiResponseRoom.errorMessage,
-        _scaffoldKey,
-      );
-      return;
-    }
+    // if (apiResponseRoom.error) {
+    //   SnackBarError.showErrorSnackBar(
+    //     apiResponseRoom.errorMessage,
+    //     _scaffoldKey,
+    //   );
+    //   return;
+    // }
 
-    room = apiResponseRoom.data;
+    // room = apiResponseRoom.data;
 
-    print("getting feedback");
+    RoomModel room = _room;
+
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(room.id, "week");
-    print("got feedback");
 
     if (apiResponseQuestions.error) {
       SnackBarError.showErrorSnackBar(
@@ -163,12 +160,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   }
 
   void _setSubtitle() {
+    String subtitle = getSubtitle(_gettingRoom, _room);
     setState(() {
-      _subtitle = _gettingRoom
-          ? "Room: scanning..."
-          : _room == null
-              ? "Failed scanning room, tap to retry"
-              : "Room: ${_room.name}";
+      _subtitle = subtitle;
     });
   }
 
@@ -210,7 +204,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       appBar: AppBar(
         title: InkWell(
           onTap: () => _getAndSetRoom(),
-          onLongPress: () => _getAndSetRoom(forceBuildingRescan: true),
           child: Row(
             children: [
               Expanded(

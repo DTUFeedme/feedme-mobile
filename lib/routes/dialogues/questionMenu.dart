@@ -22,7 +22,7 @@ class QuestionMenu {
     @required this.setCurrentlyConfirming,
     @required this.getCurrentlyConfirming,
   }) {
-    _restService = RestService(context);
+    _restService = RestService();
     questionMenuDialog = StatefulBuilder(
       builder: (context, setState) {
         Future<void> _makeQuestionInactive() async {

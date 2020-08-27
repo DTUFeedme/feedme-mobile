@@ -27,9 +27,10 @@ dependencies:
   provider: ^3.1.0
   shared_preferences: ^0.5.7+1
   cupertino_icons: ^0.1.2
-  flutter_blue: ^0.6.3+1
+  flutter_blue: ^0.7.2
   json_annotation: ^3.0.0
   intl: ^0.16.1
+  background_fetch: ^0.6.0
 
 dev_dependencies:
   flutter_test:

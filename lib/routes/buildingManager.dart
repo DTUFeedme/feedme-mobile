@@ -1,13 +1,9 @@
 import 'dart:async';
 
 import 'package:climify/models/api_response.dart';
-import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
-import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
-import 'package:climify/models/userModel.dart';
-import 'package:climify/routes/dialogues/addBeacon.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
 import 'package:climify/routes/dialogues/roomMenu.dart';
 import 'package:climify/services/bluetooth.dart';
@@ -16,12 +12,9 @@ import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
-import 'package:flutter_blue/flutter_blue.dart';
 
 import 'dialogues/scanRoom.dart';
-import 'dialogues/beaconMenu.dart';
 import 'dialogues/addQuestion.dart';
 import 'dialogues/questionMenu.dart';
 
@@ -35,14 +28,16 @@ class _BuildingManagerState extends State<BuildingManager> {
   RestService _restService;
 
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  GlobalKey<RefreshIndicatorState> _refreshBeaconKey =
+      GlobalKey<RefreshIndicatorState>();
   //GlobalKey<State> _dialogKey = GlobalKey<State>();
   BuildingModel _building = BuildingModel('', '', []);
   List<FeedbackQuestion> _questionsRealList = [];
   List<FeedbackQuestion> _questions = [];
   TextEditingController _newRoomNameController = TextEditingController();
-  List<Beacon> _beacons = [];
-  List<Tuple2<String, String>> _beaconList = [];
+  List<Tuple2<String, int>> _beacons = [];
   bool _scanningSignalMap = false;
+  bool _gettingBeacons = false;
   int _signalMapScans = 0;
   // SignalMap _signalMap;
   String _currentlyConfirming = "";
@@ -57,8 +52,8 @@ class _BuildingManagerState extends State<BuildingManager> {
   @override
   void initState() {
     super.initState();
-    _bluetooth = BluetoothServices(context);
-    _restService = RestService(context);
+    _bluetooth = BluetoothServices();
+    _restService = RestService();
     _setBuildingState();
   }
 
@@ -79,19 +74,10 @@ class _BuildingManagerState extends State<BuildingManager> {
 
   void _setBuildingState() async {
     await Future.delayed(Duration.zero);
+    BuildingModel argBuilding = ModalRoute.of(context).settings.arguments;
     setState(() {
-      _building = Provider.of<GlobalState>(context).globalState['building'];
+      _building = argBuilding;
     });
-    APIResponse<List<Beacon>> apiResponseBeacons =
-        await _restService.getBeaconsOfBuilding(_building);
-    if (!apiResponseBeacons.error) {
-      setState(() {
-        _beacons = apiResponseBeacons.data;
-      });
-      print("beacons of the deep: $_beacons");
-    } else {
-      print(apiResponseBeacons.errorMessage);
-    }
     _questions = [];
     _updateQuestions();
     _updateBuilding();
@@ -109,15 +95,27 @@ class _BuildingManagerState extends State<BuildingManager> {
     return;
   }
 
-  Future<void> _updateBeacon() async {
-    APIResponse<List<Beacon>> apiResponseBeacons =
-        await _restService.getBeaconsOfBuilding(_building);
-    if (apiResponseBeacons.error == false) {
-      List<Beacon> beacon = apiResponseBeacons.data;
+  Future<void> _updateBeacons() async {
+    if (_gettingBeacons) return;
+
+    setState(() {
+      _gettingBeacons = true;
+      _beacons = [];
+    });
+
+    _bluetooth.getNearbyBeaconData().listen((event) {
       setState(() {
-        _beacons = beacon;
+        _beacons = event;
       });
-    }
+    });
+
+    // FlutterBlue does not properly close streams, so this duration will have to match the timeout
+    // found in the bluetooth.dart function getNearbyBeaconData
+    await Future.delayed(Duration(milliseconds: 3750));
+
+    setState(() {
+      _gettingBeacons = false;
+    });
     return;
   }
 
@@ -199,10 +197,6 @@ class _BuildingManagerState extends State<BuildingManager> {
     setState(() {
       _scanningSignalMap = false;
       _signalMapScans = 0;
-      // Map<String, List<int>> beacons = {};
-      // beacons.addEntries(
-      //     _beacons.map((b) => MapEntry<String, List<int>>(b.id, [])));
-      // _signalMap = SignalMap(_building.id);
     });
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
@@ -225,7 +219,6 @@ class _BuildingManagerState extends State<BuildingManager> {
           }),
           getScanning: () => _scanningSignalMap,
           getNumberOfScans: () => _signalMapScans,
-          beacons: _beacons,
         ).dialog;
       },
     );
@@ -253,30 +246,6 @@ class _BuildingManagerState extends State<BuildingManager> {
         _currentlyConfirming = "";
       });
       _updateBuilding();
-    });
-  }
-
-  void _beaconMenu(Beacon beacon) async {
-    await showDialogModified(
-      barrierColor: Colors.black12,
-      context: context,
-      builder: (_) {
-        return BeaconMenu(
-          context,
-          beacon: beacon,
-          building: _building,
-          scaffoldKey: _scaffoldKey,
-          setCurrentlyConfirming: (s) => setState(() {
-            _currentlyConfirming = s;
-          }),
-          getCurrentlyConfirming: () => _currentlyConfirming,
-        ).dialog;
-      },
-    ).then((value) {
-      setState(() {
-        _currentlyConfirming = "";
-      });
-      _updateBeacon();
     });
   }
 
@@ -335,74 +304,14 @@ class _BuildingManagerState extends State<BuildingManager> {
     }
   }
 
-  void _addBeacon() async {
-    if (_scanningBeacons) {
-      return;
+  String _getSignalStrengthString(int rssi) {
+    if (rssi >= -79) {
+      return "Strong";
+    } else if (rssi >= -88) {
+      return "Normal";
+    } else {
+      return "Poor";
     }
-    if (!await _bluetooth.isOn) {
-      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
-      return;
-    }
-    if (await _bluetooth.isOn == false) return;
-    List<Tuple2<String, String>> beaconList = [];
-    setState(() {
-      _scanningBeacons = true;
-    });
-    List<ScanResult> scanResults = await _bluetooth.scanForDevices(2500);
-    setState(() {
-      _scanningBeacons = false;
-    });
-    scanResults.forEach((result) {
-      setState(() {});
-      String beaconName = _bluetooth.getBeaconName(result);
-      // List<String> serviceUuids = result.advertisementData.serviceUuids;
-      // String beaconId = serviceUuids.isNotEmpty ? serviceUuids[0] : "";
-      RegExp regex = RegExp(r'^[a-zA-Z0-9]{4,6}$');
-      if (beaconName != "" && regex.hasMatch(beaconName)) {
-        String beaconId = result.advertisementData.serviceData.keys.first;
-        Tuple2<String, String> item =
-            new Tuple2<String, String>(beaconName, beaconId);
-        beaconList.add(item);
-        print('beaconId' + beaconId);
-      }
-    });
-    setState(() {
-      _beaconList = beaconList;
-    });
-    if (beaconList.isEmpty) {
-      SnackBarError.showErrorSnackBar("No beacons found", _scaffoldKey);
-      return;
-    }
-    int addedBeacons = 0;
-    void Function(int) setBeaconsAdded = (b) {
-      addedBeacons = b;
-    };
-    await showDialogModified(
-      barrierColor: Colors.black12,
-      context: context,
-      builder: (_) {
-        return AddBeacon(
-          context,
-          beaconList: _beaconList,
-          alreadyExistingBeacons: _beacons,
-          building: _building,
-          scaffoldKey: _scaffoldKey,
-          setBeaconsAdded: setBeaconsAdded,
-        ).dialog;
-      },
-    ).then((_) {
-      if (addedBeacons == 0) {
-        SnackBarError.showErrorSnackBar("No beacons were added", _scaffoldKey);
-      } else {
-        if (addedBeacons == 1) {
-          SnackBarError.showErrorSnackBar("1 beacon was added", _scaffoldKey);
-        } else {
-          SnackBarError.showErrorSnackBar(
-              "$addedBeacons beacons were added", _scaffoldKey);
-        }
-        _updateBeacon();
-      }
-    });
   }
 
   void _changeWindow(int index) {
@@ -417,7 +326,10 @@ class _BuildingManagerState extends State<BuildingManager> {
           _title = "Manage questions";
           break;
         case 2:
-          _title = "Manage beacons";
+          // this runs _updateBeacons through the refreshindicator
+          // this method shows the indicator the first time for UX
+          _refreshBeaconKey?.currentState?.show();
+          _title = "View nearby beacons";
           break;
         case 3:
           _title = "Make user admin";
@@ -528,10 +440,36 @@ class _BuildingManagerState extends State<BuildingManager> {
                   ),
                 ),
               ),
+              // Visibility(
+              //   visible: _visibleIndex == 2,
+              //   child: RefreshIndicator(
+              //     onRefresh: () => _updateBeacons(),
+              //     child: Container(
+              //       child: ListView.builder(
+              //         padding: EdgeInsets.symmetric(
+              //           horizontal: 8,
+              //           vertical: 4,
+              //         ),
+              //         itemCount: _beacons.length,
+              //         itemBuilder: (_, index) => ListButton(
+              //           onTap: () => _beaconMenu(_beacons[index]),
+              //           child: Text(
+              //             _beacons[index].name,
+              //             style: TextStyle(
+              //               fontSize: 24,
+              //             ),
+              //           ),
+              //         ),
+              //       ),
+              //     ),
+              //   ),
+              // ),
               Visibility(
+                maintainState: true,
                 visible: _visibleIndex == 2,
                 child: RefreshIndicator(
-                  onRefresh: () => _updateBeacon(),
+                  key: _refreshBeaconKey,
+                  onRefresh: _updateBeacons,
                   child: Container(
                     child: ListView.builder(
                       padding: EdgeInsets.symmetric(
@@ -540,12 +478,22 @@ class _BuildingManagerState extends State<BuildingManager> {
                       ),
                       itemCount: _beacons.length,
                       itemBuilder: (_, index) => ListButton(
-                        onTap: () => _beaconMenu(_beacons[index]),
-                        child: Text(
-                          _beacons[index].name,
-                          style: TextStyle(
-                            fontSize: 24,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text(
+                              _beacons[index].item1,
+                              style: TextStyle(
+                                fontSize: 24,
+                              ),
+                            ),
+                            Text(
+                              "Signal: ${_getSignalStrengthString(_beacons[index].item2)}",
+                              style: TextStyle(
+                                fontSize: 24,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -580,7 +528,7 @@ class _BuildingManagerState extends State<BuildingManager> {
           ),
         ),
       ),
-      floatingActionButton: _visibleIndex != 3
+      floatingActionButton: _visibleIndex != 3 && _visibleIndex != 2
           ? FloatingActionButton(
               child: _scanningBeacons
                   ? CircularProgressIndicator(
@@ -596,8 +544,6 @@ class _BuildingManagerState extends State<BuildingManager> {
                     return _addRoom();
                   case 1:
                     return _addQuestion();
-                  case 2:
-                    return _addBeacon();
                   default:
                     return print("default case");
                 }

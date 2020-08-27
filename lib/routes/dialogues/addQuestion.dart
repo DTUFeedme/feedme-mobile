@@ -23,7 +23,7 @@ class AddQuestion {
     this.building,
     this.scaffoldKey,
   }) {
-    _restService = RestService(context);
+    _restService = RestService();
     List<bool> list = [];
     for (int i = 0; i < building.rooms.length; i++) {
       list.add(false);
