@@ -1,11 +1,9 @@
 import 'dart:async';
 
 import 'package:climify/models/api_response.dart';
-import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/roomModel.dart';
-import 'package:climify/routes/dialogues/addBeacon.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
 import 'package:climify/routes/dialogues/roomMenu.dart';
 import 'package:climify/services/bluetooth.dart';
@@ -14,11 +12,9 @@ import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
 import 'package:tuple/tuple.dart';
 
 import 'dialogues/scanRoom.dart';
-import 'dialogues/beaconMenu.dart';
 import 'dialogues/addQuestion.dart';
 import 'dialogues/questionMenu.dart';
 
@@ -253,30 +249,6 @@ class _BuildingManagerState extends State<BuildingManager> {
     });
   }
 
-  void _beaconMenu(Beacon beacon) async {
-    await showDialogModified(
-      barrierColor: Colors.black12,
-      context: context,
-      builder: (_) {
-        return BeaconMenu(
-          context,
-          beacon: beacon,
-          building: _building,
-          scaffoldKey: _scaffoldKey,
-          setCurrentlyConfirming: (s) => setState(() {
-            _currentlyConfirming = s;
-          }),
-          getCurrentlyConfirming: () => _currentlyConfirming,
-        ).dialog;
-      },
-    ).then((value) {
-      setState(() {
-        _currentlyConfirming = "";
-      });
-      _updateBeacons();
-    });
-  }
-
   void _questionMenu(FeedbackQuestion question) async {
     await showDialogModified(
       barrierColor: Colors.black12,
@@ -341,73 +313,6 @@ class _BuildingManagerState extends State<BuildingManager> {
       return "Poor";
     }
   }
-
-  // void _addBeacon() async {
-  //   if (_scanningBeacons) {
-  //     return;
-  //   }
-  //   if (!await _bluetooth.isOn) {
-  //     SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
-  //     return;
-  //   }
-  //   if (await _bluetooth.isOn == false) return;
-  //   List<String> beaconList = [];
-  //   setState(() {
-  //     _scanningBeacons = true;
-  //   });
-  //   List<ScanResult> scanResults = await _bluetooth.scanForDevices(2500);
-  //   setState(() {
-  //     _scanningBeacons = false;
-  //   });
-  //   scanResults.forEach((result) {
-  //     setState(() {});
-  //     String beaconName = _bluetooth.getBeaconName(result);
-  //     // List<String> serviceUuids = result.advertisementData.serviceUuids;
-  //     // String beaconId = serviceUuids.isNotEmpty ? serviceUuids[0] : "";
-  //     RegExp regex = RegExp(r'^[a-zA-Z0-9]{4,6}$');
-  //     if (beaconName != "" && regex.hasMatch(beaconName)) {
-  //       beaconList.add(beaconName);
-  //       print('beacon name' + beaconName);
-  //     }
-  //   });
-  //   setState(() {
-  //     _beaconList = beaconList;
-  //   });
-  //   if (beaconList.isEmpty) {
-  //     SnackBarError.showErrorSnackBar("No beacons found", _scaffoldKey);
-  //     return;
-  //   }
-  //   int addedBeacons = 0;
-  //   void Function(int) setBeaconsAdded = (b) {
-  //     addedBeacons = b;
-  //   };
-  //   await showDialogModified(
-  //     barrierColor: Colors.black12,
-  //     context: context,
-  //     builder: (_) {
-  //       return AddBeacon(
-  //         context,
-  //         beaconList: _beaconList,
-  //         alreadyExistingBeacons: _beacons,
-  //         building: _building,
-  //         scaffoldKey: _scaffoldKey,
-  //         setBeaconsAdded: setBeaconsAdded,
-  //       ).dialog;
-  //     },
-  //   ).then((_) {
-  //     if (addedBeacons == 0) {
-  //       SnackBarError.showErrorSnackBar("No beacons were added", _scaffoldKey);
-  //     } else {
-  //       if (addedBeacons == 1) {
-  //         SnackBarError.showErrorSnackBar("1 beacon was added", _scaffoldKey);
-  //       } else {
-  //         SnackBarError.showErrorSnackBar(
-  //             "$addedBeacons beacons were added", _scaffoldKey);
-  //       }
-  //       _updateBeacons();
-  //     }
-  //   });
-  // }
 
   void _changeWindow(int index) {
     setState(() {
