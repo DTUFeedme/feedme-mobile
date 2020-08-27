@@ -20,54 +20,23 @@ class BluetoothServices {
       return [];
     }
     List<ScanResult> finalResults = [];
-    flutterBlue.startScan(timeout: Duration(milliseconds: timeoutms));
+    try {
+      flutterBlue.startScan(timeout: Duration(milliseconds: timeoutms));
 
-    flutterBlue.scanResults
-        .distinct((e1, e2) => listEquals(e1, e2))
-        .listen((scanResult) {
-      finalResults = scanResult;
-    });
+      flutterBlue.scanResults
+          .distinct((e1, e2) => listEquals(e1, e2))
+          .listen((scanResult) {
+        finalResults = scanResult;
+      });
 
-    flutterBlue.stopScan();
-    await Future.delayed(Duration(milliseconds: timeoutms));
+      flutterBlue.stopScan();
+      await Future.delayed(Duration(milliseconds: timeoutms));
+    } catch (e) {
+      print(e);
+    }
+
     return finalResults;
   }
-
-  // Future<APIResponse<Tuple2<BuildingModel, RoomModel>>>
-  //     getBuildingAndRoomFromScan() async {
-  //   if (!await isOn) {
-  //     return APIResponse<Tuple2<BuildingModel, RoomModel>>(
-  //         error: true, errorMessage: "Bluetooth is not on");
-  //   }
-
-  //   RestService restService = RestService(context);
-  //   SignalMap signalMap = SignalMap();
-
-  //   List<ScanResult> scanResults = await scanForDevices(2000);
-  //   scanResults.forEach((result) {
-  //     String beaconName = getBeaconName(result);
-  //     if (beaconName.isNotEmpty)
-  //       signalMap.addBeaconReading(beaconName, getRSSI(result));
-  //   });
-
-  //   APIResponse<RoomModel> roomResponse =
-  //       await restService.getRoomFromSignalMap(signalMap);
-
-  //   if (!roomResponse.error) {
-  //     APIResponse<BuildingModel> buildingResponse =
-  //         await restService.getBuilding(roomResponse.data.building);
-  //     if (!buildingResponse.error){
-  //       return APIResponse<Tuple2<BuildingModel, RoomModel>>(
-  //           data: Tuple2(buildingResponse.data, roomResponse.data));
-  //     }else {
-  //       return APIResponse<Tuple2<BuildingModel, RoomModel>>(
-  //           error: true, errorMessage: buildingResponse.errorMessage);
-  //     }
-  //   } else {
-  //     return APIResponse<Tuple2<BuildingModel, RoomModel>>(
-  //         error: true, errorMessage: roomResponse.errorMessage);
-  //   }
-  // }
 
   Future<APIResponse<RoomModel>> getRoomFromScan({
     List<ScanResult> scanResults,
@@ -112,15 +81,49 @@ class BluetoothServices {
     }
   }
 
+  Stream<List<Tuple2<String, int>>> getNearbyBeaconData() {
+    try {
+      // FlutterBlue does not properly close streams, so this timeout will have to match the await
+      // duration found in the buildingManager.dart function _updateBeacons
+      Stream<List<Tuple2<String, int>>> stream;
+      flutterBlue
+          .startScan(timeout: Duration(milliseconds: 3750))
+          .then((_) => print("stop the stream"));
+      flutterBlue.stopScan();
+      stream = flutterBlue.scanResults.transform(StreamTransformer<
+          List<ScanResult>, List<Tuple2<String, int>>>.fromHandlers(
+        handleData: (data, sink) {
+          try {
+            List<Tuple2<String, int>> resultingList = [];
+            data.forEach((scanResult) {
+              String name = getBeaconName(scanResult) ?? "";
+              if (name != null && name.isNotEmpty) {
+                resultingList.add(Tuple2(name, getRSSI(scanResult)));
+              }
+            });
+            sink.add(resultingList);
+          } catch (e) {
+            sink.addError(e);
+          }
+        },
+      ));
+      return stream;
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<bool> get isOn async => await flutterBlue.isOn;
 
   String getBeaconName(ScanResult scanResult) {
+    RegExp regex = RegExp("[a-zA-Z0-9]");
     try {
       String name = "";
       String firstKey = scanResult.advertisementData.serviceData.keys.first;
       for (int i = 0; i < 4; i++) {
         String character = String.fromCharCode(
             scanResult.advertisementData.serviceData[firstKey][i]);
+        if (!regex.hasMatch(character)) return "";
         name = name + character;
       }
       return name;
