@@ -44,6 +44,7 @@ Future<APIResponse<RoomModel>> sendReceiveLocation() async {
     channelAction: AndroidNotificationChannelAction.CreateIfNotExists,
     category: 'alarm',
     channelShowBadge: false,
+    timeoutAfter: 10*60*1000, // 10 minutes
     importance: Importance.Default,
     priority: Priority.Max,
   );
