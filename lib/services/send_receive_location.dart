@@ -2,31 +2,15 @@ import 'package:climify/models/api_response.dart';
 import 'package:climify/main.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/services/bluetooth.dart';
-import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:flutter/material.dart';
-import 'package:tuple/tuple.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
-import 'jwtDecoder.dart';
 
 Future<APIResponse<RoomModel>> sendReceiveLocation() async {
   SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
-  Tuple2<String, String> _tokens;
-  _tokens = Tuple2(
-    await sharedPrefsHelper.getUserAuthToken(),
-    await sharedPrefsHelper.getUserRefreshToken(),
-  );
 
   if (await sharedPrefsHelper.getOnLoginScreen()) {
     return null;
-  }
-
-  if (_tokens == null) {
-    return APIResponse<RoomModel>(
-      error: true,
-      errorMessage: "No tokens were fetched from disk",
-    );
   }
 
   String notificationTitle = "Scanning room";
@@ -68,8 +52,8 @@ Future<APIResponse<RoomModel>> sendReceiveLocation() async {
   RoomModel _room = apiResponse?.data;
 
   notificationTitle = _room?.name != null
-      ? "Currently in: ${_room.name}"
-      : "Current room unknown";
+      ? "Current room: ${_room.name}"
+      : "Couldn't scan room";
   await Future.delayed(Duration(milliseconds: 250)).then(
     (_) => LocalNotifications.flutterLocalNotificationsPlugin.show(
       0,

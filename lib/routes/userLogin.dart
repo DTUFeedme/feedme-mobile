@@ -61,10 +61,8 @@ class _UserLoginState extends State<UserLogin> {
       if (!apiResponse.error) {
         await _sharedPrefsHelper.setOnLoginScreen(false);
         Navigator.of(context).pushReplacementNamed("registered");
-        return;
       }
     }
-    SnackBarError.showErrorSnackBar("Please log in again", _scaffoldKey);
   }
 
   Future<void> _authUser({bool create = false}) async {

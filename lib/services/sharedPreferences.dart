@@ -77,7 +77,6 @@ class SharedPrefsHelper {
 
   Future<String> getUserAuthToken() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    print("registered: ${await getStartOnLogin()}");
     if (await getStartOnLogin()) {
       return sharedPreferences.getString(tokenKey);
     } else {
