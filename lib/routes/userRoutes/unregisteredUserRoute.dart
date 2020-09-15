@@ -1,3 +1,5 @@
+import 'package:climify/functions/setSubtitle.dart';
+import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/roomModel.dart';
@@ -118,12 +120,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   }
 
   void _setSubtitle() {
+    String subtitle = getSubtitle(_gettingRoom, _room);
     setState(() {
-      _subtitle = _gettingRoom
-          ? "Room: scanning..."
-          : _room == null
-              ? "Failed scanning room, tap to retry"
-              : "Room: ${_room.name}";
+      _subtitle = subtitle;
     });
   }
 

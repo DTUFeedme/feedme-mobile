@@ -25,8 +25,6 @@ class SharedPrefsHelper {
         sharedPreferences.getString(unregisteredAuthTokenKey);
     String refreshToken =
         sharedPreferences.getString(unregisteredRefreshTokenKey);
-    print("init unreg auth: $unregisteredAuthToken");
-    print("init refresh: $refreshToken");
     if (unregisteredAuthToken == null || refreshToken == null) {
       print("posting new user");
       APIResponse<Tuple2<String, String>> newUserAPIResponse =
@@ -56,13 +54,13 @@ class SharedPrefsHelper {
   //   print(sharedPreferences.getString(registeredRefreshTokenKey));
   // }
 
-  Future<bool> _getBool(key) async{
+  Future<bool> _getBool(key) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     bool value = sharedPreferences.getBool(key) ?? false;
     return value;
   }
 
-  Future<void> _setBool(key, b) async{
+  Future<void> _setBool(key, b) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     await sharedPreferences.setBool(key, b);
     return;
@@ -73,14 +71,20 @@ class SharedPrefsHelper {
 
   Future<bool> getOnLoginScreen() async => _getBool(onLoginScreenKey);
   Future<void> setOnLoginScreen(bool b) async => _setBool(onLoginScreenKey, b);
-  
+
   Future<bool> getStartOnLogin() async => _getBool(startOnLogin);
   Future<void> setStartOnLogin(bool b) async => _setBool(startOnLogin, b);
 
   Future<String> getUserAuthToken() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    String token = sharedPreferences.getString(tokenKey);
-    return token;
+    print("registered: ${await getStartOnLogin()}");
+    if (await getStartOnLogin()) {
+      return sharedPreferences.getString(tokenKey);
+    } else {
+      return sharedPreferences.getString(unregisteredAuthTokenKey);
+    }
+    // String token = sharedPreferences.getString(tokenKey);
+    // return token;
   }
 
   Future<void> setUserTokens(Tuple2<String, String> tokens) async {

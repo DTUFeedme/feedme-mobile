@@ -7,7 +7,6 @@ Future<APIResponse<String>> postSignalMapRequest(
   final String body = json.encode({
     'beacons': signalMap.beacons,
     'roomId': roomId,
-    'buildingId': signalMap.buildingId,
   });
   return RestService.requestServer(
     fromJson: (_) {

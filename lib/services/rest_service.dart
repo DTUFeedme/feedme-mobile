@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:climify/models/beacon.dart';
 import 'package:climify/models/buildingModel.dart';
-import 'package:climify/models/globalState.dart';
 import 'package:climify/models/questionAndFeedback.dart';
 import 'package:climify/models/questionModel.dart';
 import 'package:climify/models/questionStatistics.dart';
@@ -11,20 +9,15 @@ import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/sharedPreferences.dart';
-// import 'package:climify/services/rest_service_functions/addBeacon.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:http/http.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tuple/tuple.dart';
 
 import 'jwtDecoder.dart';
-
-part 'package:climify/services/rest_service_functions/deleteBeacon.dart';
 
 part 'package:climify/services/rest_service_functions/deleteBuilding.dart';
 
@@ -35,8 +28,6 @@ part 'package:climify/services/rest_service_functions/deleteSignalMapsOfRoom.dar
 part 'package:climify/services/rest_service_functions/getActiveQuestionsByRoom.dart';
 
 part 'package:climify/services/rest_service_functions/getAllQuestionsByRoom.dart';
-
-part 'package:climify/services/rest_service_functions/getBeaconsOfBuilding.dart';
 
 part 'package:climify/services/rest_service_functions/getBuilding.dart';
 
@@ -53,8 +44,6 @@ part 'package:climify/services/rest_service_functions/getQuestionStatistics.dart
 part 'package:climify/services/rest_service_functions/patchQuestionInactive.dart';
 
 part 'package:climify/services/rest_service_functions/patchUserAdmin.dart';
-
-part 'package:climify/services/rest_service_functions/postBeacon.dart';
 
 part 'package:climify/services/rest_service_functions/postBuilding.dart';
 
@@ -226,6 +215,7 @@ class RestService {
 
     if (responseData.statusCode == 200) {
       dynamic bodyJson = {};
+      print("body: ${responseData.body}");
       try {
         bodyJson = json.decode(responseData.body);
       } catch (_) {
@@ -282,9 +272,6 @@ class RestService {
 
   Future<APIResponse<String>> Function(BuildingModel) deleteBuilding;
 
-  Future<APIResponse<List<Beacon>>> Function(BuildingModel)
-      getBeaconsOfBuilding;
-
   Future<APIResponse<BuildingModel>> Function(String) getBuilding;
 
   Future<APIResponse<BuildingModel>> Function(String) postBuilding;
@@ -293,15 +280,11 @@ class RestService {
 
   Future<APIResponse<String>> Function(String) deleteRoom;
 
-  Future<APIResponse<String>> Function(String) deleteBeacon;
-
   Future<APIResponse<String>> Function(SignalMap, String) postSignalMap;
 
   Future<APIResponse<String>> Function(String) deleteSignalMapsOfRoom;
 
   Future<APIResponse<RoomModel>> Function(SignalMap) getRoomFromSignalMap;
-
-  Future<APIResponse<String>> Function(String, BuildingModel) postBeacon;
 
   Future<APIResponse<Question>> Function(List<String>, String, List<String>)
       postQuestion;
@@ -346,8 +329,6 @@ class RestService {
 
     deleteBuilding = (building) => deleteBuildingRequest(building);
 
-    getBeaconsOfBuilding = (building) => getBeaconsOfBuildingRequest(building);
-
     getBuilding = (buildingId) => getBuildingRequest(buildingId);
 
     postBuilding = (buildingName) => postBuildingRequest(buildingName);
@@ -356,8 +337,6 @@ class RestService {
 
     deleteRoom = (roomId) => deleteRoomRequest(roomId);
 
-    deleteBeacon = (beaconId) => deleteBeaconRequest(beaconId);
-
     postSignalMap =
         (signalMap, roomId) => postSignalMapRequest(signalMap, roomId);
 
@@ -365,9 +344,6 @@ class RestService {
 
     getRoomFromSignalMap =
         (signalMap) => getRoomFromSignalMapRequest(signalMap);
-
-    postBeacon =
-        (beaconName, building) => postBeaconRequest(beaconName, building);
 
     postQuestion = (rooms, value, answerOptions) =>
         postQuestionRequest(rooms, value, answerOptions);
