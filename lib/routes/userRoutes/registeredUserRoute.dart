@@ -9,6 +9,7 @@ import 'package:climify/routes/userRoutes/scanHelper.dart';
 import 'package:climify/routes/userRoutes/viewRoomFeedback.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
+import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
 import 'package:climify/widgets/listButton.dart';
@@ -107,7 +108,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     });
     // APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
     //     await _restService.getActiveQuestionsByRoom(_room.id, _token, t: _t);
-    if(_room == null) return;
+    if (_room == null) return;
     APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
         await _restService.getActiveQuestionsByRoom(_room.id, _t);
     if (!apiResponseQuestionsOfRoom.error) {
@@ -185,17 +186,20 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
 
   DateTime currentBackPressTime;
 
-  Future<bool> onWillPop() {
+  Future<bool> onWillPop() async {
     DateTime now = DateTime.now();
     if (currentBackPressTime == null ||
         now.difference(currentBackPressTime) > Duration(milliseconds: 1500)) {
       currentBackPressTime = now;
       SnackBarError.showErrorSnackBar(
-          "Exit application by pressing the back button again", _scaffoldKey,
+          "Log out by pressing the back button again", _scaffoldKey,
           duration: Duration(milliseconds: 1500));
       return Future.value(false);
     }
-    return Future.value(true);
+    SharedPrefsHelper _sharedPrefsHelper = SharedPrefsHelper();
+    await _sharedPrefsHelper.setManualLogout(true);
+    Navigator.of(context).pushReplacementNamed('login');
+    return Future.value(false);
   }
 
   @override

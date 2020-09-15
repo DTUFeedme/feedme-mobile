@@ -1,41 +1,41 @@
-import 'package:climify/models/buildingModel.dart';
-import 'package:climify/services/sharedPreferences.dart';
-import 'package:flutter/material.dart';
+// import 'package:climify/models/buildingModel.dart';
+// import 'package:climify/services/sharedPreferences.dart';
+// import 'package:flutter/material.dart';
 
-class GlobalState extends ChangeNotifier {
-  Map globalState = {
-    'email': '',
-    'authToken': '',
-    'refreshToken': '',
-    'building': null,
-  };
+// class GlobalState extends ChangeNotifier {
+//   Map globalState = {
+//     'email': '',
+//     'authToken': '',
+//     'refreshToken': '',
+//     'building': null,
+//   };
 
-  void updateAccount(String email, String authToken, String refreshToken, BuildContext context) {
-    final SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+//   void updateAccount(String email, String authToken, String refreshToken, BuildContext context) {
+//     final SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
 
-    globalState['email'] = email;
-    globalState['authToken'] = authToken;
-    globalState['refreshToken'] = refreshToken;
-    sharedPrefsHelper.setUserAuthToken(authToken);
-    sharedPrefsHelper.setUserRefreshToken(refreshToken);
+//     globalState['email'] = email;
+//     globalState['authToken'] = authToken;
+//     globalState['refreshToken'] = refreshToken;
+//     sharedPrefsHelper.setUserAuthToken(authToken);
+//     sharedPrefsHelper.setUserRefreshToken(refreshToken);
     
-    notifyListeners();
-  }
+//     notifyListeners();
+//   }
 
-  void updateTokens(String authToken, String refreshToken, BuildContext context){
-    final SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+//   void updateTokens(String authToken, String refreshToken, BuildContext context){
+//     final SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
 
-    globalState['authToken'] = authToken;
-    globalState['refreshToken'] = refreshToken;
+//     globalState['authToken'] = authToken;
+//     globalState['refreshToken'] = refreshToken;
 
-    sharedPrefsHelper.setUserAuthToken(authToken);
-    sharedPrefsHelper.setUserRefreshToken(refreshToken);
+//     sharedPrefsHelper.setUserAuthToken(authToken);
+//     sharedPrefsHelper.setUserRefreshToken(refreshToken);
 
-    notifyListeners();
-  }
+//     notifyListeners();
+//   }
 
-  void updateBuilding(BuildingModel building) {
-    globalState['building'] = building;
-    notifyListeners();
-  }
-}
+//   void updateBuilding(BuildingModel building) {
+//     globalState['building'] = building;
+//     notifyListeners();
+//   }
+// }

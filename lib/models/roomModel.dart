@@ -1,4 +1,3 @@
-import 'package:climify/models/buildingModel.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'roomModel.g.dart';

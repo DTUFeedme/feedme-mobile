@@ -1,12 +1,14 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/globalState.dart';
 import 'package:climify/models/userModel.dart';
+import 'package:climify/services/jwtDecoder.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tuple/tuple.dart';
 
 class UserLogin extends StatefulWidget {
   @override
@@ -32,6 +34,8 @@ class _UserLoginState extends State<UserLogin> {
     super.initState();
     _restService = RestService();
     _sharedPrefsHelper = SharedPrefsHelper();
+    _sharedPrefsHelper.setOnLoginScreen(true);
+    _attemptLogin();
   }
 
   @override
@@ -39,6 +43,28 @@ class _UserLoginState extends State<UserLogin> {
     if (mounted) {
       super.setState(fn);
     }
+  }
+
+  Future<void> _attemptLogin() async {
+    if (await _sharedPrefsHelper.getManualLogout()) {
+      return;
+    }
+    // TODO
+    // Make a better check than this api call to see if tokens are still functioning
+    // This should already take care of expired refresh tokens, as the user is simply prompted to reauth if the refresh token is expired
+    // We still have to implement refreshing the refresh token while logged in
+    String authToken = await _sharedPrefsHelper.getUserAuthToken();
+    int role = JwtDecoder.parseJwtPayLoad(authToken)['role'];
+    print(role);
+    if (role == 1) {
+      var apiResponse = await _restService.getBuildingsWithAdminRights();
+      if (!apiResponse.error) {
+        await _sharedPrefsHelper.setOnLoginScreen(false);
+        Navigator.of(context).pushReplacementNamed("registered");
+        return;
+      }
+    }
+    SnackBarError.showErrorSnackBar("Please log in again", _scaffoldKey);
   }
 
   Future<void> _authUser({bool create = false}) async {
@@ -73,8 +99,10 @@ class _UserLoginState extends State<UserLogin> {
       print("tokens directly");
       print(apiResponse.data.authToken);
       print(apiResponse.data.refreshToken);
-      await sharedPrefsHelper.setUserAuthToken(apiResponse.data.authToken);
-      await sharedPrefsHelper.setUserRefreshToken(apiResponse.data.refreshToken);
+      await sharedPrefsHelper.setUserTokens(
+          Tuple2(apiResponse.data.authToken, apiResponse.data.refreshToken));
+      await _sharedPrefsHelper.setOnLoginScreen(false);
+      await _sharedPrefsHelper.setManualLogout(false);
       Navigator.of(context).pushReplacementNamed("registered");
     }
     setState(() {
@@ -103,6 +131,7 @@ class _UserLoginState extends State<UserLogin> {
 
   void _gotoUnregistered() {
     _sharedPrefsHelper.setStartOnLogin(false);
+    _sharedPrefsHelper.setOnLoginScreen(false);
     Navigator.of(context).pushReplacementNamed("unregistered");
   }
 

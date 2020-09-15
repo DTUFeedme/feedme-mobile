@@ -132,6 +132,7 @@ class RestService {
     mLock = completer.future;
 
     Map<String, String> reqHeaders;
+    String authToken;
     String refreshToken;
     SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
 
@@ -139,13 +140,11 @@ class RestService {
       reqHeaders =
           await headers(additionalParameters: additionalHeaderParameters);
       refreshToken = await sharedPrefsHelper.getUserRefreshToken();
-      print("refresh token: $refreshToken");
+      authToken = reqHeaders["x-auth-token"];
     } catch (e) {
       print(e);
       return APIResponse<T>(error: true, errorMessage: "");
     }
-
-    String authToken = reqHeaders["x-auth-token"];
 
     // Make sure authToken hasn't expired
     if (authToken != null && authToken.isNotEmpty && !skipRefreshValidation) {
@@ -153,14 +152,13 @@ class RestService {
 
       // check if jwt has expired
       if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 30) {
-        print("refresh token expired");
+        // print("refresh token expired");
         APIResponse<Tuple2<String, String>> updatedTokensResponse =
             await updateTokensRequest(authToken, refreshToken);
 
         if (!updatedTokensResponse.error) {
           try {
-            await sharedPrefsHelper.setUserAuthToken(updatedTokensResponse.data.item1);            
-            await sharedPrefsHelper.setUserRefreshToken(updatedTokensResponse.data.item2);            
+            await sharedPrefsHelper.setUserTokens(updatedTokensResponse.data);
           } catch (e) {
             print(e);
           }
@@ -308,7 +306,8 @@ class RestService {
   Future<APIResponse<Question>> Function(List<String>, String, List<String>)
       postQuestion;
 
-  Future<APIResponse<Tuple2<String, String>>> Function() postUnauthorizedUser;
+  Future<APIResponse<Tuple2<String, String>>> Function() postUnauthorizedUser =
+      postUnauthorizedUserRequest;
 
   Future<APIResponse<Tuple2<String, String>>> Function(
       String authToken, String refreshToken) updateTokens;
@@ -372,8 +371,6 @@ class RestService {
 
     postQuestion = (rooms, value, answerOptions) =>
         postQuestionRequest(rooms, value, answerOptions);
-
-    postUnauthorizedUser = () => postUnauthorizedUserRequest();
 
     updateTokens = (authToken, refreshToken) =>
         updateTokensRequest(authToken, refreshToken);

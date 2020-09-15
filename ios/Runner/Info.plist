@@ -42,15 +42,15 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 
-	<key>NSBluetoothAlwaysUsageDescription</key>
-		<string>This app needs Bluetooth permission</string>
-	<key>NSBluetoothPeripheralUsageDescription</key>
-		<string>This app needs Bluetooth permission</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>This app needs Location permission</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-		<string>This app needs Location permission</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-		<string>This app needs Location permission</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>  
+	<string>Need BLE permission</string>  
+	<key>NSBluetoothPeripheralUsageDescription</key>  
+	<string>Need BLE permission</string>  
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>  
+	<string>Need Location permission</string>  
+	<key>NSLocationAlwaysUsageDescription</key>  
+	<string>Need Location permission</string>  
+	<key>NSLocationWhenInUseUsageDescription</key>  
+	<string>Need Location permission</string>
 </dict>
 </plist>
