@@ -13,12 +13,18 @@ const EVENTS_KEY = "fetch_events";
 
 class LocalNotifications {
   static FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+  static bool preventSelectNotification;
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   LocalNotifications.flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  NotificationAppLaunchDetails launchDetails = await LocalNotifications
+      .flutterLocalNotificationsPlugin
+      .getNotificationAppLaunchDetails();
+  LocalNotifications.preventSelectNotification = launchDetails.didNotificationLaunchApp;
   AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('app_icon');
   IOSInitializationSettings initializationSettingsIOS =
@@ -60,6 +66,10 @@ void main() async {
 }
 
 Future selectNotification(String payload) async {
+  if (LocalNotifications.preventSelectNotification) {
+    return;
+  }
+
   if (payload != null) {
     debugPrint('notification payload: ' + payload);
   }
