@@ -18,6 +18,7 @@ class ScanRoom {
   final Function incrementScans;
   final bool Function() getScanning;
   final int Function() getNumberOfScans;
+  final List<String> blacklist;
   StatefulBuilder scanRoomDialog;
 
   RestService _restService;
@@ -33,6 +34,7 @@ class ScanRoom {
     @required this.incrementScans,
     @required this.getScanning,
     @required this.getNumberOfScans,
+    @required this.blacklist,
   }) {
     _restService = RestService();
     _bluetooth = BluetoothServices();
@@ -67,10 +69,13 @@ class ScanRoom {
 
           scanResults.forEach((result) {
             String beaconName = _bluetooth.getBeaconName(result);
-            if (beaconName.isNotEmpty) {
+            if (beaconName.isNotEmpty && !blacklist.contains(beaconName)) {
               beaconsScanned++;
               signalMap.addBeaconReading(
-                  beaconName, _bluetooth.getRSSI(result));
+                beaconName,
+                _bluetooth.getRSSI(result),
+                blacklist: blacklist,
+              );
             }
           });
 

@@ -1,0 +1,42 @@
+
+
+
+
+    deleteBuilding = (building) => deleteBuildingRequest(building);
+
+    getBuilding = (buildingId) => getBuildingRequest(buildingId);
+
+    postBuilding = (buildingName) => postBuildingRequest(buildingName);
+
+    postRoom = (roomName, building) => postRoomRequest(roomName, building);
+
+    deleteRoom = (roomId) => deleteRoomRequest(roomId);
+
+    postSignalMap =
+        (signalMap, roomId) => postSignalMapRequest(signalMap, roomId);
+
+    deleteSignalMapsOfRoom = (roomId) => deleteSignalMapsOfRoomRequest(roomId);
+
+    getRoomFromSignalMap =
+        (signalMap) => getRoomFromSignalMapRequest(signalMap);
+
+    postQuestion = (rooms, value, answerOptions) =>
+        postQuestionRequest(rooms, value, answerOptions);
+
+    postUnauthorizedUser = () => postUnauthorizedUserRequest();
+
+    updateTokens = (authToken, refreshToken) =>
+        updateTokensRequest(authToken, refreshToken);
+
+    getFeedback = (user, t) => getFeedbackRequest(user, t);
+
+    getQuestionStatistics =
+        (question, t) => getQuestionStatisticsRequest(question, t);
+
+    patchUserAdmin =
+        (userId, building) => patchUserAdminRequest(userId, building);
+
+    getUserIdFromEmail = (email) => getUserIdFromEmailRequest(email);
+
+    patchQuestionInactive = (questionId, isActive) =>
+        patchQuestionInactiveRequest(questionId, isActive);
