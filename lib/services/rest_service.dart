@@ -7,7 +7,6 @@ import 'package:climify/models/questionStatistics.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
-import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -29,6 +28,8 @@ part 'package:climify/services/rest_service_functions/getActiveQuestionsByRoom.d
 
 part 'package:climify/services/rest_service_functions/getAllQuestionsByRoom.dart';
 
+part 'package:climify/services/rest_service_functions/getBeaconBlacklist.dart';
+
 part 'package:climify/services/rest_service_functions/getBuilding.dart';
 
 part 'package:climify/services/rest_service_functions/getBuildingsWithAdminRights.dart';
@@ -41,7 +42,11 @@ part 'package:climify/services/rest_service_functions/getUserIdFromEmail.dart';
 
 part 'package:climify/services/rest_service_functions/getQuestionStatistics.dart';
 
+part 'package:climify/services/rest_service_functions/patchAddBlacklistBeacon.dart';
+
 part 'package:climify/services/rest_service_functions/patchQuestionInactive.dart';
+
+part 'package:climify/services/rest_service_functions/patchRemoveBlacklistBeacon.dart';
 
 part 'package:climify/services/rest_service_functions/patchUserAdmin.dart';
 
@@ -154,7 +159,6 @@ class RestService {
           // Update the auth token for the current request
           reqHeaders["x-auth-token"] = updatedTokensResponse.data.item1;
         } else {
-          print(updatedTokensResponse.errorMessage);
           //unlock
           completer.complete();
           mLock = null;
@@ -252,116 +256,93 @@ class RestService {
     }
   }
 
-  BluetoothServices bluetooth;
+  Future<APIResponse<List<FeedbackQuestion>>> Function(String roomId, String t)
+      getActiveQuestionsByRoom =
+      (roomId, t) => getActiveQuestionsByRoomRequest(roomId, t: t);
 
-  Future<APIResponse<List<FeedbackQuestion>>> Function(String, String)
-      getActiveQuestionsByRoom;
+  Future<APIResponse<List<FeedbackQuestion>>> Function(String roomId)
+      getAllQuestionsByRoom = (roomId) => getAllQuestionsByRoomRequest(roomId);
 
-  Future<APIResponse<List<FeedbackQuestion>>> Function(String)
-      getAllQuestionsByRoom;
+  Future<APIResponse<bool>> Function(
+          FeedbackQuestion question, int chosenOption, RoomModel room)
+      postFeedback = (question, choosenOption, room) =>
+          postFeedbackRequest(question, choosenOption, room);
 
-  Future<APIResponse<bool>> Function(FeedbackQuestion, int, RoomModel)
-      postFeedback;
+  Future<APIResponse<UserModel>> Function(String email, String password)
+      postUser = (email, password) => postUserRequest(email, password);
 
-  Future<APIResponse<UserModel>> Function(String, String) postUser;
-
-  Future<APIResponse<UserModel>> Function(String, String) loginUser;
+  Future<APIResponse<UserModel>> Function(String email, String password)
+      loginUser = (email, password) => loginUserRequest(email, password);
 
   Future<APIResponse<List<BuildingModel>>> Function()
-      getBuildingsWithAdminRights;
+      getBuildingsWithAdminRights = () => getBuildingsWithAdminRightsRequest();
 
-  Future<APIResponse<String>> Function(BuildingModel) deleteBuilding;
+  Future<APIResponse<String>> Function(BuildingModel building) deleteBuilding =
+      (building) => deleteBuildingRequest(building);
 
-  Future<APIResponse<BuildingModel>> Function(String) getBuilding;
+  Future<APIResponse<BuildingModel>> Function(String buildingId) getBuilding =
+      (buildingId) => getBuildingRequest(buildingId);
 
-  Future<APIResponse<BuildingModel>> Function(String) postBuilding;
+  Future<APIResponse<BuildingModel>> Function(String buildingName)
+      postBuilding = (buildingName) => postBuildingRequest(buildingName);
 
-  Future<APIResponse<RoomModel>> Function(String, BuildingModel) postRoom;
+  Future<APIResponse<RoomModel>> Function(
+          String roomName, BuildingModel building) postRoom =
+      (roomName, building) => postRoomRequest(roomName, building);
 
-  Future<APIResponse<String>> Function(String) deleteRoom;
+  Future<APIResponse<String>> Function(String roomId) deleteRoom =
+      (roomId) => deleteRoomRequest(roomId);
 
-  Future<APIResponse<String>> Function(SignalMap, String) postSignalMap;
+  Future<APIResponse<String>> Function(SignalMap signalMap, String roomId)
+      postSignalMap =
+      (signalMap, roomId) => postSignalMapRequest(signalMap, roomId);
 
-  Future<APIResponse<String>> Function(String) deleteSignalMapsOfRoom;
+  Future<APIResponse<String>> Function(String roomId) deleteSignalMapsOfRoom =
+      (roomId) => deleteSignalMapsOfRoomRequest(roomId);
 
-  Future<APIResponse<RoomModel>> Function(SignalMap) getRoomFromSignalMap;
+  Future<APIResponse<RoomModel>> Function(SignalMap signalMap)
+      getRoomFromSignalMap =
+      (signalMap) => getRoomFromSignalMapRequest(signalMap);
 
-  Future<APIResponse<Question>> Function(List<String>, String, List<String>)
-      postQuestion;
+  Future<APIResponse<Question>> Function(
+          List<String> rooms, String value, List<String> answerOptions)
+      postQuestion = (rooms, value, answerOptions) =>
+          postQuestionRequest(rooms, value, answerOptions);
 
   Future<APIResponse<Tuple2<String, String>>> Function() postUnauthorizedUser =
-      postUnauthorizedUserRequest;
+      () => postUnauthorizedUserRequest();
 
   Future<APIResponse<Tuple2<String, String>>> Function(
-      String authToken, String refreshToken) updateTokens;
+          String authToken, String refreshToken) updateTokens =
+      (authToken, refreshToken) => updateTokensRequest(authToken, refreshToken);
 
-  Future<APIResponse<List<QuestionAndFeedback>>> Function(String, String)
-      getFeedback;
+  Future<APIResponse<List<QuestionAndFeedback>>> Function(String user, String t)
+      getFeedback = (user, t) => getFeedbackRequest(user, t);
 
   Future<APIResponse<QuestionStatisticsModel>> Function(
-      FeedbackQuestion, String) getQuestionStatistics;
+          FeedbackQuestion question, String t) getQuestionStatistics =
+      (question, t) => getQuestionStatisticsRequest(question, t);
 
-  Future<APIResponse<bool>> Function(String, BuildingModel) patchUserAdmin;
+  Future<APIResponse<bool>> Function(String userId, BuildingModel building)
+      patchUserAdmin =
+      (userId, building) => patchUserAdminRequest(userId, building);
 
-  Future<APIResponse<String>> Function(String) getUserIdFromEmail;
+  Future<APIResponse<String>> Function(String email) getUserIdFromEmail =
+      (email) => getUserIdFromEmailRequest(email);
 
-  Future<APIResponse<String>> Function(String, bool) patchQuestionInactive;
+  Future<APIResponse<String>> Function(String questionId, bool isActive)
+      patchQuestionInactive = (questionId, isActive) =>
+          patchQuestionInactiveRequest(questionId, isActive);
 
-  RestService() {
-    bluetooth = BluetoothServices();
+  Future<APIResponse<List<String>>> Function(String buildingId)
+      getBeaconBlacklist =
+      (buildingId) => getBeaconBlacklistRequest(buildingId);
 
-    // TODO: t is the jwt but it seems like it is used as a time???
-    // t is actually the date/time filter
-    // This has now been corrected in the two user routes and defaults to week
-    getActiveQuestionsByRoom =
-        (roomId, t) => getActiveQuestionsByRoomRequest(roomId, t: t);
+  Future<APIResponse<bool>> Function(String buildingId, String beaconName)
+      patchAddBlacklistBeacon = (buildingId, beaconName) =>
+          patchAddBlacklistBeaconRequest(buildingId, beaconName);
 
-    getAllQuestionsByRoom = (roomId) => getAllQuestionsByRoomRequest(roomId);
-
-    postFeedback = (question, choosenOption, room) =>
-        postFeedbackRequest(question, choosenOption, room);
-
-    postUser = (email, password) => postUserRequest(email, password);
-
-    loginUser = (email, password) => loginUserRequest(email, password);
-
-    getBuildingsWithAdminRights = () => getBuildingsWithAdminRightsRequest();
-
-    deleteBuilding = (building) => deleteBuildingRequest(building);
-
-    getBuilding = (buildingId) => getBuildingRequest(buildingId);
-
-    postBuilding = (buildingName) => postBuildingRequest(buildingName);
-
-    postRoom = (roomName, building) => postRoomRequest(roomName, building);
-
-    deleteRoom = (roomId) => deleteRoomRequest(roomId);
-
-    postSignalMap =
-        (signalMap, roomId) => postSignalMapRequest(signalMap, roomId);
-
-    deleteSignalMapsOfRoom = (roomId) => deleteSignalMapsOfRoomRequest(roomId);
-
-    getRoomFromSignalMap =
-        (signalMap) => getRoomFromSignalMapRequest(signalMap);
-
-    postQuestion = (rooms, value, answerOptions) =>
-        postQuestionRequest(rooms, value, answerOptions);
-
-    updateTokens = (authToken, refreshToken) =>
-        updateTokensRequest(authToken, refreshToken);
-
-    getFeedback = (user, t) => getFeedbackRequest(user, t);
-
-    getQuestionStatistics =
-        (question, t) => getQuestionStatisticsRequest(question, t);
-
-    patchUserAdmin =
-        (userId, building) => patchUserAdminRequest(userId, building);
-
-    getUserIdFromEmail = (email) => getUserIdFromEmailRequest(email);
-
-    patchQuestionInactive = (questionId, isActive) =>
-        patchQuestionInactiveRequest(questionId, isActive);
-  }
+  Future<APIResponse<bool>> Function(String buildingId, String beaconName)
+      patchRemoveBlacklistBeacon = (buildingId, beaconName) =>
+          patchRemoveBlacklistBeaconRequest(buildingId, beaconName);
 }

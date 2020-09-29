@@ -4,6 +4,8 @@ import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/roomModel.dart';
+import 'package:climify/routes/buildingManagerComponents/blacklistedDevices.dart';
+import 'package:climify/routes/buildingManagerComponents/scannedDevices.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
 import 'package:climify/routes/dialogues/roomMenu.dart';
 import 'package:climify/services/bluetooth.dart';
@@ -48,6 +50,8 @@ class _BuildingManagerState extends State<BuildingManager> {
   final _questionAnswerOptionsController = TextEditingController();
   List<TextEditingController> controllerList = [];
   bool _scanningBeacons = false;
+  List<String> _blacklist = [];
+  bool _blacklistingBeacon = false;
 
   @override
   void initState() {
@@ -77,10 +81,28 @@ class _BuildingManagerState extends State<BuildingManager> {
     BuildingModel argBuilding = ModalRoute.of(context).settings.arguments;
     setState(() {
       _building = argBuilding;
+      _gettingBeacons = true;
     });
     _questions = [];
     _updateQuestions();
-    _updateBuilding();
+    await _updateBuilding();
+    await _getBlacklist();
+    setState(() {
+      _gettingBeacons = false;
+    });
+  }
+
+  Future<void> _getBlacklist() async {
+    APIResponse<List<String>> apiResponseBlacklist =
+        await _restService.getBeaconBlacklist(_building.id);
+    if (apiResponseBlacklist.error == false) {
+      setState(() {
+        _blacklist = apiResponseBlacklist.data;
+      });
+    } else {
+      print(apiResponseBlacklist.errorMessage);
+    }
+    print("blacklist: $_blacklist");
   }
 
   Future<void> _updateBuilding() async {
@@ -219,6 +241,7 @@ class _BuildingManagerState extends State<BuildingManager> {
           }),
           getScanning: () => _scanningSignalMap,
           getNumberOfScans: () => _signalMapScans,
+          blacklist: _blacklist,
         ).dialog;
       },
     );
@@ -314,9 +337,44 @@ class _BuildingManagerState extends State<BuildingManager> {
     }
   }
 
+  void _toggleBlacklistBeacon(String beaconName) async {
+    if (_blacklistingBeacon) {
+      return;
+    }
+    setState(() {
+      _blacklistingBeacon = true;
+    });
+    bool blackListed = _blacklist.contains(beaconName);
+    APIResponse<bool> apiResponse;
+    if (blackListed) {
+      apiResponse = await _restService.patchRemoveBlacklistBeacon(
+          _building.id, beaconName);
+    } else {
+      apiResponse =
+          await _restService.patchAddBlacklistBeacon(_building.id, beaconName);
+    }
+    if (apiResponse.error == false) {
+      if (blackListed) {
+        setState(() {
+          _blacklist.remove(beaconName);
+        });
+      } else {
+        setState(() {
+          _blacklist.add(beaconName);
+        });
+      }
+    } else {
+      print("error:");
+      print(apiResponse.errorMessage);
+    }
+    setState(() {
+      _blacklistingBeacon = false;
+    });
+    return;
+  }
+
   void _changeWindow(int index) {
     setState(() {
-      _visibleIndex = index;
       //_setSubtitle();
       switch (index) {
         case 0:
@@ -326,9 +384,11 @@ class _BuildingManagerState extends State<BuildingManager> {
           _title = "Manage questions";
           break;
         case 2:
-          // this runs _updateBeacons through the refreshindicator
-          // this method shows the indicator the first time for UX
-          _refreshBeaconKey?.currentState?.show();
+          if (_visibleIndex != 2) {
+            // this runs _updateBeacons through the refreshindicator
+            // this method shows the indicator the first time for UX
+            _refreshBeaconKey?.currentState?.show();
+          }
           _title = "View nearby beacons";
           break;
         case 3:
@@ -336,6 +396,7 @@ class _BuildingManagerState extends State<BuildingManager> {
           break;
         default:
       }
+      _visibleIndex = index;
     });
   }
 
@@ -467,37 +528,44 @@ class _BuildingManagerState extends State<BuildingManager> {
               Visibility(
                 maintainState: true,
                 visible: _visibleIndex == 2,
-                child: RefreshIndicator(
-                  key: _refreshBeaconKey,
-                  onRefresh: _updateBeacons,
-                  child: Container(
-                    child: ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: _beacons.length,
-                      itemBuilder: (_, index) => ListButton(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Text(
-                              _beacons[index].item1,
-                              style: TextStyle(
-                                fontSize: 24,
-                              ),
-                            ),
-                            Text(
-                              "Signal: ${_getSignalStrengthString(_beacons[index].item2)}",
-                              style: TextStyle(
-                                fontSize: 24,
-                              ),
-                            ),
-                          ],
+                child: Column(
+                  children: <Widget>[
+                    Expanded(
+                      flex: 6,
+                      child: RefreshIndicator(
+                        key: _refreshBeaconKey,
+                        onRefresh: _updateBeacons,
+                        child: ScannedDevices(
+                          _beacons,
+                          _blacklist,
+                          _getSignalStrengthString,
+                          _toggleBlacklistBeacon,
                         ),
                       ),
                     ),
-                  ),
+                    _blacklist.isNotEmpty
+                        ? Expanded(
+                            flex: 1,
+                            child: Text(
+                              "Blacklisted beacons",
+                              style: TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : Container(),
+                    _blacklist.isNotEmpty
+                        ? Expanded(
+                            flex: 3,
+                            child: BlacklistedDevices(
+                              _beacons,
+                              _blacklist,
+                              _toggleBlacklistBeacon,
+                            ),
+                          )
+                        : Container(),
+                  ],
                 ),
               ),
               Visibility(

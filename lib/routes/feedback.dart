@@ -45,12 +45,6 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
         _chosenOption,
         widget.room,
       );
-
-      if (status.data == true) {
-        print("Answer has been added");
-      } else {
-        print(status.errorMessage);
-      }
       Navigator.pop(context);
     }
   }

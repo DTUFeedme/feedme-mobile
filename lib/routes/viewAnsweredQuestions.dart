@@ -79,7 +79,6 @@ class ViewAnsweredQuestionsWidgetState
         }
       }
     }
-    print(_tempFeedbackList);
     setState(() {
       _feedbackList = response.data;
       _tempFeedbackList = _tempFeedbackList;
