@@ -2,9 +2,7 @@ import 'package:climify/functions/setSubtitle.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
-import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
-import 'package:climify/models/userModel.dart';
 import 'package:climify/routes/userRoutes/scanHelper.dart';
 import 'package:climify/routes/viewAnsweredQuestions.dart';
 import 'package:climify/services/bluetooth.dart';
@@ -13,7 +11,6 @@ import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:climify/routes/feedback.dart';
 import 'package:tuple/tuple.dart';
 
@@ -73,9 +70,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       // Provider.of<GlobalState>(context)
       //     .updateAccount("no email", tokens.item1, tokens.item2, context);
       SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
-      sharedPrefsHelper.setUserAuthToken(tokens.item1);
-      sharedPrefsHelper.setUserRefreshToken(tokens.item2);
-
+      await sharedPrefsHelper.setUserTokens(tokens);
       setState(() {
         _fetchingTokens = false;
       });
@@ -116,41 +111,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       _building = _scanResults.building;
       _room = _scanResults.room;
       _questions = _scanResults.questions;
-    });
-  }
-
-  Future<void> _getActiveQuestions() async {
-    // RoomModel room;
-
-    // APIResponse<RoomModel> apiResponseRoom = await _bluetooth.getRoomFromScan();
-
-    // if (apiResponseRoom.error) {
-    //   SnackBarError.showErrorSnackBar(
-    //     apiResponseRoom.errorMessage,
-    //     _scaffoldKey,
-    //   );
-    //   return;
-    // }
-
-    // room = apiResponseRoom.data;
-
-    RoomModel room = _room;
-
-    APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
-        await _restService.getActiveQuestionsByRoom(room.id, "week");
-
-    if (apiResponseQuestions.error) {
-      SnackBarError.showErrorSnackBar(
-        apiResponseQuestions.errorMessage,
-        _scaffoldKey,
-      );
-      return;
-    }
-
-    setState(() {
-      _questions = apiResponseQuestions.data;
-      _room = room;
-      _setSubtitle();
     });
   }
 
@@ -266,7 +226,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                           child: _questions != null && _questions.isNotEmpty
                               ? Container(
                                   child: RefreshIndicator(
-                                    onRefresh: () => _getActiveQuestions(),
+                                    onRefresh: () => _scanForRoom(),
                                     child: Container(
                                       child: ListView.builder(
                                         padding: EdgeInsets.symmetric(

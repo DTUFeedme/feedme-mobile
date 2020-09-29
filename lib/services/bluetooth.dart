@@ -10,13 +10,18 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'package:tuple/tuple.dart';
 
 class BluetoothServices {
-  BluetoothServices();
+  BluetoothServices() {
+    flutterBlue.isScanning.listen((event) {
+      _scanning = event;
+    });
+  }
 
   final FlutterBlue flutterBlue = FlutterBlue.instance;
   bool _gettingRoom = false;
+  bool _scanning = false;
 
   Future<List<ScanResult>> scanForDevices(int timeoutms) async {
-    if (await flutterBlue.isOn == false) {
+    if (await flutterBlue.isOn == false || _scanning) {
       return [];
     }
     List<ScanResult> finalResults = [];
@@ -34,7 +39,6 @@ class BluetoothServices {
     } catch (e) {
       print(e);
     }
-
     return finalResults;
   }
 

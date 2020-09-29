@@ -1,14 +1,12 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
-import 'package:climify/models/globalState.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
+import 'package:climify/services/send_receive_location.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:tuple/tuple.dart';
 
 class ScanHelper {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -52,7 +50,8 @@ class ScanHelper {
   // }
 
   Future<void> _getAndSetRoom() async {
-    APIResponse<RoomModel> apiResponse = await _bluetooth.getRoomFromScan();
+    // APIResponse<RoomModel> apiResponse = await _bluetooth.getRoomFromScan();
+    APIResponse<RoomModel> apiResponse = await sendReceiveLocation();
     if (!apiResponse.error) {
       _room = apiResponse.data;
     } else {

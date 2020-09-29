@@ -1,13 +1,83 @@
-import 'package:climify/models/globalState.dart';
+import 'package:background_fetch/background_fetch.dart';
 import 'package:climify/routes/buildingManager.dart';
+import 'package:climify/routes/userLogin.dart';
 import 'package:climify/routes/userRoutes/registeredUserRoute.dart';
 import 'package:climify/routes/userRoutes/unregisteredUserRoute.dart';
-import 'package:climify/routes/userLogin.dart';
+import 'package:climify/services/send_receive_location.dart';
+
 //import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-void main() => runApp(MyApp());
+const EVENTS_KEY = "fetch_events";
+
+class LocalNotifications {
+  static FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+  static bool preventSelectNotification;
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  LocalNotifications.flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+  NotificationAppLaunchDetails launchDetails = await LocalNotifications
+      .flutterLocalNotificationsPlugin
+      .getNotificationAppLaunchDetails();
+  LocalNotifications.preventSelectNotification = launchDetails.didNotificationLaunchApp;
+  AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('app_icon');
+  IOSInitializationSettings initializationSettingsIOS =
+      IOSInitializationSettings(
+          onDidReceiveLocalNotification: (_, __, ___, ____) {
+    print("iOS foreground notification");
+    return;
+  });
+  InitializationSettings initializationSettings = InitializationSettings(
+      initializationSettingsAndroid, initializationSettingsIOS);
+  await LocalNotifications.flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onSelectNotification: selectNotification,
+  );
+
+  BackgroundFetch.configure(
+      BackgroundFetchConfig(
+        minimumFetchInterval: 1,
+        forceAlarmManager: false,
+        stopOnTerminate: true,
+        startOnBoot: true,
+        enableHeadless: false,
+        requiresBatteryNotLow: false,
+        requiresCharging: false,
+        requiresStorageNotLow: false,
+        requiresDeviceIdle: false,
+        requiredNetworkType: NetworkType.ANY,
+      ), (taskId) async {
+    await sendReceiveLocation();
+    BackgroundFetch.finish(taskId);
+    return;
+  }).then((int status) {
+    print('[BackgroundFetch] configure success: $status');
+  }).catchError((e) {
+    print('[BackgroundFetch] configure ERROR: $e');
+  });
+
+  runApp(MyApp());
+}
+
+Future selectNotification(String payload) async {
+  if (LocalNotifications.preventSelectNotification) {
+    return;
+  }
+
+  if (payload != null) {
+    debugPrint('notification payload: ' + payload);
+  }
+  if (payload == "scan") {
+    await sendReceiveLocation();
+  }
+  return;
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -34,136 +104,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<GlobalState>(
-      create: (context) => GlobalState(),
-      child: MaterialApp(
-        home: UnregisteredUserScreen(),
-        routes: {
-          "unregistered": (context) => UnregisteredUserScreen(),
-          "login": (context) => UserLogin(),
-          "registered": (context) => RegisteredUserScreen(),
-          "buildingManager": (context) => BuildingManager(),
-        },
-      ),
+    return MaterialApp(
+      home: UnregisteredUserScreen(),
+      routes: {
+        "unregistered": (context) => UnregisteredUserScreen(),
+        "login": (context) => UserLogin(),
+        "registered": (context) => RegisteredUserScreen(),
+        "buildingManager": (context) => BuildingManager(),
+      },
     );
   }
 }
-
-// class _MyHomePageState extends State<MyHomePage> {
-//   List<FeedbackQuestion> _questionList = [];
-//   String _room = "";
-//   String _testText = "";
-//   final _selectQuestion = new SelectQuestion();
-
-//   void _changeRoom(String room) {
-//     setState(() async {
-//       _room = room;
-//       _getQuestions(room);
-//     });
-//   }
-
-//   void _setTestText(String text) async {
-//     setState(() {
-//       _testText = text;
-//     });
-//   }
-
-//   void _receiveFeedback(FeedbackQuestion question, int option) {
-//     _setTestText(
-//         "Answered: ${question.answerOptions[option]}. Room number is $_room");
-//   }
-
-//   void _getQuestions(String room) async {
-//     final restService = RestService();
-//     print(room);
-//     APIResponse<List<FeedbackQuestion>> questionList =
-//         await restService.getQuestionByRoom(room);
-//     if (questionList.error != true) {
-//       print(room);
-//       _questionList = questionList.data;
-//       print(_questionList.toString());
-//     } else {
-//       print(questionList.errorMessage);
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       resizeToAvoidBottomInset: false,
-//       appBar: AppBar(
-//         title: Text(widget.title),
-//       ),
-//       body: Center(
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.center,
-//           children: <Widget>[
-//             Flexible(
-//               child: Container(),
-//               flex: 1,
-//             ),
-//             Flexible(
-//               child: EnterRoomNumber(
-//                 onTextInput: _changeRoom,
-//               ),
-//               flex: 3,
-//             ),
-//             Flexible(
-//               child: Container(
-//                 margin: EdgeInsets.symmetric(
-//                   vertical: 10,
-//                   horizontal: 96,
-//                 ),
-//                 child: RoundedBox(
-//                   onTap: () {
-//                     if (_questionList != null && _questionList != []) {
-//                       Navigator.push(
-//                         context,
-//                         MaterialPageRoute(
-//                           builder: (context) => _selectQuestion,
-//                           settings: RouteSettings(
-//                             arguments: _questionList,
-//                           ),
-//                         ),
-//                       );
-//                     }
-//                   },
-//                   decoration: BoxDecoration(
-//                     color: _questionList == [] ? Colors.blue : Colors.lightBlue,
-//                   ),
-//                   child: Center(
-//                     child: Text(
-//                       "Select room",
-//                       style: TextStyles.bodyStyle.copyWith(color: Colors.white),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//               flex: 1,
-//               /*Flexible(
-//               child: FeedbackWidget(
-//                 question: testQuestion,
-//                 room: _room,
-//                 returnFeedback: _receiveFeedback,
-//               ),
-//               flex: 10,
-//             ),
-//             */
-//             ),
-//             Flexible(
-//               child: InkWell(
-//                 onLongPress: () => _setTestText(""),
-//                 child: Container(
-//                   child: Text(
-//                     _testText,
-//                   ),
-//                 ),
-//               ),
-//               flex: 1,
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }

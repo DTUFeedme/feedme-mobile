@@ -126,6 +126,7 @@ class RestService {
     mLock = completer.future;
 
     Map<String, String> reqHeaders;
+    String authToken;
     String refreshToken;
     SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
 
@@ -133,12 +134,11 @@ class RestService {
       reqHeaders =
           await headers(additionalParameters: additionalHeaderParameters);
       refreshToken = await sharedPrefsHelper.getUserRefreshToken();
+      authToken = reqHeaders["x-auth-token"];
     } catch (e) {
       print(e);
       return APIResponse<T>(error: true, errorMessage: "");
     }
-
-    String authToken = reqHeaders["x-auth-token"];
 
     // Make sure authToken hasn't expired
     if (authToken != null && authToken.isNotEmpty && !skipRefreshValidation) {
@@ -146,15 +146,13 @@ class RestService {
 
       // check if jwt has expired
       if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 30) {
+        // print("refresh token expired");
         APIResponse<Tuple2<String, String>> updatedTokensResponse =
             await updateTokensRequest(authToken, refreshToken);
 
         if (!updatedTokensResponse.error) {
           try {
-            sharedPrefsHelper
-                .setUserAuthToken(updatedTokensResponse.data.item1);
-            sharedPrefsHelper
-                .setUserRefreshToken(updatedTokensResponse.data.item2);
+            await sharedPrefsHelper.setUserTokens(updatedTokensResponse.data);
           } catch (e) {
             print(e);
           }
@@ -221,7 +219,7 @@ class RestService {
 
     if (responseData.statusCode == 200) {
       dynamic bodyJson = {};
-      print("body: ${responseData.body}");
+      // print("body: ${responseData.body}");
       try {
         bodyJson = json.decode(responseData.body);
       } catch (_) {
