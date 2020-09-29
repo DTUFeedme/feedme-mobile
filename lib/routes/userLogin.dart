@@ -70,9 +70,6 @@ class _UserLoginState extends State<UserLogin> {
       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
     } else {
       SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
-      print("tokens directly");
-      print(apiResponse.data.authToken);
-      print(apiResponse.data.refreshToken);
       await sharedPrefsHelper.setUserAuthToken(apiResponse.data.authToken);
       await sharedPrefsHelper.setUserRefreshToken(apiResponse.data.refreshToken);
       Navigator.of(context).pushReplacementNamed("registered");

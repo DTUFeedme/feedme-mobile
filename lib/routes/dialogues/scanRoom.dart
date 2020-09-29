@@ -80,7 +80,6 @@ class ScanRoom {
           });
 
           if (beaconsScanned > 0) {
-            print("sending these scans: ${signalMap.beacons}");
             APIResponse<String> apiResponse =
                 await _restService.postSignalMap(signalMap, room.id);
             if (!apiResponse.error) {

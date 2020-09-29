@@ -133,7 +133,6 @@ class RestService {
       reqHeaders =
           await headers(additionalParameters: additionalHeaderParameters);
       refreshToken = await sharedPrefsHelper.getUserRefreshToken();
-      print(refreshToken);
     } catch (e) {
       print(e);
       return APIResponse<T>(error: true, errorMessage: "");
@@ -147,8 +146,6 @@ class RestService {
 
       // check if jwt has expired
       if (DateTime.now().millisecondsSinceEpoch / 1000 > exp - 30) {
-        print("expired");
-        print(refreshToken);
         APIResponse<Tuple2<String, String>> updatedTokensResponse =
             await updateTokensRequest(authToken, refreshToken);
 
@@ -164,7 +161,6 @@ class RestService {
           // Update the auth token for the current request
           reqHeaders["x-auth-token"] = updatedTokensResponse.data.item1;
         } else {
-          print(updatedTokensResponse.errorMessage);
           //unlock
           completer.complete();
           mLock = null;

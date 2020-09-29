@@ -21,7 +21,6 @@ Future<APIResponse<Tuple2<String,String>>> updateTokensRequest(
     String newAuthToken = response.headers["x-auth-token"];
     return APIResponse<Tuple2<String,String>>(data: new Tuple2(newAuthToken, newRefreshToken));
   } else {
-    print(response.reasonPhrase);
     return APIResponse<Tuple2<String,String>>(error: true, errorMessage: response.body ?? response.reasonPhrase);
   }
 
