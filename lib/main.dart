@@ -7,6 +7,8 @@ import 'package:climify/services/send_receive_location.dart';
 
 //import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 const EVENTS_KEY = "fetch_events";
@@ -80,6 +82,8 @@ Future selectNotification(String payload) async {
 }
 
 class MyApp extends StatelessWidget {
+
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -93,6 +97,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
+
   MyHomePage({Key key, this.title}) : super(key: key);
 
   final String title;
@@ -102,6 +107,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  static const platform = const MethodChannel('CHANNEL');
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -113,5 +120,9 @@ class _MyHomePageState extends State<MyHomePage> {
         "buildingManager": (context) => BuildingManager(),
       },
     );
+  }
+
+  Future<void> _callNative() async {
+    await platform.invokeMethod("testNative");
   }
 }

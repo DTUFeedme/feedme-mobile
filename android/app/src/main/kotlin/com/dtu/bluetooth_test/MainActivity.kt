@@ -1,4 +1,4 @@
-package com.example.climify
+package com.dtu.feedme
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity
