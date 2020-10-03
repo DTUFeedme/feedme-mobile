@@ -20,26 +20,40 @@ class BluetoothServices {
   bool _gettingRoom = false;
   bool _scanning = false;
 
-  Future<List<ScanResult>> scanForDevices(int timeoutms) async {
-    if (await flutterBlue.isOn == false || _scanning) {
-      return [];
-    }
-    List<ScanResult> finalResults = [];
-    try {
-      flutterBlue.startScan(timeout: Duration(milliseconds: timeoutms));
-
-      flutterBlue.scanResults
-          .distinct((e1, e2) => listEquals(e1, e2))
-          .listen((scanResult) {
-        finalResults = scanResult;
+  Future<SignalMap> addStreamReadingsToSignalMap(
+    SignalMap signalMap,
+    int timeoutms, {
+    List<String> blacklist = const [],
+  }) async {
+    Stream<List<ScanResult>> scanResultStream =
+        await scanForDevicesStream(2000);
+    scanResultStream.listen((List<ScanResult> scanResultList) {
+      scanResultList.forEach((ScanResult scanResult) {
+        String beaconName = getBeaconName(scanResult);
+        signalMap.addBeaconReading(
+          beaconName,
+          getRSSI(scanResult),
+          blacklist: blacklist,
+        );
       });
+    });
+    await Future.delayed(Duration(milliseconds: timeoutms));
+    return signalMap;
+  }
 
-      flutterBlue.stopScan();
-      await Future.delayed(Duration(milliseconds: timeoutms));
+  Future<Stream<List<ScanResult>>> scanForDevicesStream(int timeoutms) async {
+    if (await flutterBlue.isOn == false || _scanning) {
+      return Stream.empty();
+    }
+    try {
+      flutterBlue
+          .startScan(timeout: Duration(milliseconds: timeoutms))
+          .then((_) => flutterBlue.stopScan());
     } catch (e) {
       print(e);
+      return Stream.empty();
     }
-    return finalResults;
+    return flutterBlue.scanResults;
   }
 
   Future<APIResponse<RoomModel>> getRoomFromScan({
@@ -65,12 +79,11 @@ class BluetoothServices {
     }
 
     if (scanResults == null) {
-      scanResults = await scanForDevices(2000);
+      signalMap = await addStreamReadingsToSignalMap(signalMap, 2000);
     }
-    scanResults.forEach((result) {
-      String beaconName = getBeaconName(result);
-      signalMap.addBeaconReading(beaconName, getRSSI(result));
-    });
+
+    print("signal map beacons:");
+    print(signalMap.beacons);
 
     APIResponse<RoomModel> apiResponseRoom =
         await restService.getRoomFromSignalMap(signalMap);
