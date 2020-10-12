@@ -1,5 +1,6 @@
 import 'package:background_fetch/background_fetch.dart';
 import 'package:climify/routes/buildingManager.dart';
+import 'package:climify/routes/splashScreen.dart';
 import 'package:climify/routes/userLogin.dart';
 import 'package:climify/routes/userRoutes/registeredUserRoute.dart';
 import 'package:climify/routes/userRoutes/unregisteredUserRoute.dart';
@@ -64,7 +65,7 @@ void main() async {
     print('[BackgroundFetch] configure ERROR: $e');
   });
 
-  runApp(MyApp());
+  runApp(ClimifyApp());
 }
 
 Future selectNotification(String payload) async {
@@ -81,38 +82,39 @@ Future selectNotification(String payload) async {
   return;
 }
 
-class MyApp extends StatelessWidget {
+// class MyApp extends StatelessWidget {
 
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Climify Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Climify Feedback Tech Demo'),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'Climify Demo',
+//       theme: ThemeData(
+//         primarySwatch: Colors.blue,
+//       ),
+//       home: MyHomePage(title: 'Climify Feedback Tech Demo'),
+//     );
+//   }
+// }
 
-class MyHomePage extends StatefulWidget {
+class ClimifyApp extends StatefulWidget {
 
-  MyHomePage({Key key, this.title}) : super(key: key);
+  ClimifyApp({Key key, this.title}) : super(key: key);
 
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _ClimifyAppState createState() => _ClimifyAppState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _ClimifyAppState extends State<ClimifyApp> {
   static const platform = const MethodChannel('CHANNEL');
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: UnregisteredUserScreen(),
+      title: "Climify",
+      home: SplashScreen(),
       routes: {
         "unregistered": (context) => UnregisteredUserScreen(),
         "login": (context) => UserLogin(),
