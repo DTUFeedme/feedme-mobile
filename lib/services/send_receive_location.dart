@@ -14,6 +14,8 @@ class UpdateLocation extends ChangeNotifier {
   bool _error = false;
   RoomModel _room = RoomModel('', '');
   String _message = '';
+  String _errorMessageRoom = '';
+  String _errorMessageQuestion = '';
   final List<FeedbackQuestion> _questions = [];
   DateTime _dateTime = DateTime.now();
 
@@ -23,6 +25,8 @@ class UpdateLocation extends ChangeNotifier {
   bool get error => _error;
   RoomModel get room => _room;
   String get message => _message;
+  String get errorMessageRoom => _errorMessageRoom;
+  String get errorMessageQuestion => _errorMessageQuestion;
   UnmodifiableListView get questions => UnmodifiableListView(_questions);
 
   Future<void> sendReceiveLocation({bool fromAuto = false}) async {
@@ -77,12 +81,12 @@ class UpdateLocation extends ChangeNotifier {
         : "Couldn't scan room";
 
     LocalNotifications.preventSelectNotification = false;
-    if (apiResponse.error) {
-      _error = true;
+    _error = apiResponse.error;
+    if (_error) {
       _message = "Error scanning room, tap to retry";
+      _errorMessageRoom = apiResponse.errorMessage;
       notificationTitle = "Couldn't scan room";
     } else {
-      _error = false;
       _room = apiResponse.data;
       _message = "Current room: ${_room.name}";
       notificationTitle = _message;
@@ -101,19 +105,18 @@ class UpdateLocation extends ChangeNotifier {
   }
 
   Future<void> updateQuestions() async {
+    _questions.clear();
     if (_room == null) {
       return;
     }
     APIResponse<List<FeedbackQuestion>> apiResponseQuestions =
         await _restService.getActiveQuestionsByRoom(_room.id, "week");
-    if (!apiResponseQuestions.error) {
-      _questions.clear();
-      _questions.addAll(apiResponseQuestions.data);
+    _error = apiResponseQuestions.error;
+    if (_error) {
+      _errorMessageQuestion = apiResponseQuestions.errorMessage;
       notifyListeners();
     } else {
-      _questions.clear();
-      _error = true;
-      _message = apiResponseQuestions.errorMessage;
+      _questions.addAll(apiResponseQuestions.data);
       notifyListeners();
     }
   }
