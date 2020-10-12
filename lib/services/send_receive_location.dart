@@ -101,7 +101,6 @@ class UpdateLocation extends ChangeNotifier {
       platformChannelSpecifics,
       payload: "scan",
     );
-    updateQuestions();
   }
 
   Future<void> updateQuestions() async {
@@ -116,6 +115,7 @@ class UpdateLocation extends ChangeNotifier {
       _errorMessageQuestion = apiResponseQuestions.errorMessage;
       notifyListeners();
     } else {
+      _questions.clear();
       _questions.addAll(apiResponseQuestions.data);
       notifyListeners();
     }
