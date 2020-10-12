@@ -76,7 +76,7 @@ enum RequestType {
 }
 
 class RestService {
-  static const api = 'http://feedme.compute.dtu.dk/api-dev';
+  static const api = 'http://feedme.compute.dtu.dk/api';
   static Future<Null> mLock;
 
   static Future<Map<String, String>> headers({
