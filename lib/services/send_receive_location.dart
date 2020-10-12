@@ -68,6 +68,10 @@ class UpdateLocation extends ChangeNotifier {
 
     BluetoothServices _bluetoothServices = BluetoothServices();
 
+    _error = false;
+    _room = RoomModel('', '');
+    _errorMessageRoom = '';
+    _errorMessageQuestion = '';
     _questions.clear();
     _scanningLocation = true;
     _message = "Scanning room...";
