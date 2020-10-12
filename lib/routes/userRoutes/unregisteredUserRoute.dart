@@ -1,6 +1,4 @@
 import 'package:climify/functions/setSubtitle.dart';
-import 'package:climify/models/api_response.dart';
-import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/routes/userRoutes/scanHelper.dart';
@@ -32,7 +30,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   int _visibleIndex = 0;
   bool _fetchingTokens = true;
   bool _gettingRoom = false;
-  BuildingModel _building;
   List<FeedbackQuestion> _questions = [];
   RoomModel _room;
   String _title = "Provide feedback";
@@ -46,6 +43,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     _sharedPrefsHelper = SharedPrefsHelper();
     _bluetooth = BluetoothServices();
     _checkUserStatus();
+    _setupState();
   }
 
   @override
@@ -55,27 +53,40 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     }
   }
 
+  void _setupState() async {
+    setState(() {
+      _fetchingTokens = true;
+    });
+
+    Tuple2 tokens =
+        await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
+
+    // Provider.of<GlobalState>(context)
+    //     .updateAccount("no email", tokens.item1, tokens.item2, context);
+    SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+    await sharedPrefsHelper.setUserTokens(tokens);
+    setState(() {
+      _fetchingTokens = false;
+    });
+    await _getAndSetRoom();
+  }
+
   void _checkUserStatus() async {
-    bool alreadyUser = await _sharedPrefsHelper.getStartOnLogin();
-    if (alreadyUser) {
-      _gotoLogin();
-    } else {
-      setState(() {
-        _fetchingTokens = true;
-      });
+    setState(() {
+      _fetchingTokens = true;
+    });
 
-      Tuple2 tokens =
-          await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
+    Tuple2 tokens =
+        await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
 
-      // Provider.of<GlobalState>(context)
-      //     .updateAccount("no email", tokens.item1, tokens.item2, context);
-      SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
-      await sharedPrefsHelper.setUserTokens(tokens);
-      setState(() {
-        _fetchingTokens = false;
-      });
-      await _getAndSetRoom();
-    }
+    // Provider.of<GlobalState>(context)
+    //     .updateAccount("no email", tokens.item1, tokens.item2, context);
+    SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
+    await sharedPrefsHelper.setUserTokens(tokens);
+    setState(() {
+      _fetchingTokens = false;
+    });
+    await _getAndSetRoom();
   }
 
   Future<void> _getAndSetRoom() async {
@@ -108,7 +119,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     //     resetBuilding: forceBuildingRescan);
     var _scanResults = await _scanHelper.scanForRoom();
     setState(() {
-      _building = _scanResults.building;
       _room = _scanResults.room;
       _questions = _scanResults.questions;
     });
@@ -207,7 +217,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
             title: Text("Login"),
           ),
         ],
-        onTap: (int index) => index == 2 ? _gotoLogin() : _changeWindow(index),
+        onTap: (int index) => index != 2 ? _changeWindow(index) : _gotoLogin(),
         currentIndex: _visibleIndex,
       ),
       body: WillPopScope(
