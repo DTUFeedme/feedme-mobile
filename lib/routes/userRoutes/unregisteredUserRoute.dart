@@ -1,15 +1,13 @@
-import 'package:climify/functions/setSubtitle.dart';
-import 'package:climify/models/feedbackQuestion.dart';
-import 'package:climify/models/roomModel.dart';
-import 'package:climify/routes/userRoutes/scanHelper.dart';
 import 'package:climify/routes/viewAnsweredQuestions.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
+import 'package:climify/services/send_receive_location.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
-import 'package:climify/widgets/listButton.dart';
+import 'package:climify/widgets/questionList.dart';
+import 'package:climify/widgets/scanAppBar.dart';
 import 'package:flutter/material.dart';
-import 'package:climify/routes/feedback.dart';
+import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
 
 class UnregisteredUserScreen extends StatefulWidget {
@@ -22,18 +20,13 @@ class UnregisteredUserScreen extends StatefulWidget {
 }
 
 class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
-  ScanHelper _scanHelper;
   SharedPrefsHelper _sharedPrefsHelper;
   RestService _restService;
   BluetoothServices _bluetooth;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _visibleIndex = 0;
   bool _fetchingTokens = true;
-  bool _gettingRoom = false;
-  List<FeedbackQuestion> _questions = [];
-  RoomModel _room;
   String _title = "Provide feedback";
-  String _subtitle = "Room: scanning...";
 
   @override
   void initState() {
@@ -90,38 +83,26 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   }
 
   Future<void> _getAndSetRoom() async {
-    if (_gettingRoom) return;
-    setState(() {
-      _gettingRoom = true;
-    });
+    UpdateLocation updateLocation =
+        Provider.of<UpdateLocation>(context, listen: false);
+    if (updateLocation.scanning) {
+      return;
+    }
 
-    await Future.delayed(Duration.zero);
-
-    _setSubtitle();
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
+      return;
     }
-    _scanHelper = ScanHelper(
-      context,
-      scaffoldKey: _scaffoldKey,
-    );
 
-    await _scanForRoom();
-
-    setState(() {
-      _gettingRoom = false;
-    });
-    _setSubtitle();
+    await updateLocation.sendReceiveLocation();
+    _getActiveQuestions();
   }
 
-  Future<void> _scanForRoom() async {
-    // var _scanResults = await _scanHelper.scanBuildingAndRoom(
-    //     resetBuilding: forceBuildingRescan);
-    var _scanResults = await _scanHelper.scanForRoom();
-    setState(() {
-      _room = _scanResults.room;
-      _questions = _scanResults.questions;
-    });
+  Future<void> _getActiveQuestions() async {
+    UpdateLocation updateLocation =
+        Provider.of<UpdateLocation>(context, listen: false);
+    await updateLocation.updateQuestions();
+    return;
   }
 
   void _gotoLogin() {
@@ -129,17 +110,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     Navigator.of(context).pushReplacementNamed("login");
   }
 
-  void _setSubtitle() {
-    String subtitle = getSubtitle(_gettingRoom, _room);
-    setState(() {
-      _subtitle = subtitle;
-    });
-  }
-
   void _changeWindow(int index) {
     setState(() {
       _visibleIndex = index;
-      _setSubtitle();
       switch (index) {
         case 0:
           _title = "Give feedback";
@@ -171,36 +144,9 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        title: InkWell(
-          onTap: () => _getAndSetRoom(),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      _title,
-                    ),
-                    Text(
-                      _subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _gettingRoom
-                  ? CircularProgressIndicator(
-                      value: null,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    )
-                  : Container(),
-            ],
-          ),
-        ),
+      appBar: scanAppBar(
+        _getAndSetRoom,
+        _title,
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: [
@@ -232,40 +178,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                   child: Column(
                     children: <Widget>[
                       Expanded(
-                        child: Container(
-                          child: _questions != null && _questions.isNotEmpty
-                              ? Container(
-                                  child: RefreshIndicator(
-                                    onRefresh: () => _scanForRoom(),
-                                    child: Container(
-                                      child: ListView.builder(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        itemCount: _questions.length,
-                                        itemBuilder: (_, index) => ListButton(
-                                          onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    FeedbackWidget(
-                                                        question:
-                                                            _questions[index],
-                                                        room: _room)),
-                                          ),
-                                          child: Text(
-                                            _questions[index].value,
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Container(),
+                        child: QuestionList(
+                          getActiveQuestions: _getActiveQuestions,
                         ),
                       ),
                     ],

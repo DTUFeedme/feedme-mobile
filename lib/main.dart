@@ -22,12 +22,15 @@ class LocalNotifications {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  UpdateLocation updateLocation = UpdateLocation();
+
   LocalNotifications.flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
   NotificationAppLaunchDetails launchDetails = await LocalNotifications
       .flutterLocalNotificationsPlugin
       .getNotificationAppLaunchDetails();
-  LocalNotifications.preventSelectNotification = launchDetails.didNotificationLaunchApp;
+  LocalNotifications.preventSelectNotification =
+      launchDetails.didNotificationLaunchApp;
   AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('app_icon');
   IOSInitializationSettings initializationSettingsIOS =
@@ -40,7 +43,10 @@ void main() async {
       initializationSettingsAndroid, initializationSettingsIOS);
   await LocalNotifications.flutterLocalNotificationsPlugin.initialize(
     initializationSettings,
-    onSelectNotification: selectNotification,
+    onSelectNotification: (payload) => selectNotification(
+      payload,
+      updateLocation,
+    ),
   );
 
   BackgroundFetch.configure(
@@ -56,7 +62,7 @@ void main() async {
         requiresDeviceIdle: false,
         requiredNetworkType: NetworkType.ANY,
       ), (taskId) async {
-    await sendReceiveLocation();
+    await updateLocation.sendReceiveLocation(fromAuto: true);
     BackgroundFetch.finish(taskId);
     return;
   }).then((int status) {
@@ -65,10 +71,16 @@ void main() async {
     print('[BackgroundFetch] configure ERROR: $e');
   });
 
-  runApp(ClimifyApp());
+  // runApp(ClimifyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => updateLocation,
+      child: ClimifyApp(),
+    ),
+  );
 }
 
-Future selectNotification(String payload) async {
+Future selectNotification(String payload, UpdateLocation updateLocation) async {
   if (LocalNotifications.preventSelectNotification) {
     return;
   }
@@ -77,13 +89,12 @@ Future selectNotification(String payload) async {
     debugPrint('notification payload: ' + payload);
   }
   if (payload == "scan") {
-    await sendReceiveLocation();
+    await updateLocation.sendReceiveLocation();
   }
   return;
 }
 
 // class MyApp extends StatelessWidget {
-
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -98,7 +109,6 @@ Future selectNotification(String payload) async {
 // }
 
 class ClimifyApp extends StatefulWidget {
-
   ClimifyApp({Key key, this.title}) : super(key: key);
 
   final String title;
@@ -109,6 +119,12 @@ class ClimifyApp extends StatefulWidget {
 
 class _ClimifyAppState extends State<ClimifyApp> {
   static const platform = const MethodChannel('CHANNEL');
+
+  @override
+  void dispose() {
+    LocalNotifications.flutterLocalNotificationsPlugin.cancelAll();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
