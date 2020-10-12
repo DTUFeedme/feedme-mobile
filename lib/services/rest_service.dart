@@ -9,6 +9,7 @@ import 'package:climify/models/signalMap.dart';
 import 'package:climify/models/userModel.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:climify/models/feedbackQuestion.dart';
@@ -76,7 +77,9 @@ enum RequestType {
 }
 
 class RestService {
-  static const api = 'http://feedme.compute.dtu.dk/api';
+  static const api = kReleaseMode
+      ? 'http://feedme.compute.dtu.dk/api'
+      : 'http://feedme.compute.dtu.dk/api-dev';
   static Future<Null> mLock;
 
   static Future<Map<String, String>> headers({
