@@ -35,7 +35,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     _restService = RestService();
     _sharedPrefsHelper = SharedPrefsHelper();
     _bluetooth = BluetoothServices();
-    _checkUserStatus();
     _setupState();
   }
 
@@ -47,24 +46,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   }
 
   void _setupState() async {
-    setState(() {
-      _fetchingTokens = true;
-    });
-
-    Tuple2 tokens =
-        await _sharedPrefsHelper.getUnauthorizedTokens(_restService);
-
-    // Provider.of<GlobalState>(context)
-    //     .updateAccount("no email", tokens.item1, tokens.item2, context);
-    SharedPrefsHelper sharedPrefsHelper = SharedPrefsHelper();
-    await sharedPrefsHelper.setUserTokens(tokens);
-    setState(() {
-      _fetchingTokens = false;
-    });
-    await _getAndSetRoom();
-  }
-
-  void _checkUserStatus() async {
     setState(() {
       _fetchingTokens = true;
     });
