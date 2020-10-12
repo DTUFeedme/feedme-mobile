@@ -27,7 +27,7 @@ class _UserLoginState extends State<UserLogin> {
   TextEditingController _passwordController = TextEditingController();
   TextEditingController _newEmailController = TextEditingController();
   TextEditingController _newPasswordController = TextEditingController();
-  TextEditingController _newPasswordConfirmController = TextEditingController();
+  TextEditingController _confirmPasswordController = TextEditingController();
 
   @override
   void initState() {
@@ -35,6 +35,7 @@ class _UserLoginState extends State<UserLogin> {
     _restService = RestService();
     _sharedPrefsHelper = SharedPrefsHelper();
     _sharedPrefsHelper.setOnLoginScreen(true);
+
     _attemptLogin();
   }
 
@@ -67,19 +68,29 @@ class _UserLoginState extends State<UserLogin> {
 
   Future<void> _authUser({bool create = false}) async {
     if (!_buttonsActive) return;
+
     if (create &&
         _newEmailController.text.trim() == "" &&
         _newPasswordController.text.trim() == "" &&
-        _newPasswordConfirmController.text.trim() == "") return;
+        _confirmPasswordController.text.trim() == "") return;
+
     if (!create &&
         _emailController.text.trim() == "" &&
         _passwordController.text.trim() == "") return;
+    if (!create && _passwordController.text.isEmpty) {
+      SnackBarError.showErrorSnackBar(
+        "Please provide a password",
+        _scaffoldKey,
+      );
+      return;
+    }
+
     setState(() {
       _buttonsActive = false;
     });
     APIResponse<UserModel> apiResponse;
     if (create) {
-      if (_newPasswordController.text == _newPasswordConfirmController.text) {
+      if (_newPasswordController.text == _confirmPasswordController.text) {
         apiResponse = await _restService.postUser(
             _newEmailController.text, _newPasswordController.text);
       } else {
@@ -211,6 +222,11 @@ class _UserLoginState extends State<UserLogin> {
                             child: TextField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              onSubmitted: (value) {
+                                if (value.isNotEmpty)
+                                  FocusScope.of(context).nextFocus();
+                              },
                             ),
                           ),
                         ],
@@ -221,8 +237,18 @@ class _UserLoginState extends State<UserLogin> {
                             "Password:",
                           ),
                           Expanded(
-                            child: _passwordField(
+                            child: TextField(
                               controller: _passwordController,
+                              obscureText: true,
+                              autocorrect: false,
+                              textInputAction: TextInputAction.go,
+                              onSubmitted: (value) {
+                                if (_emailController.text.isEmpty) {
+                                  FocusScope.of(context).previousFocus();
+                                } else {
+                                  _authUser();
+                                }
+                              },
                             ),
                           ),
                         ],
@@ -261,6 +287,11 @@ class _UserLoginState extends State<UserLogin> {
                             child: TextField(
                               controller: _newEmailController,
                               keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              onSubmitted: (value) {
+                                if (value.isNotEmpty)
+                                  FocusScope.of(context).nextFocus();
+                              },
                             ),
                           ),
                         ],
@@ -271,8 +302,15 @@ class _UserLoginState extends State<UserLogin> {
                             "Password:",
                           ),
                           Expanded(
-                            child: _passwordField(
+                            child: TextField(
                               controller: _newPasswordController,
+                              obscureText: true,
+                              autocorrect: false,
+                              textInputAction: TextInputAction.next,
+                              onSubmitted: (value) {
+                                if (value.isNotEmpty)
+                                  FocusScope.of(context).nextFocus();
+                              },
                             ),
                           ),
                         ],
@@ -283,8 +321,12 @@ class _UserLoginState extends State<UserLogin> {
                             "Confirm Password:",
                           ),
                           Expanded(
-                            child: _passwordField(
-                              controller: _newPasswordConfirmController,
+                            child: TextField(
+                              controller: _confirmPasswordController,
+                              obscureText: true,
+                              autocorrect: false,
+                              textInputAction: TextInputAction.go,
+                              onSubmitted: (_) => _authUser(create: true),
                             ),
                           ),
                         ],
@@ -303,14 +345,6 @@ class _UserLoginState extends State<UserLogin> {
           ),
         ),
       ),
-    );
-  }
-
-  TextField _passwordField({@required TextEditingController controller}) {
-    return TextField(
-      controller: controller,
-      obscureText: true,
-      autocorrect: false,
     );
   }
 }
