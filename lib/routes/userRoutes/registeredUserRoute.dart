@@ -1,19 +1,19 @@
-import 'package:climify/functions/setSubtitle.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/feedbackQuestion.dart';
-import 'package:climify/models/globalState.dart';
 import 'package:climify/models/questionStatistics.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/routes/dialogues/addBuilding.dart';
 import 'package:climify/routes/userRoutes/buildingList.dart';
-import 'package:climify/routes/userRoutes/scanHelper.dart';
 import 'package:climify/routes/userRoutes/viewRoomFeedback.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
+import 'package:climify/services/send_receive_location.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
 import 'package:climify/widgets/listButton.dart';
+import 'package:climify/widgets/questionList.dart';
+import 'package:climify/widgets/scanAppBar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -26,11 +26,8 @@ class RegisteredUserScreen extends StatefulWidget {
 }
 
 class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
-  bool _loadingState = false;
   int _visibleIndex = 0;
   String _title = "Provide feedback";
-  String _subtitle = "Room: scanning...";
-  RoomModel _room;
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<BuildingListState> _buildingListKey =
       GlobalKey<BuildingListState>();
@@ -39,8 +36,6 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   String _t;
   List<QuestionStatisticsModel> _roomQuestionStatistics = [];
   TextEditingController _buildingNameTextController = TextEditingController();
-  List<FeedbackQuestion> _questions = [];
-  ScanHelper _scanHelper;
   Future<void> _gettingRoom = Future.delayed(Duration.zero);
 
   @override
@@ -61,52 +56,53 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   Future<void> _setupState({
     bool forceBuildingRescan = false,
   }) async {
+    UpdateLocation updateLocation =
+        Provider.of<UpdateLocation>(context, listen: false);
+    bool _loadingState = updateLocation.scanning;
     if (_loadingState) return;
 
     await Future.delayed(Duration.zero);
     setState(() {
       _loadingState = true;
     });
-    _setSubtitle();
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
     }
-    _scanHelper = ScanHelper(
-      context,
-      scaffoldKey: _scaffoldKey,
-    );
-    // await Future.delayed(Duration(milliseconds: 500));
-    _gettingRoom = _scanForRoom();
-    await _gettingRoom;
-    if (_room != null) _getAndSetRoomFeedbackStats("week");
-    setState(() {
-      _loadingState = false;
-    });
-    _setSubtitle();
+    _getAndSetRoom();
   }
 
-  Future<void> _scanForRoom() async {
-    var _scanResults = await _scanHelper.scanForRoom();
-    setState(() {
-      _room = _scanResults.room;
-      _questions = _scanResults.questions;
-    });
+  Future<void> _getAndSetRoom() async {
+    UpdateLocation updateLocation =
+        Provider.of<UpdateLocation>(context, listen: false);
+    if (updateLocation.scanning) {
+      return;
+    }
+
+    if (!await _bluetooth.isOn) {
+      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
+      return;
+    }
+
+    await updateLocation.sendReceiveLocation();
+    _getActiveQuestions();
   }
 
   Future<void> _getActiveQuestions() async {
-    List<FeedbackQuestion> questions = await _scanHelper.getActiveQuestions();
-    setState(() {
-      _questions = questions;
-    });
+    UpdateLocation updateLocation =
+        Provider.of<UpdateLocation>(context, listen: false);
+    await updateLocation.updateQuestions();
     return;
   }
 
   Future<void> _getAndSetRoomFeedbackStats(String t) async {
+    UpdateLocation updateLocation =
+        Provider.of<UpdateLocation>(context, listen: false);
     List<FeedbackQuestion> questionsOfRoom = [];
     setState(() {
       _roomQuestionStatistics = [];
       _t = t;
     });
+    RoomModel _room = updateLocation.room;
     // APIResponse<List<FeedbackQuestion>> apiResponseQuestionsOfRoom =
     //     await _restService.getActiveQuestionsByRoom(_room.id, _token, t: _t);
     if (_room == null) return;
@@ -132,17 +128,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     }
   }
 
-  void _setSubtitle() {
-    String subtitle = getSubtitle(_loadingState, _room);
-    setState(() {
-      _subtitle = subtitle;
-    });
-  }
-
   void _changeWindow(int index) {
     setState(() {
       _visibleIndex = index;
-      _setSubtitle();
       switch (index) {
         case 0:
           _title = "Give feedback";
@@ -204,38 +192,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        title: InkWell(
-          onTap: () => _setupState(),
-          onLongPress: () => _setupState(forceBuildingRescan: true),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      _title,
-                    ),
-                    Text(
-                      _subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _loadingState
-                  ? CircularProgressIndicator(
-                      value: null,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    )
-                  : Container(),
-            ],
-          ),
-        ),
-      ),
+      appBar: scanAppBar(_getAndSetRoom, _title),
       body: WillPopScope(
         onWillPop: onWillPop,
         child: Center(
@@ -248,42 +205,8 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                     child: Column(
                       children: <Widget>[
                         Expanded(
-                          child: Container(
-                            child: _questions != null && _questions.isNotEmpty
-                                ? Container(
-                                    child: RefreshIndicator(
-                                      onRefresh: () => _getActiveQuestions(),
-                                      child: Container(
-                                        child: ListView.builder(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          itemCount: _questions.length,
-                                          itemBuilder: (context, index) =>
-                                              ListButton(
-                                            onTap: () => Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    FeedbackWidget(
-                                                        question:
-                                                            _questions[index],
-                                                        room: _room),
-                                              ),
-                                            ),
-                                            child: Text(
-                                              _questions[index].value,
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : Container(),
+                          child: QuestionList(
+                            getActiveQuestions: _getActiveQuestions,
                           ),
                         ),
                       ],
@@ -295,7 +218,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                   child: Container(
                     child: RefreshIndicator(
                       onRefresh: () async {
-                        if (_room != null)
+                        UpdateLocation updateLocation =
+                            Provider.of<UpdateLocation>(context, listen: false);
+                        if (updateLocation.room != null)
                           await _getAndSetRoomFeedbackStats("week");
                         await Future.delayed(Duration(milliseconds: 125));
                         _changeWindow(1);

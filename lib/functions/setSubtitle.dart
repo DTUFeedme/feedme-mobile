@@ -1,9 +1,14 @@
 import 'package:climify/models/roomModel.dart';
+import 'package:climify/services/send_receive_location.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 String getSubtitle(
-  bool gettingRoom,
-  RoomModel room,
+  BuildContext context,
 ) {
+  UpdateLocation updateLocation = Provider.of<UpdateLocation>(context);
+  bool gettingRoom = updateLocation.scanning;
+  RoomModel room = updateLocation.room;
   return gettingRoom
       ? "Room: scanning..."
       : room == null
