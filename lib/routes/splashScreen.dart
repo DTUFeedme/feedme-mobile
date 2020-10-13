@@ -52,6 +52,9 @@ class _SplashScreenState extends State<SplashScreen> {
     // This should already take care of expired refresh tokens, as the user is simply prompted to reauth if the refresh token is expired
     // We still have to implement refreshing the refresh token while logged in
     String authToken = await _sharedPrefsHelper.getUserAuthToken();
+    if (authToken == null) {
+      return false;
+    }
     int role = JwtDecoder.parseJwtPayLoad(authToken)['role'];
     if (role == 1) {
       var apiResponse = await _restService.getBuildingsWithAdminRights();
