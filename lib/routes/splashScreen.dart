@@ -58,8 +58,9 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!apiResponse.error) {
         await _sharedPrefsHelper.setOnLoginScreen(false);
         Navigator.of(context).pushReplacementNamed("registered");
+        return true;
       }
-      return true;
+      return false;
     }
     return false;
   }
