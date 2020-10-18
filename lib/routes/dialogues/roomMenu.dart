@@ -3,6 +3,7 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/submitButton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -28,7 +29,7 @@ class RoomMenu {
     return;
   }
 
-  void _deleteScans() async {
+  Future<void> _deleteScans() async {
     APIResponse<String> deleteResponse =
         await _restService.deleteSignalMapsOfRoom(room.id);
     if (!deleteResponse.error) {
@@ -37,6 +38,7 @@ class RoomMenu {
     } else {
       SnackBarError.showErrorSnackBar(deleteResponse.errorMessage, scaffoldKey);
     }
+    return;
   }
 
   RoomMenu(
@@ -63,11 +65,10 @@ class RoomMenu {
               },
             ),
             getCurrentlyConfirming() == "scans"
-                ? RaisedButton(
-                    color: Colors.red,
-                    child: Text("Confirm"),
-                    onPressed: () {
-                      _deleteScans();
+                ? SubmitButton(
+                    text: 'Confirm',
+                    onPressed: () async {
+                      await _deleteScans();
                       setCurrentlyConfirming("");
                       setState(() {});
                     },
@@ -80,11 +81,12 @@ class RoomMenu {
                     },
                   ),
             getCurrentlyConfirming() == "delete"
-                ? RaisedButton(
-                    color: Colors.red,
-                    child: Text("Confirm"),
+                ? SubmitButton(
+                    text: 'Confirm',
                     onPressed: () async {
                       await _deleteRoom();
+                      setCurrentlyConfirming("");
+                      setState(() {});
                       Navigator.of(context).pop();
                     },
                   )

@@ -5,6 +5,7 @@ import 'package:climify/models/signalMap.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/submitButton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
@@ -115,22 +116,10 @@ class ScanRoom {
             Text(
               "Add bluetooth location data from the bluetooth beacons",
             ),
-            Row(
-              children: <Widget>[
-                RaisedButton(
-                  child: Text(
-                    getScanning()
-                        ? "Adding location data"
-                        : "Add location data",
-                  ),
-                  onPressed: () => getScanning() ? print("already") : _scan(),
-                ),
-                getScanning()
-                    ? CircularProgressIndicator(
-                        value: null,
-                      )
-                    : Container(),
-              ],
+            SubmitButton(
+              text:
+                  getScanning() ? "Adding location data" : "Add location data",
+              onPressed: () async => getScanning() ? print("already") : _scan(),
             ),
             Text(
               "Additional scans completed: ${getNumberOfScans()}",
