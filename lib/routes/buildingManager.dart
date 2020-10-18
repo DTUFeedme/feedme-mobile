@@ -13,6 +13,7 @@ import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
 import 'package:climify/widgets/listButton.dart';
+import 'package:climify/widgets/submitButton.dart';
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 
@@ -296,7 +297,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     });
   }
 
-  void _getUserIdFromEmailFunc(String _email) async {
+  Future<void> _getUserIdFromEmailFunc(String _email) async {
     setState(() {});
     String userId;
     APIResponse<String> apiResponse =
@@ -308,14 +309,15 @@ class _BuildingManagerState extends State<BuildingManager> {
     }
     setState(() {});
     if (userId != null) {
-      _makeUserAdmin(userId, _email);
+      await _makeUserAdmin(userId, _email);
     } else {
       SnackBarError.showErrorSnackBar(
           "No user found with email: $_email", _scaffoldKey);
     }
+    return;
   }
 
-  void _makeUserAdmin(String _userId, String _email) async {
+  Future<void> _makeUserAdmin(String _userId, String _email) async {
     APIResponse<bool> apiResponse =
         await _restService.patchUserAdmin(_userId, _building);
     if (apiResponse.error) {
@@ -325,6 +327,7 @@ class _BuildingManagerState extends State<BuildingManager> {
           _email + " is now admin of building: " + _building.name,
           _scaffoldKey);
     }
+    return;
   }
 
   String _getSignalStrengthString(int rssi) {
@@ -583,11 +586,17 @@ class _BuildingManagerState extends State<BuildingManager> {
                         decoration:
                             InputDecoration(labelText: 'Enter user email'),
                       ),
-                      RaisedButton(
-                          onPressed: () =>
-                              _getUserIdFromEmailFunc(myController.text),
-                          child: Text('Make user admin for building: ' +
-                              _building.name))
+                      // RaisedButton(
+                      //   onPressed: () =>
+                      //       _getUserIdFromEmailFunc(myController.text),
+                      //   child: Text(
+                      //       'Make user admin for building: ' + _building.name),
+                      // ),
+                      SubmitButton(
+                        text: 'Make user admin for building: ' + _building.name,
+                        onPressed: () =>
+                            _getUserIdFromEmailFunc(myController.text),
+                      ),
                     ],
                   ),
                 ),
@@ -611,7 +620,15 @@ class _BuildingManagerState extends State<BuildingManager> {
                   case 0:
                     return _addRoom();
                   case 1:
-                    return _addQuestion();
+                    if (_building.rooms.isNotEmpty) {
+                      return _addQuestion();
+                    } else {
+                      SnackBarError.showErrorSnackBar(
+                        "A building must have rooms before adding questions",
+                        _scaffoldKey,
+                      );
+                    }
+                    return null;
                   default:
                     return print("default case");
                 }

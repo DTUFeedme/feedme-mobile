@@ -2,6 +2,7 @@ import 'package:climify/models/api_response.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/submitButton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -26,8 +27,8 @@ class QuestionMenu {
     questionMenuDialog = StatefulBuilder(
       builder: (context, setState) {
         Future<void> _makeQuestionInactive() async {
-          APIResponse<String> deleteResponse = await _restService
-              .patchQuestionInactive(question.id, false);
+          APIResponse<String> deleteResponse =
+              await _restService.patchQuestionInactive(question.id, false);
           if (!deleteResponse.error) {
             SnackBarError.showErrorSnackBar(
                 "Question ${question.value} set inactive", scaffoldKey);
@@ -55,12 +56,12 @@ class QuestionMenu {
           title: Text("${question.value}"),
           children: <Widget>[
             getCurrentlyConfirming() == "activequestion"
-                ? RaisedButton(
-                    color: Colors.red,
-                    child: Text("Confirm"),
+                ? SubmitButton(
+                    text: "Confirm",
                     onPressed: () async {
                       await _makeQuestionActive();
                       Navigator.of(context).pop();
+                      return;
                     },
                   )
                 : RaisedButton(
@@ -71,12 +72,12 @@ class QuestionMenu {
                     },
                   ),
             getCurrentlyConfirming() == "inactivequestion"
-                ? RaisedButton(
-                    color: Colors.red,
-                    child: Text("Confirm"),
+                ? SubmitButton(
+                    text: "Confirm",
                     onPressed: () async {
                       await _makeQuestionInactive();
                       Navigator.of(context).pop();
+                      return;
                     },
                   )
                 : RaisedButton(

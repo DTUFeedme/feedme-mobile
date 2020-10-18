@@ -3,6 +3,7 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/submitButton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +25,7 @@ class AddRoom {
     _restService = RestService();
     addRoomDialog = StatefulBuilder(
       builder: (context, setState) {
-        void _submitRoom() async {
+        Future<void> _submitRoom() async {
           APIResponse<RoomModel> apiResponse = await _restService.postRoom(
             textEditingController.text.trim(),
             building,
@@ -38,6 +39,7 @@ class AddRoom {
                 apiResponse.errorMessage, scaffoldKey);
             Navigator.of(context).pop(false);
           }
+          return;
         }
 
         bool submitEnabled = textEditingController.text.trim() != "";
@@ -52,10 +54,9 @@ class AddRoom {
               controller: textEditingController,
               onChanged: (value) => setState(() {}),
             ),
-            RaisedButton(
-              color: submitEnabled ? Colors.green : Colors.red,
-              child: Text("Submit"),
-              onPressed: () => submitEnabled ? _submitRoom() : null,
+            SubmitButton(
+              enabled: submitEnabled,
+              onPressed: _submitRoom,
             ),
           ],
         );

@@ -3,6 +3,7 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/questionModel.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/submitButton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -34,7 +35,7 @@ class AddQuestion {
     controllerList.add(TextEditingController());
     addQuestionDialog = StatefulBuilder(
       builder: (context, setState) {
-        void _submitRoom() async {
+        Future<void> _submitRoom() async {
           for (int i = 0; i < building.rooms.length; i++) {
             if (list[i] == true) {
               finalroomlist.add(building.rooms[i].id.toString());
@@ -56,6 +57,7 @@ class AddQuestion {
                 apiResponse.errorMessage, scaffoldKey);
             Navigator.of(context).pop(false);
           }
+          return;
         }
 
         bool submitEnabled1 = true;
@@ -66,16 +68,18 @@ class AddQuestion {
             controllerList.any((item) => item.text != "") &&
             textEditingController.text.length >= 3;
 
-        void _removeAnsweroption() {
+        Future<void> _removeAnsweroption() async {
           setState(() {
             controllerList.removeLast();
           });
+          return;
         }
 
-        void _addAnsweroption() {
+        Future<void> _addAnsweroption() async {
           setState(() {
             controllerList.add(TextEditingController());
           });
+          return;
         }
 
         void updateSelectedRoomsListRemove(int index) async {
@@ -143,20 +147,19 @@ class AddQuestion {
                     );
                   }),
             ),
-            RaisedButton(
-              color: submitEnabled3 ? Colors.green : Colors.red,
-              child: Text("Submit"),
-              onPressed: () => submitEnabled3 ? _submitRoom() : null,
+            SubmitButton(
+              enabled: submitEnabled3,
+              onPressed: _submitRoom,
             ),
-            RaisedButton(
-              color: submitEnabled1 ? Colors.green : Colors.red,
-              child: Text("Add new answeroption"),
-              onPressed: () => submitEnabled1 ? _addAnsweroption() : null,
+            SubmitButton(
+              enabled: submitEnabled1,
+              text: "Add new answer option",
+              onPressed: _addAnsweroption,
             ),
-            RaisedButton(
-              color: submitEnabled2 ? Colors.green : Colors.red,
-              child: Text("Remove latest answeroption"),
-              onPressed: () => submitEnabled2 ? _removeAnsweroption() : null,
+            SubmitButton(
+              enabled: submitEnabled2,
+              text: "Remove latest answeroption",
+              onPressed: _removeAnsweroption,
             ),
           ],
         );
