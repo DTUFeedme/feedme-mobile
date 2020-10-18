@@ -76,9 +76,6 @@ class ScanRoom {
 
           beaconsScanned = signalMap.beacons.length;
 
-          print("signal map beacons:");
-          print(signalMap.beacons);
-
           if (beaconsScanned > 0) {
             APIResponse<String> apiResponse =
                 await _restService.postSignalMap(signalMap, room.id);

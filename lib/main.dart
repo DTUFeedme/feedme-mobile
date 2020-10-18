@@ -4,7 +4,7 @@ import 'package:climify/routes/splashScreen.dart';
 import 'package:climify/routes/userLogin.dart';
 import 'package:climify/routes/userRoutes/registeredUserRoute.dart';
 import 'package:climify/routes/userRoutes/unregisteredUserRoute.dart';
-import 'package:climify/services/send_receive_location.dart';
+import 'package:climify/services/updateLocation.dart';
 
 //import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';

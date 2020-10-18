@@ -1,4 +1,4 @@
-import 'package:climify/services/send_receive_location.dart';
+import 'package:climify/services/updateLocation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

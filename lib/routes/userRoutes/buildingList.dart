@@ -3,6 +3,7 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/emptyListText.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 
@@ -109,24 +110,29 @@ class BuildingListState extends State<BuildingList> {
               ? CircularProgressIndicator(
                   value: null,
                 )
-              : ListView.builder(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  itemCount: _buildings.length,
-                  itemBuilder: (_, index) => ListButton(
-                    onTap: () => _focusBuilding(_buildings[index]),
-                    onLongPress: () =>
-                        _showDeleteBuildingDialog(_buildings[index]),
-                    child: Text(
-                      _buildings[index].name,
-                      style: TextStyle(
-                        fontSize: 24,
+              : _buildings.isNotEmpty
+                  ? ListView.builder(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
+                      itemCount: _buildings.length,
+                      itemBuilder: (_, index) => ListButton(
+                        onTap: () => _focusBuilding(_buildings[index]),
+                        onLongPress: () =>
+                            _showDeleteBuildingDialog(_buildings[index]),
+                        child: Text(
+                          _buildings[index].name,
+                          style: TextStyle(
+                            fontSize: 24,
+                          ),
+                        ),
+                      ),
+                    )
+                  : EmptyListText(
+                      text:
+                          'You are currently not administrating any buildings',
                     ),
-                  ),
-                ),
         ),
       ),
     );
