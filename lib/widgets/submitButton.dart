@@ -4,11 +4,13 @@ class SubmitButton extends StatefulWidget {
   final bool enabled;
   final Future<void> Function() onPressed;
   final String text;
+  final double textSize;
 
   const SubmitButton({
     this.enabled = true,
     @required this.onPressed,
     this.text = "Submit",
+    this.textSize = 16,
     Key key,
   }) : super(key: key);
 
@@ -25,13 +27,27 @@ class _SubmitButtonState extends State<SubmitButton> {
         color: widget.enabled ? Colors.lightBlue : Colors.redAccent,
         focusColor: Colors.blue,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Center(
-              child: Text(widget.text),
+              child: Text(
+                widget.text,
+                style: TextStyle(
+                  fontSize: widget.textSize,
+                ),
+              ),
             ),
-            waitingForResponse ? LinearProgressIndicator() : Container(),
+            Visibility(
+              visible: waitingForResponse,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: LinearProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              ),
+            ),
+            // waitingForResponse ? LinearProgressIndicator() : Container(),
           ],
         ),
         onPressed: () async {

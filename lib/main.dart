@@ -1,4 +1,5 @@
 import 'package:background_fetch/background_fetch.dart';
+import 'package:climify/routes/addQuestion/addQuestionFlow.dart';
 import 'package:climify/routes/buildingManager.dart';
 import 'package:climify/routes/splashScreen.dart';
 import 'package:climify/routes/userLogin.dart';
@@ -131,11 +132,20 @@ class _ClimifyAppState extends State<ClimifyApp> {
     return MaterialApp(
       title: "Climify",
       home: SplashScreen(),
-      routes: {
-        "unregistered": (context) => UnregisteredUserScreen(),
-        "login": (context) => UserLogin(),
-        "registered": (context) => RegisteredUserScreen(),
-        "buildingManager": (context) => BuildingManager(),
+      onGenerateRoute: (settings) {
+        Map<String, Widget Function(BuildContext)> routes = {
+          "unregistered": (context) => UnregisteredUserScreen(),
+          "login": (context) => UserLogin(),
+          "registered": (context) => RegisteredUserScreen(),
+          "buildingManager": (context) => BuildingManager(
+                building: settings.arguments,
+              ),
+          "addQuestion": (context) => AddQuestionFlow(
+                arguments: settings.arguments,
+              ),
+        };
+        WidgetBuilder builder = routes[settings.name];
+        return MaterialPageRoute(builder: (context) => builder(context));
       },
     );
   }
