@@ -1,7 +1,7 @@
 import 'package:climify/routes/viewAnsweredQuestions.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
-import 'package:climify/services/send_receive_location.dart';
+import 'package:climify/services/updateLocation.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/questionList.dart';
@@ -27,6 +27,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
   int _visibleIndex = 0;
   bool _fetchingTokens = true;
   String _title = "Provide feedback";
+  String _t = "week";
 
   @override
   void initState() {
@@ -61,6 +62,12 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       _fetchingTokens = false;
     });
     await _getAndSetRoom();
+  }
+
+  void _setT(String t) {
+    setState(() {
+      _t = t;
+    });
   }
 
   Future<void> _getAndSetRoom() async {
@@ -176,6 +183,8 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                       : ViewAnsweredQuestionsWidget(
                           scaffoldKey: _scaffoldKey,
                           user: "me",
+                          t: _t,
+                          setT: _setT,
                         ),
                 ),
               ),

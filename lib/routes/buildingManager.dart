@@ -12,6 +12,7 @@ import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
+import 'package:climify/widgets/emptyListText.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:climify/widgets/submitButton.dart';
 import 'package:flutter/material.dart';
@@ -457,22 +458,26 @@ class _BuildingManagerState extends State<BuildingManager> {
                 child: RefreshIndicator(
                   onRefresh: () => _updateBuilding(),
                   child: Container(
-                    child: ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: _building.rooms.length,
-                      itemBuilder: (_, index) => ListButton(
-                        onTap: () => _roomMenu(_building.rooms[index]),
-                        child: Text(
-                          _building.rooms[index].name,
-                          style: TextStyle(
-                            fontSize: 24,
+                    child: _building.rooms.isNotEmpty
+                        ? ListView.builder(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            itemCount: _building.rooms.length,
+                            itemBuilder: (_, index) => ListButton(
+                              onTap: () => _roomMenu(_building.rooms[index]),
+                              child: Text(
+                                _building.rooms[index].name,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                ),
+                              ),
+                            ),
+                          )
+                        : EmptyListText(
+                            text: 'There are no rooms in this building yet',
                           ),
-                        ),
-                      ),
-                    ),
                   ),
                 ),
               ),
@@ -481,53 +486,35 @@ class _BuildingManagerState extends State<BuildingManager> {
                 child: RefreshIndicator(
                   onRefresh: () => _updateQuestions(),
                   child: Container(
-                    child: ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: _questionsRealList.length,
-                      itemBuilder: (_, index) => ListButton(
-                        onTap: () => _questionMenu(_questionsRealList[index]),
-                        child: Text(
-                          _questionsRealList[index].value,
-                          style: TextStyle(
-                            color: (_questionsRealList.any((question) =>
-                                    _questionsRealList[index].isActive == false)
-                                ? Colors.red[800]
-                                : Colors.green[800]),
-                            fontSize: 24,
+                    child: _questionsRealList.isNotEmpty
+                        ? ListView.builder(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            itemCount: _questionsRealList.length,
+                            itemBuilder: (_, index) => ListButton(
+                              onTap: () =>
+                                  _questionMenu(_questionsRealList[index]),
+                              child: Text(
+                                _questionsRealList[index].value,
+                                style: TextStyle(
+                                  color: (_questionsRealList.any((question) =>
+                                          _questionsRealList[index].isActive ==
+                                          false)
+                                      ? Colors.red[800]
+                                      : Colors.green[800]),
+                                  fontSize: 24,
+                                ),
+                              ),
+                            ),
+                          )
+                        : EmptyListText(
+                            text: 'There are no questions yet',
                           ),
-                        ),
-                      ),
-                    ),
                   ),
                 ),
               ),
-              // Visibility(
-              //   visible: _visibleIndex == 2,
-              //   child: RefreshIndicator(
-              //     onRefresh: () => _updateBeacons(),
-              //     child: Container(
-              //       child: ListView.builder(
-              //         padding: EdgeInsets.symmetric(
-              //           horizontal: 8,
-              //           vertical: 4,
-              //         ),
-              //         itemCount: _beacons.length,
-              //         itemBuilder: (_, index) => ListButton(
-              //           onTap: () => _beaconMenu(_beacons[index]),
-              //           child: Text(
-              //             _beacons[index].name,
-              //             style: TextStyle(
-              //               fontSize: 24,
-              //             ),
-              //           ),
-              //         ),
-              //       ),
-              //     ),
-              //   ),
-              // ),
               Visibility(
                 maintainState: true,
                 visible: _visibleIndex == 2,
@@ -538,12 +525,16 @@ class _BuildingManagerState extends State<BuildingManager> {
                       child: RefreshIndicator(
                         key: _refreshBeaconKey,
                         onRefresh: _updateBeacons,
-                        child: ScannedDevices(
-                          _beacons,
-                          _blacklist,
-                          _getSignalStrengthString,
-                          _toggleBlacklistBeacon,
-                        ),
+                        child: _beacons.isNotEmpty
+                            ? ScannedDevices(
+                                _beacons,
+                                _blacklist,
+                                _getSignalStrengthString,
+                                _toggleBlacklistBeacon,
+                              )
+                            : EmptyListText(
+                                text: 'No beacons scanned',
+                              ),
                       ),
                     ),
                     _blacklist.isNotEmpty

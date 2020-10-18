@@ -82,9 +82,6 @@ class BluetoothServices {
       signalMap = await addStreamReadingsToSignalMap(signalMap, 2000);
     }
 
-    print("signal map beacons:");
-    print(signalMap.beacons);
-
     APIResponse<RoomModel> apiResponseRoom =
         await restService.getRoomFromSignalMap(signalMap);
     if (apiResponseRoom.error == false) {

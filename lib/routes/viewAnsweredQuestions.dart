@@ -3,6 +3,7 @@ import 'package:climify/models/questionAndFeedback.dart';
 import 'package:climify/routes/viewFeedback.dart';
 //import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/widgets/dateFilterButton.dart';
+import 'package:climify/widgets/emptyListText.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
 
@@ -13,11 +14,15 @@ import 'package:intl/intl.dart';
 class ViewAnsweredQuestionsWidget extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final String user;
+  final String t;
+  final Function(String) setT;
 
   const ViewAnsweredQuestionsWidget({
     Key key,
     @required this.scaffoldKey,
     this.user,
+    this.t = 'week',
+    @required this.setT,
   }) : super(key: key);
 
   @override
@@ -31,7 +36,7 @@ class ViewAnsweredQuestionsWidgetState
   RestService _restService;
   List<QuestionAndFeedback> _feedbackList = <QuestionAndFeedback>[];
   List<QuestionAndFeedback> _tempFeedbackList = <QuestionAndFeedback>[];
-  String _t = "week";
+  String _t;
   String _user = "";
 
   @override
@@ -40,6 +45,7 @@ class ViewAnsweredQuestionsWidgetState
     _restService = RestService();
     _scaffoldKey = widget.scaffoldKey;
     _user = widget.user;
+    _t = widget.t;
     _getFeedback();
   }
 
@@ -52,7 +58,6 @@ class ViewAnsweredQuestionsWidgetState
 
   Future<void> _getFeedback() async {
     await Future.delayed(Duration.zero);
-    _tempFeedbackList = [];
     APIResponse<List<QuestionAndFeedback>> response =
         await _restService.getFeedback(_user, _t);
     if (response.error) return;
@@ -65,6 +70,7 @@ class ViewAnsweredQuestionsWidgetState
       // }
     }
 
+    _tempFeedbackList = [];
     for (int i = 0; i < response.data.length; i++) {
       if (_tempFeedbackList.length == 0) {
         _addToList(response.data[i]);
@@ -102,6 +108,7 @@ class ViewAnsweredQuestionsWidgetState
     setState(() {
       _t = t;
     });
+    widget.setT(t);
     _getFeedback();
   }
 
@@ -156,31 +163,38 @@ class ViewAnsweredQuestionsWidgetState
                 ],
               ),
             ),
-            Container(
-              child: Expanded(
-                child: ListView.builder(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  itemCount: _tempFeedbackList.length,
-                  itemBuilder: (_, index) => ListButton(
-                    onTap: () => _focusFeedback(_tempFeedbackList[index]),
-                    child: Text(
-                      (_tempFeedbackList[index].question.value +
-                          "\n"
-                              "Last answered: " +
-                          getDate(
-                            _tempFeedbackList[index],
-                          )),
-                      style: TextStyle(
-                        fontSize: 18,
+            _tempFeedbackList.isNotEmpty
+                ? Container(
+                    child: Expanded(
+                      child: ListView.builder(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        itemCount: _tempFeedbackList.length,
+                        itemBuilder: (_, index) => ListButton(
+                          onTap: () => _focusFeedback(_tempFeedbackList[index]),
+                          child: Text(
+                            (_tempFeedbackList[index].question.value +
+                                "\n"
+                                    "Last answered: " +
+                                getDate(
+                                  _tempFeedbackList[index],
+                                )),
+                            style: TextStyle(
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
+                  )
+                : Expanded(
+                    child: EmptyListText(
+                      text:
+                          'You have not provided any feedback within the last $_t',
+                    ),
                   ),
-                ),
-              ),
-            )
           ],
         ),
       ),

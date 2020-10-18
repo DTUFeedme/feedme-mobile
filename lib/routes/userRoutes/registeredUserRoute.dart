@@ -7,7 +7,7 @@ import 'package:climify/routes/userRoutes/buildingList.dart';
 import 'package:climify/routes/userRoutes/viewRoomFeedback.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
-import 'package:climify/services/send_receive_location.dart';
+import 'package:climify/services/updateLocation.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
@@ -33,7 +33,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       GlobalKey<BuildingListState>();
   BluetoothServices _bluetooth;
   RestService _restService;
-  String _t;
+  String _t = "week";
   List<QuestionStatisticsModel> _roomQuestionStatistics = [];
   TextEditingController _buildingNameTextController = TextEditingController();
   Future<void> _gettingRoom = Future.delayed(Duration.zero);
@@ -68,7 +68,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
     }
-    _getAndSetRoom();
+    await _getAndSetRoom();
   }
 
   Future<void> _getAndSetRoom() async {
@@ -84,7 +84,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     }
 
     await updateLocation.sendReceiveLocation();
+    await _getAndSetRoomFeedbackStats(_t);
     _getActiveQuestions();
+    return;
   }
 
   Future<void> _getActiveQuestions() async {
@@ -188,6 +190,12 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     return Future.value(false);
   }
 
+  void _setT(String t) {
+    setState(() {
+      _t = t;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -220,8 +228,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                       onRefresh: () async {
                         UpdateLocation updateLocation =
                             Provider.of<UpdateLocation>(context, listen: false);
-                        if (updateLocation.room != null)
-                          await _getAndSetRoomFeedbackStats("week");
+                        if (updateLocation.room != null) {
+                          await _getAndSetRoomFeedbackStats(_t);
+                        }
                         await Future.delayed(Duration(milliseconds: 125));
                         _changeWindow(1);
                         return;
@@ -240,6 +249,8 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                     child: ViewAnsweredQuestionsWidget(
                       scaffoldKey: _scaffoldKey,
                       user: "me",
+                      t: _t,
+                      setT: _setT,
                     ),
                   ),
                 ),

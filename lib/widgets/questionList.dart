@@ -1,5 +1,6 @@
 import 'package:climify/routes/feedback.dart';
-import 'package:climify/services/send_receive_location.dart';
+import 'package:climify/services/updateLocation.dart';
+import 'package:climify/widgets/emptyListText.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -50,7 +51,9 @@ class QuestionList extends StatelessWidget {
                   ),
                 ),
               )
-            : Container(),
+            : EmptyListText(
+                text: 'The list of questions is empty',
+              ),
       ),
     );
   }
