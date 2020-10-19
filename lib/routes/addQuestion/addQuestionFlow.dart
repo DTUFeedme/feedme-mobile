@@ -40,7 +40,14 @@ class _AddQuestionFlowState extends State<AddQuestionFlow> {
   int _index = 0;
   RestService _restService;
   TextEditingController _titleController = TextEditingController();
-  List<TextEditingController> _answerOptionsControllers = [];
+  List<TextEditingController> _answerOptionsControllers = [
+    TextEditingController(),
+    TextEditingController(),
+  ];
+  List<GlobalKey> _answerKeys = [
+    GlobalKey(),
+    GlobalKey(),
+  ];
   Map<String, bool> _roomSelection = {};
   List<bool> _flowComplete = [false, false, false];
   bool _moving = false;
@@ -53,6 +60,8 @@ class _AddQuestionFlowState extends State<AddQuestionFlow> {
     _restService = RestService();
     _oldState = widget.arguments['oldState'];
     _rooms = widget.arguments['rooms'];
+    _rooms.sort(
+        (r1, r2) => r1.name.toLowerCase().compareTo(r2.name.toLowerCase()));
     _itemPositionsListener.itemPositions.addListener(() {
       List<ItemPosition> positions =
           _itemPositionsListener.itemPositions.value.toList();
@@ -71,13 +80,14 @@ class _AddQuestionFlowState extends State<AddQuestionFlow> {
     });
     if (_oldState != null) {
       setState(() {
+        _answerOptionsControllers = [];
         _oldState.answerOptions.forEach((element) {
-          print(element);
           _answerOptionsControllers.add(
             TextEditingController(
               text: element,
             ),
           );
+          _answerKeys.add(GlobalKey());
         });
         _flowComplete[0] = _oldState.flowComplete[0];
         _flowComplete[1] = _oldState.flowComplete[1];
@@ -177,14 +187,31 @@ class _AddQuestionFlowState extends State<AddQuestionFlow> {
   }
 
   void _addAnswerOption() {
+    FocusScope.of(context).unfocus();
     setState(() {
       _answerOptionsControllers.add(TextEditingController());
     });
+    _answerKeys.add(GlobalKey());
   }
 
-  void _removeAnswerOption(int index) {
+  void _removeAnswerOption(TextEditingController element) {
+    FocusScope.of(context).unfocus();
     setState(() {
-      _answerOptionsControllers.removeAt(index);
+      _answerKeys.removeAt(_answerOptionsControllers.indexOf(element));
+      _answerOptionsControllers.remove(element);
+    });
+  }
+
+  void _swapAnswerOptions(int i1, int i2) {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      if (i2 > i1) {
+        i2 = i2 - 1;
+      }
+      final GlobalKey key = _answerKeys.removeAt(i1);
+      final TextEditingController item = _answerOptionsControllers.removeAt(i1);
+      _answerKeys.insert(i2, key);
+      _answerOptionsControllers.insert(i2, item);
     });
   }
 
@@ -207,6 +234,8 @@ class _AddQuestionFlowState extends State<AddQuestionFlow> {
         addOption: _addAnswerOption,
         setFlowComplete: (b) => _flagFlowComplete(1, b),
         removeOption: _removeAnswerOption,
+        swapOptions: _swapAnswerOptions,
+        answerKeys: _answerKeys,
       ),
       SelectQuestionRooms(
         roomSelection: _roomSelection,

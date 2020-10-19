@@ -3,9 +3,11 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class SelectQuestionAnswerOptions extends StatefulWidget {
   final List<TextEditingController> answerOptionControllers;
-  final void Function(int) removeOption;
+  final void Function(TextEditingController) removeOption;
   final void Function() addOption;
   final void Function(bool) setFlowComplete;
+  final void Function(int, int) swapOptions;
+  final List<GlobalKey> answerKeys;
 
   const SelectQuestionAnswerOptions({
     Key key,
@@ -13,6 +15,8 @@ class SelectQuestionAnswerOptions extends StatefulWidget {
     this.answerOptionControllers,
     this.removeOption,
     this.setFlowComplete,
+    this.swapOptions,
+    this.answerKeys,
   }) : super(key: key);
 
   @override
@@ -22,10 +26,105 @@ class SelectQuestionAnswerOptions extends StatefulWidget {
 
 class _SelectQuestionAnswerOptionsState
     extends State<SelectQuestionAnswerOptions> {
-  ItemScrollController _itemScrollController = ItemScrollController();
+  ScrollController _scrollController = ScrollController();
+  void _scrollToIndex(ScrollController scrollController, double offset) {
+    _scrollController.animateTo(
+      offset,
+      duration: Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void checkFlowCompleteOnChange() {
+    if (widget.answerOptionControllers.length >= 2) {
+      if (widget.answerOptionControllers.any((c) => c.text.trim().isEmpty)) {
+        widget.setFlowComplete(false);
+      } else {
+        widget.setFlowComplete(true);
+      }
+    } else {
+      widget.setFlowComplete(false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    double listPadding = MediaQuery.of(context).size.height / 5;
+    List<Widget> _listChildren = widget.answerOptionControllers.map(
+      (element) {
+        int index = widget.answerOptionControllers.indexOf(element);
+        GlobalKey key = widget.answerKeys[index];
+        double Function() offset = () =>
+            key.currentContext.size.height * index -
+            ((key.currentContext.size.height / 5) * 3);
+
+        return Dismissible(
+          background: Container(
+            color: Colors.red.withAlpha(120),
+          ),
+          key: key,
+          onDismissed: (d) {
+            widget.removeOption(element);
+            if (widget.answerOptionControllers.length < 2) {
+              widget.setFlowComplete(false);
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              border: BorderDirectional(bottom: BorderSide()),
+            ),
+            child: ListTile(
+              leading: Icon(Icons.menu),
+              title: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 16,
+                ),
+                child: TextFormField(
+                  autovalidate: true,
+                  validator: (value) =>
+                      widget.answerOptionControllers.length < 2
+                          ? 'You need at least 2 answers'
+                          : value.trim().isEmpty
+                              ? 'Answer option must contain text'
+                              : null,
+                  textInputAction:
+                      index == widget.answerOptionControllers.length - 1
+                          ? TextInputAction.done
+                          : TextInputAction.next,
+                  onTap: () => _scrollToIndex(_scrollController, offset()),
+                  onFieldSubmitted: (value) {
+                    if (index == widget.answerOptionControllers.length - 1) {
+                      FocusScope.of(context).unfocus();
+                    } else {
+                      FocusScope.of(context)
+                          .focusInDirection(TraversalDirection.down);
+                      _scrollToIndex(_scrollController,
+                          offset() + key.currentContext.size.height);
+                    }
+                  },
+                  style: TextStyle(
+                    fontSize: 24,
+                  ),
+                  minLines: 1,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Answer',
+                    hintStyle: TextStyle(
+                      fontSize: 14,
+                    ),
+                  ),
+                  controller: element,
+                  onChanged: (value) {
+                    checkFlowCompleteOnChange();
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    ).toList();
     return Column(
       children: <Widget>[
         Container(
@@ -44,73 +143,11 @@ class _SelectQuestionAnswerOptionsState
         Expanded(
           flex: 18,
           child: Center(
-            child: ScrollablePositionedList.builder(
-              itemScrollController: _itemScrollController,
-              itemCount: widget.answerOptionControllers.length,
-              itemBuilder: (context, index) => Column(
-                children: <Widget>[
-                  Dismissible(
-                    background: Container(
-                      color: Colors.red.withAlpha(120),
-                    ),
-                    key: Key(widget.answerOptionControllers[index].hashCode
-                        .toString()),
-                    onDismissed: (d) {
-                      widget.removeOption(index);
-                      if (widget.answerOptionControllers.length < 2) {
-                        widget.setFlowComplete(false);
-                      }
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 16,
-                      ),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 2,
-                        ),
-                        child: TextFormField(
-                          textInputAction: TextInputAction.done,
-                          style: TextStyle(
-                            fontSize: 24,
-                          ),
-                          minLines: 1,
-                          maxLines: 3,
-                          decoration: InputDecoration(
-                            hintText: 'Answer (swipe to delete)',
-                          ),
-                          controller: widget.answerOptionControllers[index],
-                          onTap: () => _itemScrollController.scrollTo(
-                            index: index,
-                            duration: Duration(
-                              milliseconds: 250,
-                            ),
-                          ),
-                          onChanged: (value) {
-                            if (value.trim().isNotEmpty &&
-                                widget.answerOptionControllers.length >= 2) {
-                              if (widget.answerOptionControllers
-                                  .any((c) => c.text.trim().isEmpty)) {
-                                widget.setFlowComplete(false);
-                              } else {
-                                widget.setFlowComplete(true);
-                              }
-                            } else {
-                              widget.setFlowComplete(false);
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                  index == widget.answerOptionControllers.length - 1
-                      ? SizedBox(
-                          height: (MediaQuery.of(context).size.height / 10) * 3)
-                      : Container()
-                ],
-              ),
+            child: ReorderableListView(
+              padding: EdgeInsets.only(bottom: listPadding),
+              children: _listChildren,
+              scrollController: _scrollController,
+              onReorder: (i1, i2) => widget.swapOptions(i1, i2),
             ),
           ),
         ),

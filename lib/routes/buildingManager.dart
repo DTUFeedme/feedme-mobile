@@ -587,7 +587,7 @@ class _BuildingManagerState extends State<BuildingManager> {
                       //       'Make user admin for building: ' + _building.name),
                       // ),
                       SubmitButton(
-                        text: 'Make user admin for building: ' + _building.name,
+                        text: 'Make user admin of: ' + _building.name,
                         onPressed: () =>
                             _getUserIdFromEmailFunc(myController.text),
                       ),

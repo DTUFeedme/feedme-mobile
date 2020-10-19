@@ -105,6 +105,7 @@ class UpdateLocation extends ChangeNotifier {
       platformChannelSpecifics,
       payload: "scan",
     );
+    return;
   }
 
   Future<void> updateQuestions() async {

@@ -18,42 +18,40 @@ class QuestionList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<UpdateLocation>(
       builder: (context, updateLocation, child) => Container(
-        child: updateLocation.questions != null &&
-                updateLocation.questions.isNotEmpty
-            ? Container(
-                child: RefreshIndicator(
-                  onRefresh: () => getActiveQuestions(),
-                  child: Container(
-                    child: ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      itemCount: updateLocation.questions.length,
-                      itemBuilder: (_, index) => ListButton(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FeedbackWidget(
-                              question: updateLocation.questions[index],
-                              room: updateLocation.room,
-                            ),
+        child: RefreshIndicator(
+          onRefresh: () => getActiveQuestions(),
+          child: updateLocation.questions != null &&
+                  updateLocation.questions.isNotEmpty
+              ? Container(
+                  child: ListView.builder(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    itemCount: updateLocation.questions.length,
+                    itemBuilder: (_, index) => ListButton(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FeedbackWidget(
+                            question: updateLocation.questions[index],
+                            room: updateLocation.room,
                           ),
                         ),
-                        child: Text(
-                          updateLocation.questions[index].value,
-                          style: TextStyle(
-                            fontSize: 18,
-                          ),
+                      ),
+                      child: Text(
+                        updateLocation.questions[index].value,
+                        style: TextStyle(
+                          fontSize: 18,
                         ),
                       ),
                     ),
                   ),
+                )
+              : EmptyListText(
+                  text: 'The list of questions is empty',
                 ),
-              )
-            : EmptyListText(
-                text: 'The list of questions is empty',
-              ),
+        ),
       ),
     );
   }

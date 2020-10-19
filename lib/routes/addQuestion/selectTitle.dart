@@ -55,6 +55,8 @@ class SelectQuestionTitle extends StatelessWidget {
                     setFlowComplete(false);
                   }
                 },
+                validator: (value) => value.trim().length >= 3 ? null : 'Questions must be at least 3 characters',
+                autovalidate: true,
                 onFieldSubmitted: (value) {
                   if (value.trim().length >= 3) {
                     FocusScope.of(context).unfocus();

@@ -10,15 +10,29 @@ class EmptyListText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 24,
-          color: Colors.black54,
+    return Stack(
+      children: <Widget>[
+        NotificationListener<OverscrollIndicatorNotification>(
+          onNotification: (overscroll) {
+            overscroll.disallowGlow();
+            return true;
+          },
+          child: ListView.builder(
+            itemCount: 1,
+            itemBuilder: (context, index) => Container(),
+          ),
         ),
-      ),
+        Center(
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 24,
+              color: Colors.black54,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

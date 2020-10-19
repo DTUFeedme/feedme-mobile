@@ -136,9 +136,11 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       switch (index) {
         case 0:
           _title = "Give feedback";
+          _getActiveQuestions();
           break;
         case 1:
           _title = "View room feedback";
+          _getAndSetRoomFeedbackStats(_t);
           break;
         case 2:
           _title = "View your feedback";
