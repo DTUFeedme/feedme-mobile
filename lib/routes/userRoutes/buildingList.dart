@@ -12,11 +12,13 @@ import 'package:provider/provider.dart';
 class BuildingList extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final Future gettingRoom;
+  final Future<void> Function() refresh;
 
   const BuildingList({
     Key key,
     @required this.scaffoldKey,
     @required this.gettingRoom,
+    @required this.refresh,
   }) : super(key: key);
 
   @override
@@ -62,9 +64,10 @@ class BuildingListState extends State<BuildingList> {
       arguments: building,
     )
         .then((value) async {
-      UpdateLocation updateLocation = Provider.of<UpdateLocation>(context);
-      await updateLocation.sendReceiveLocation();
-      await getBuildings();
+      UpdateLocation updateLocation =
+          Provider.of<UpdateLocation>(context, listen: false);
+      await widget.refresh();
+      getBuildings();
     });
   }
 

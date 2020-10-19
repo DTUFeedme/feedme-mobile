@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 String getSubtitle(
   BuildContext context,
 ) {
-  UpdateLocation updateLocation = Provider.of<UpdateLocation>(context);
+  UpdateLocation updateLocation = Provider.of<UpdateLocation>(context, listen: false);
   bool gettingRoom = updateLocation.scanning;
   RoomModel room = updateLocation.room;
   return gettingRoom
