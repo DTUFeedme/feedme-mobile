@@ -5,6 +5,7 @@ import 'package:climify/services/jwtDecoder.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/widgets/submitButton.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,6 +29,9 @@ class _UserLoginState extends State<UserLogin> {
   TextEditingController _newEmailController = TextEditingController();
   TextEditingController _newPasswordController = TextEditingController();
   TextEditingController _confirmPasswordController = TextEditingController();
+
+  FocusNode _newPasswordNode = FocusNode();
+  FocusNode _confirmPasswordNode = FocusNode();
 
   @override
   void initState() {
@@ -231,10 +235,8 @@ class _UserLoginState extends State<UserLogin> {
                           ),
                         ],
                       ),
-                      RaisedButton(
-                        child: Text(
-                          "Login",
-                        ),
+                      SubmitButton(
+                        text: "Login",
                         onPressed: () => _authUser(),
                       ),
                       // RaisedButton(
@@ -268,7 +270,7 @@ class _UserLoginState extends State<UserLogin> {
                               textInputAction: TextInputAction.next,
                               onSubmitted: (value) {
                                 if (value.isNotEmpty)
-                                  FocusScope.of(context).nextFocus();
+                                  _newPasswordNode.requestFocus();
                               },
                             ),
                           ),
@@ -287,7 +289,7 @@ class _UserLoginState extends State<UserLogin> {
                               textInputAction: TextInputAction.next,
                               onSubmitted: (value) {
                                 if (value.isNotEmpty)
-                                  FocusScope.of(context).nextFocus();
+                                  _confirmPasswordNode.requestFocus();
                               },
                             ),
                           ),
@@ -309,10 +311,8 @@ class _UserLoginState extends State<UserLogin> {
                           ),
                         ],
                       ),
-                      RaisedButton(
-                        child: Text(
-                          "Create User",
-                        ),
+                      SubmitButton(
+                        text: "Create User",
                         onPressed: () => _authUser(create: true),
                       ),
                     ],

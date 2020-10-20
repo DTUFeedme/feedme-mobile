@@ -326,9 +326,9 @@ class RestService {
           FeedbackQuestion question, String t) getQuestionStatistics =
       (question, t) => getQuestionStatisticsRequest(question, t);
 
-  Future<APIResponse<bool>> Function(String userId, BuildingModel building)
+  Future<APIResponse<bool>> Function(String email, BuildingModel building)
       patchUserAdmin =
-      (userId, building) => patchUserAdminRequest(userId, building);
+      (email, building) => patchUserAdminRequest(email, building);
 
   Future<APIResponse<String>> Function(String email) getUserIdFromEmail =
       (email) => getUserIdFromEmailRequest(email);
