@@ -47,7 +47,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   String _currentlyConfirming = "";
   int _visibleIndex = 0;
   String _title = "Manage rooms";
-  final myController = TextEditingController();
+  final _adminController = TextEditingController();
   final _questionNameController = TextEditingController();
   final _questionAnswerOptionsController = TextEditingController();
   List<TextEditingController> controllerList = [];
@@ -66,7 +66,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   @override
   void dispose() {
     // Clean up the controller when the widget is disposed.
-    myController.dispose();
+    _adminController.dispose();
     _newRoomNameController.dispose();
     super.dispose();
   }
@@ -298,35 +298,27 @@ class _BuildingManagerState extends State<BuildingManager> {
     });
   }
 
-  Future<void> _getUserIdFromEmailFunc(String _email) async {
-    setState(() {});
-    String userId;
-    APIResponse<String> apiResponse =
-        await _restService.getUserIdFromEmail(_email);
-    if (apiResponse.error) {
-      SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
-    } else {
-      userId = apiResponse.data;
+  Future<void> _makeUserAdmin(String _email) async {
+    if (_email.isEmpty) {
+      SnackBarError.showErrorSnackBar("No email provided", _scaffoldKey);
+      return;
     }
-    setState(() {});
-    if (userId != null) {
-      await _makeUserAdmin(userId, _email);
-    } else {
-      SnackBarError.showErrorSnackBar(
-          "No user found with email: $_email", _scaffoldKey);
-    }
-    return;
-  }
 
-  Future<void> _makeUserAdmin(String _userId, String _email) async {
     APIResponse<bool> apiResponse =
-        await _restService.patchUserAdmin(_userId, _building);
-    if (apiResponse.error) {
-      SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
-    } else {
+        await _restService.patchUserAdmin(_email, _building);
+    if (!apiResponse.error) {
       SnackBarError.showErrorSnackBar(
-          _email + " is now admin of building: " + _building.name,
-          _scaffoldKey);
+          "$_email made admin of ${_building.name}", _scaffoldKey);
+      _adminController.clear();
+    } else {
+      // We should either have the server messages more user friendly or custom tailor these responses
+      // This is a bad mix of both, and should not be used
+      // I am doing this because there is no way to tell if the server finds a user with the email or not
+      if (apiResponse.errorMessage.contains('already')) {
+        SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
+      } else {
+        SnackBarError.showErrorSnackBar("No user found with email: $_email", _scaffoldKey);
+      }
     }
     return;
   }
@@ -573,7 +565,7 @@ class _BuildingManagerState extends State<BuildingManager> {
                     children: <Widget>[
                       TextFormField(
                         keyboardType: TextInputType.emailAddress,
-                        controller: myController,
+                        controller: _adminController,
                         decoration:
                             InputDecoration(labelText: 'Enter user email'),
                       ),
@@ -585,8 +577,7 @@ class _BuildingManagerState extends State<BuildingManager> {
                       // ),
                       SubmitButton(
                         text: 'Make user admin for building: ' + _building.name,
-                        onPressed: () =>
-                            _getUserIdFromEmailFunc(myController.text),
+                        onPressed: () => _makeUserAdmin(_adminController.text),
                       ),
                     ],
                   ),
