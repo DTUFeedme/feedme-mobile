@@ -35,7 +35,7 @@ class _SelectQuestionAnswerOptionsState
     );
   }
 
-  void checkFlowCompleteOnChange() {
+  void _checkFlowComplete() {
     if (widget.answerOptionControllers.length >= 2) {
       if (widget.answerOptionControllers.any((c) => c.text.trim().isEmpty)) {
         widget.setFlowComplete(false);
@@ -65,9 +65,7 @@ class _SelectQuestionAnswerOptionsState
           key: key,
           onDismissed: (d) {
             widget.removeOption(element);
-            if (widget.answerOptionControllers.length < 2) {
-              widget.setFlowComplete(false);
-            }
+            _checkFlowComplete();
           },
           child: Container(
             decoration: BoxDecoration(
@@ -116,7 +114,7 @@ class _SelectQuestionAnswerOptionsState
                   ),
                   controller: element,
                   onChanged: (value) {
-                    checkFlowCompleteOnChange();
+                    _checkFlowComplete();
                   },
                 ),
               ),
@@ -160,7 +158,10 @@ class _SelectQuestionAnswerOptionsState
             child: SizedBox(
               width: (MediaQuery.of(context).size.width / 5) * 3,
               child: RaisedButton(
-                onPressed: () => widget.addOption(),
+                onPressed: () {
+                  widget.addOption();
+                  _checkFlowComplete();
+                },
                 child: Text("Add option"),
               ),
             ),
