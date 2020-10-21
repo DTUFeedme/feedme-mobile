@@ -27,7 +27,6 @@ class SelectQuestionAnswerOptions extends StatefulWidget {
 class _SelectQuestionAnswerOptionsState
     extends State<SelectQuestionAnswerOptions> {
   ScrollController _scrollController = ScrollController();
-  List<FocusNode> _nodes = [];
 
   void _scrollToIndex(ScrollController scrollController, double offset) {
     _scrollController.animateTo(
@@ -49,17 +48,6 @@ class _SelectQuestionAnswerOptionsState
     }
   }
 
-  void _swapNodes(int i1, int i2) {
-    FocusScope.of(context).unfocus();
-    setState(() {
-      if (i2 > i1) {
-        i2 = i2 - 1;
-      }
-      final FocusNode node = _nodes.removeAt(i1);
-      _nodes.insert(i2, node);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     double listPadding = MediaQuery.of(context).size.height / 5;
@@ -70,8 +58,6 @@ class _SelectQuestionAnswerOptionsState
         double Function() offset = () =>
             key.currentContext.size.height * index -
             ((key.currentContext.size.height / 5) * 3);
-        FocusNode node = FocusNode();
-        _nodes.add(node);
 
         return Dismissible(
           background: Container(
@@ -81,9 +67,6 @@ class _SelectQuestionAnswerOptionsState
           onDismissed: (d) {
             widget.removeOption(element);
             _checkFlowComplete();
-            setState(() {
-              _nodes.remove(index);
-            });
           },
           child: Container(
             decoration: BoxDecoration(
@@ -97,8 +80,7 @@ class _SelectQuestionAnswerOptionsState
                   vertical: 16,
                 ),
                 child: TextFormField(
-                  focusNode: node,
-                  autovalidate: true,
+                  autovalidateMode: AutovalidateMode.always,
                   validator: (value) =>
                       widget.answerOptionControllers.length < 2
                           ? 'You need at least 2 answers'
@@ -110,11 +92,12 @@ class _SelectQuestionAnswerOptionsState
                           ? TextInputAction.done
                           : TextInputAction.next,
                   onTap: () => _scrollToIndex(_scrollController, offset()),
-                  onFieldSubmitted: (value) {
+                  onEditingComplete: () {
                     if (index == widget.answerOptionControllers.length - 1) {
                       FocusScope.of(context).unfocus();
                     } else {
-                      _nodes[index + 1].requestFocus();
+                      FocusScope.of(context)
+                          .focusInDirection(TraversalDirection.down);
                       _scrollToIndex(_scrollController,
                           offset() + key.currentContext.size.height);
                     }
@@ -165,7 +148,6 @@ class _SelectQuestionAnswerOptionsState
                 scrollController: _scrollController,
                 onReorder: (i1, i2) {
                   widget.swapOptions(i1, i2);
-                  _swapNodes(i1, i2);
                 }),
           ),
         ),

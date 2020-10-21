@@ -135,7 +135,7 @@ class _AddQuestionFlowState extends State<AddQuestionFlow> {
       _index = index;
     });
     await _itemScrollController.scrollTo(
-      index: _index,
+      index: index,
       duration: Duration(milliseconds: 350),
       curve: Curves.easeInOut,
     );
@@ -161,7 +161,9 @@ class _AddQuestionFlowState extends State<AddQuestionFlow> {
         child: Container(
           decoration: BoxDecoration(
             color: _index >= index
-                ? _flowComplete[index] ? Colors.lightBlueAccent : Colors.grey
+                ? _flowComplete[index]
+                    ? Colors.lightBlueAccent
+                    : Colors.grey
                 : _flowComplete[index]
                     ? Colors.lightBlueAccent
                     : Colors.transparent,
