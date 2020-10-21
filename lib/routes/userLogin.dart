@@ -205,8 +205,8 @@ class _UserLoginState extends State<UserLogin> {
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
-                              onSubmitted: (value) {
-                                if (value.isNotEmpty)
+                              onEditingComplete: () {
+                                if (_emailController.text.isNotEmpty)
                                   FocusScope.of(context).nextFocus();
                               },
                             ),
@@ -224,7 +224,7 @@ class _UserLoginState extends State<UserLogin> {
                               obscureText: true,
                               autocorrect: false,
                               textInputAction: TextInputAction.go,
-                              onSubmitted: (value) {
+                              onEditingComplete: () {
                                 if (_emailController.text.isEmpty) {
                                   FocusScope.of(context).previousFocus();
                                 } else {
@@ -268,8 +268,8 @@ class _UserLoginState extends State<UserLogin> {
                               controller: _newEmailController,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
-                              onSubmitted: (value) {
-                                if (value.isNotEmpty)
+                              onEditingComplete: () {
+                                if (_newEmailController.text.isNotEmpty)
                                   _newPasswordNode.requestFocus();
                               },
                             ),
@@ -287,8 +287,8 @@ class _UserLoginState extends State<UserLogin> {
                               obscureText: true,
                               autocorrect: false,
                               textInputAction: TextInputAction.next,
-                              onSubmitted: (value) {
-                                if (value.isNotEmpty)
+                              onEditingComplete: () {
+                                if (_newPasswordController.text.isNotEmpty)
                                   _confirmPasswordNode.requestFocus();
                               },
                             ),
@@ -306,7 +306,7 @@ class _UserLoginState extends State<UserLogin> {
                               obscureText: true,
                               autocorrect: false,
                               textInputAction: TextInputAction.go,
-                              onSubmitted: (_) => _authUser(create: true),
+                              onEditingComplete: () => _authUser(create: true),
                             ),
                           ),
                         ],
