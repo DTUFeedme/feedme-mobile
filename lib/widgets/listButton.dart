@@ -4,12 +4,14 @@ class ListButton extends StatelessWidget {
   final void Function() onTap;
   final void Function() onLongPress;
   final Widget child;
+  final Color color;
 
   const ListButton({
     Key key,
     this.onTap,
     this.onLongPress,
     this.child,
+    this.color,
   }) : super(key: key);
 
   @override
@@ -24,11 +26,7 @@ class ListButton extends StatelessWidget {
           onTap: onTap,
           onLongPress: onLongPress,
           child: Container(
-            decoration: BoxDecoration(
-                // border: Border(
-                //   bottom: BorderSide(),
-                // ),
-                ),
+            color: color,
             child: SizedBox(
               width: double.infinity,
               child: Center(

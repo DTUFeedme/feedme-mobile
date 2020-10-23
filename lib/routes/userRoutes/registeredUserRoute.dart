@@ -83,6 +83,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       return;
     }
 
+    setState(() {
+      _roomQuestionStatistics = [];
+    });
     await updateLocation.sendReceiveLocation();
     await _getAndSetRoomFeedbackStats(_t);
     _getActiveQuestions();
@@ -136,9 +139,11 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       switch (index) {
         case 0:
           _title = "Give feedback";
+          // _getActiveQuestions();
           break;
         case 1:
           _title = "View room feedback";
+          // _getAndSetRoomFeedbackStats(_t);
           break;
         case 2:
           _title = "View your feedback";
@@ -262,6 +267,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
                       scaffoldKey: _scaffoldKey,
                       key: _buildingListKey,
                       gettingRoom: _gettingRoom,
+                      refresh: _getAndSetRoom,
                     ),
                   ),
                 ),

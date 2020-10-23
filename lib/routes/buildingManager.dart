@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
+import 'package:climify/models/questionModel.dart';
 import 'package:climify/models/roomModel.dart';
+import 'package:climify/routes/addQuestion/addQuestionFlow.dart';
 import 'package:climify/routes/buildingManagerComponents/blacklistedDevices.dart';
 import 'package:climify/routes/buildingManagerComponents/scannedDevices.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
@@ -19,10 +21,16 @@ import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 
 import 'dialogues/scanRoom.dart';
-import 'dialogues/addQuestion.dart';
 import 'dialogues/questionMenu.dart';
 
 class BuildingManager extends StatefulWidget {
+  final BuildingModel building;
+
+  const BuildingManager({
+    Key key,
+    this.building,
+  }) : super(key: key);
+
   @override
   _BuildingManagerState createState() => _BuildingManagerState();
 }
@@ -54,6 +62,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   bool _scanningBeacons = false;
   List<String> _blacklist = [];
   bool _blacklistingBeacon = false;
+  OldStateQuestionFlow _addQuestionOldState;
 
   @override
   void initState() {
@@ -79,10 +88,8 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _setBuildingState() async {
-    await Future.delayed(Duration.zero);
-    BuildingModel argBuilding = ModalRoute.of(context).settings.arguments;
     setState(() {
-      _building = argBuilding;
+      _building = widget.building;
       _gettingBeacons = true;
     });
     _questions = [];
@@ -171,28 +178,24 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _addQuestion() async {
-    await showDialogModified(
-      barrierColor: Colors.black12,
-      context: context,
-      builder: (_) {
-        return AddQuestion(
-          context,
-          textEditingController: _questionNameController,
-          controllerList: controllerList,
-          building: _building,
-          scaffoldKey: _scaffoldKey,
-        ).dialog;
-      },
-    ).then((value) {
-      setState(() {
-        _questionNameController.text = "";
-        _questionAnswerOptionsController.text = "";
-        controllerList = [];
-      });
-      //if (value ?? false) {
-      _updateQuestions();
-      //}
-    });
+    dynamic response = await Navigator.of(context).pushNamed(
+      "addQuestion",
+      arguments: {'rooms': _building.rooms, 'oldState': _addQuestionOldState},
+    );
+    if (response['oldState'] != null) {
+      _addQuestionOldState = response['oldState'];
+    }
+    if (response['apiResponse'] != null) {
+      APIResponse<Question> apiResponse = response['apiResponse'];
+      if (!apiResponse.error) {
+        SnackBarError.showErrorSnackBar(
+            "Question posted successfully", _scaffoldKey);
+        _addQuestionOldState = null;
+        _updateQuestions();
+      } else {
+        SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
+      }
+    }
   }
 
   void _addRoom() async {
@@ -317,7 +320,8 @@ class _BuildingManagerState extends State<BuildingManager> {
       if (apiResponse.errorMessage.contains('already')) {
         SnackBarError.showErrorSnackBar(apiResponse.errorMessage, _scaffoldKey);
       } else {
-        SnackBarError.showErrorSnackBar("No user found with email: $_email", _scaffoldKey);
+        SnackBarError.showErrorSnackBar(
+            "No user found with email: $_email", _scaffoldKey);
       }
     }
     return;

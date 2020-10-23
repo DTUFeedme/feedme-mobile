@@ -3,18 +3,22 @@ import 'package:climify/models/buildingModel.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/services/updateLocation.dart';
 import 'package:climify/widgets/emptyListText.dart';
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class BuildingList extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final Future gettingRoom;
+  final Future<void> Function() refresh;
 
   const BuildingList({
     Key key,
     @required this.scaffoldKey,
     @required this.gettingRoom,
+    @required this.refresh,
   }) : super(key: key);
 
   @override
@@ -56,10 +60,15 @@ class BuildingListState extends State<BuildingList> {
   void _focusBuilding(BuildingModel building) {
     Navigator.of(context)
         .pushNamed(
-          "buildingManager",
-          arguments: building,
-        )
-        .then((value) => getBuildings());
+      "buildingManager",
+      arguments: building,
+    )
+        .then((value) async {
+      UpdateLocation updateLocation =
+          Provider.of<UpdateLocation>(context, listen: false);
+      await widget.refresh();
+      getBuildings();
+    });
   }
 
   void _showDeleteBuildingDialog(BuildingModel building) {
