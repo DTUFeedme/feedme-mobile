@@ -140,7 +140,7 @@ class RestService {
       authToken = reqHeaders["x-auth-token"];
     } catch (e) {
       print(e);
-      return APIResponse<T>(error: true, errorMessage: "");
+      return APIResponse<T>(error: true, errorMessage: e.toString());
     }
 
     // Make sure authToken hasn't expired
@@ -213,7 +213,7 @@ class RestService {
       mLock = null;
       print(e);
       return APIResponse<T>(
-          data: null, error: true, errorMessage: errorMessage);
+          data: null, error: true, errorMessage: e.toString());
     }
 
     //unlock
