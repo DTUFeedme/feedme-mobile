@@ -82,8 +82,6 @@ class BluetoothServices {
       signalMap = await addStreamReadingsToSignalMap(signalMap, 2000);
     }
 
-    print(signalMap.beacons);
-
     if (signalMap.beacons.isEmpty) {
       return APIResponse<RoomModel>(error: true, errorMessage: "no_scans");
     }
