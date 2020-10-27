@@ -14,10 +14,11 @@ class UpdateLocation extends ChangeNotifier {
   bool _error = false;
   RoomModel _room = RoomModel('', '');
   String _message = '';
+  String _subMessage = '';
   String _errorMessageRoom = '';
   String _errorMessageQuestion = '';
   final List<FeedbackQuestion> _questions = [];
-  DateTime _dateTime = DateTime.now();
+  // DateTime _dateTime = DateTime.now();
 
   RestService _restService = RestService();
 
@@ -25,6 +26,7 @@ class UpdateLocation extends ChangeNotifier {
   bool get error => _error;
   RoomModel get room => _room;
   String get message => _message;
+  String get subMessage => _subMessage;
   String get errorMessageRoom => _errorMessageRoom;
   String get errorMessageQuestion => _errorMessageQuestion;
   UnmodifiableListView get questions => UnmodifiableListView(_questions);
@@ -32,12 +34,14 @@ class UpdateLocation extends ChangeNotifier {
   Future<void> sendReceiveLocation({bool fromAuto = false}) async {
     // If the background trigger attempts to scan within two minutes of a manual one, dont run it
     // This prevents interrupting a user who could actively be looking at the question list
-    if (fromAuto &&
-        DateTime.now().isBefore(_dateTime.add(Duration(minutes: 2)))) {
-      return;
-    }
 
-    _dateTime = DateTime.now();
+    //This has been disabled to enable rescanning
+    // if (fromAuto &&
+    //     DateTime.now().isBefore(_dateTime.add(Duration(minutes: 2)))) {
+    //   return;
+    // }
+
+    // _dateTime = DateTime.now();
 
     String notificationTitle = "Scanning room";
 
@@ -80,31 +84,44 @@ class UpdateLocation extends ChangeNotifier {
     APIResponse<RoomModel> apiResponse =
         await _bluetoothServices.getRoomFromScan();
 
-    notificationTitle = _room?.name != null
-        ? "Current room: ${_room.name}"
-        : "Couldn't scan room";
-
     LocalNotifications.preventSelectNotification = false;
+    bool _rescan = false;
     _error = apiResponse.error;
     if (_error) {
-      _message = "Error scanning room, tap to retry";
       _errorMessageRoom = apiResponse.errorMessage;
-      notificationTitle = "Couldn't scan room";
+      _rescan = (_errorMessageRoom == "no_scans");
+      print(_error);
+      print(_errorMessageRoom);
+      if (_rescan) {
+        _message = "Phone was locked during scan";
+        _subMessage = "Retrying scan...";
+      } else {
+        _message = "Couldn't scan room";
+        _subMessage = "Tap to rescan room";
+      }
     } else {
       _room = apiResponse.data;
       _message = "Current room: ${_room.name}";
-      notificationTitle = _message;
+      _subMessage = "Tap to rescan room";
     }
+    notificationTitle = _message;
     _scanningLocation = false;
     notifyListeners();
 
     LocalNotifications.flutterLocalNotificationsPlugin.show(
       0,
       notificationTitle,
-      "Tap to rescan room",
+      _subMessage,
       platformChannelSpecifics,
-      payload: "scan",
+      payload: _rescan ? "rescanning" : "scan",
     );
+
+    if (_rescan) {
+      print("retrying in 10 sec");
+      await Future.delayed(Duration(seconds: 10));
+      sendReceiveLocation();
+    }
+
     return;
   }
 
