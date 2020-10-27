@@ -78,6 +78,9 @@ class _AddQuestionFlowState extends State<AddQuestionFlow> {
         FocusScope.of(context).unfocus();
       }
     });
+    _rooms.forEach((room) {
+      _roomSelection[room.id] = false;
+    });
     if (_oldState != null) {
       setState(() {
         _answerOptionsControllers = [];
@@ -223,6 +226,22 @@ class _AddQuestionFlowState extends State<AddQuestionFlow> {
     });
   }
 
+  void _toggleAllRooms() {
+    if (_roomSelection.containsValue(false)) {
+      setState(() {
+        _roomSelection.forEach((key, value) {
+          _roomSelection[key] = true;
+        });
+      });
+    } else {
+      setState(() {
+        _roomSelection.forEach((key, value) {
+          _roomSelection[key] = false;
+        });
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     List<Widget> _flowWidgets = [
@@ -244,6 +263,7 @@ class _AddQuestionFlowState extends State<AddQuestionFlow> {
         rooms: _rooms,
         setFlowComplete: (b) => _flagFlowComplete(2, b),
         toggleRoom: _toggleRoom,
+        toggleAllRooms: _toggleAllRooms,
       ),
     ];
     return Scaffold(
