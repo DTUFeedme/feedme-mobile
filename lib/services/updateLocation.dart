@@ -76,7 +76,7 @@ class UpdateLocation extends ChangeNotifier {
     _room = null;
     _errorMessageRoom = '';
     _errorMessageQuestion = '';
-    // _questions.clear();
+    _questions.clear();
     _scanningLocation = true;
     _message = "Scanning room...";
     notifyListeners();
@@ -122,6 +122,7 @@ class UpdateLocation extends ChangeNotifier {
         await sendReceiveLocation();
       }
     }
+    updateQuestions();
     return;
   }
 
