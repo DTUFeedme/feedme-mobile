@@ -49,7 +49,7 @@ class QuestionList extends StatelessWidget {
                   ),
                 )
               : EmptyListText(
-                  text: 'The list of questions is empty',
+                  text: 'The list of questions is empty (pull to refresh)',
                 ),
         ),
       ),

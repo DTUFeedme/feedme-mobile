@@ -12,7 +12,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 class UpdateLocation extends ChangeNotifier {
   bool _scanningLocation = false;
   bool _error = false;
-  RoomModel _room = RoomModel('', '');
+  RoomModel _room;
   String _message = '';
   String _subMessage = '';
   String _errorMessageRoom = '';
@@ -73,10 +73,10 @@ class UpdateLocation extends ChangeNotifier {
     BluetoothServices _bluetoothServices = BluetoothServices();
 
     _error = false;
-    _room = RoomModel('', '');
+    _room = null;
     _errorMessageRoom = '';
     _errorMessageQuestion = '';
-    _questions.clear();
+    // _questions.clear();
     _scanningLocation = true;
     _message = "Scanning room...";
     notifyListeners();
@@ -103,8 +103,8 @@ class UpdateLocation extends ChangeNotifier {
       _subMessage = "Tap to rescan room";
     }
     notificationTitle = _message;
-    _scanningLocation = false;
     notifyListeners();
+    _scanningLocation = false;
 
     LocalNotifications.flutterLocalNotificationsPlugin.show(
       0,
@@ -117,14 +117,17 @@ class UpdateLocation extends ChangeNotifier {
     if (_rescan) {
       print("retrying in 10 sec");
       await Future.delayed(Duration(seconds: 10));
-      sendReceiveLocation();
+      print(_room);
+      if (_room == null) {
+        await sendReceiveLocation();
+      }
     }
-
     return;
   }
 
   Future<void> updateQuestions() async {
     _questions.clear();
+    notifyListeners();
     if (_room == null) {
       return;
     }
