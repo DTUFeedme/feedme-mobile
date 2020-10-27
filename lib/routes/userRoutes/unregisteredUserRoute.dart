@@ -83,7 +83,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
     }
 
     await updateLocation.sendReceiveLocation();
-    _getActiveQuestions();
+    // _getActiveQuestions();
   }
 
   Future<void> _getActiveQuestions() async {

@@ -88,7 +88,7 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     });
     await updateLocation.sendReceiveLocation();
     await _getAndSetRoomFeedbackStats(_t);
-    _getActiveQuestions();
+    // _getActiveQuestions();
     return;
   }
 
