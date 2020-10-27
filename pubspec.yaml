@@ -33,6 +33,7 @@ dependencies:
   background_fetch: ^0.6.0
   flutter_local_notifications: ^1.4.4+4
   scrollable_positioned_list: ^0.1.8
+  is_lock_screen: ^1.0.0
 
 dev_dependencies:
   flutter_test:

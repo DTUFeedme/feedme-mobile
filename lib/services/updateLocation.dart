@@ -8,6 +8,7 @@ import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:is_lock_screen/is_lock_screen.dart';
 
 class UpdateLocation extends ChangeNotifier {
   bool _scanningLocation = false;
@@ -17,7 +18,11 @@ class UpdateLocation extends ChangeNotifier {
   String _subMessage = '';
   String _errorMessageRoom = '';
   String _errorMessageQuestion = '';
+  int retries = 0;
   final List<FeedbackQuestion> _questions = [];
+
+  final int retrySeconds = 10;
+  final int retryLimit = 15;
   // DateTime _dateTime = DateTime.now();
 
   RestService _restService = RestService();
@@ -88,8 +93,9 @@ class UpdateLocation extends ChangeNotifier {
     bool _rescan = false;
     _error = apiResponse.error;
     if (_error) {
+      print(retries);
       _errorMessageRoom = apiResponse.errorMessage;
-      _rescan = (_errorMessageRoom == "no_scans");
+      _rescan = await isLockScreen() && (retries < retryLimit);
       if (_rescan) {
         _message = "Phone was locked during scan";
         _subMessage = "Retrying scan...";
@@ -98,6 +104,7 @@ class UpdateLocation extends ChangeNotifier {
         _subMessage = "Tap to rescan room";
       }
     } else {
+      retries = 0;
       _room = apiResponse.data;
       _message = "Current room: ${_room.name}";
       _subMessage = "Tap to rescan room";
@@ -115,10 +122,9 @@ class UpdateLocation extends ChangeNotifier {
     );
 
     if (_rescan) {
-      print("retrying in 10 sec");
-      await Future.delayed(Duration(seconds: 10));
-      print(_room);
+      await Future.delayed(Duration(seconds: retrySeconds));
       if (_room == null) {
+        retries = retries + 1;
         await sendReceiveLocation();
       }
     }
