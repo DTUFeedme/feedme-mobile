@@ -90,8 +90,6 @@ class UpdateLocation extends ChangeNotifier {
     if (_error) {
       _errorMessageRoom = apiResponse.errorMessage;
       _rescan = (_errorMessageRoom == "no_scans");
-      print(_error);
-      print(_errorMessageRoom);
       if (_rescan) {
         _message = "Phone was locked during scan";
         _subMessage = "Retrying scan...";
