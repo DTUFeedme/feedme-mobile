@@ -90,7 +90,7 @@ class ScanRoom {
               setProgress(progress + 1 / 9);
               setState(() {});
             } else {
-              setProgress(null);
+              setProgress(0);
               timer.cancel();
               if (_dialogMounted()) {
                 setState(() {});
@@ -162,23 +162,23 @@ class ScanRoom {
         }
 
         return SimpleDialog(
-          title: Text("Scan ${room.name}"),
+          title: Text("Scanning: ${room.name}"),
           children: <Widget>[
             Text(
-              "Add bluetooth location data from the bluetooth beacons",
+              "Add bluetooth location data from the bluetooth beacons by scanning the current room",
             ),
             ProgressButton(
               text: getScanning()
                   ? getStopping()
                       ? "Stopping scan..."
-                      : "Stop scanning"
-                  : "Start Scanning",
+                      : "Stop scanning room"
+                  : "Start scanning room",
               onPressed: () async => _toggleScan(),
               showBar: getScanning(),
               progress: getProgress(),
             ),
             Text(
-              "Additional scans completed: ${getNumberOfScans()}",
+              "Scans completed: ${getNumberOfScans()}",
             ),
             RaisedButton(
               color: !getScanning() ? Colors.green : Colors.red,
