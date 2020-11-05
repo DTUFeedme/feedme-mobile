@@ -50,14 +50,15 @@ class _BuildingManagerState extends State<BuildingManager> {
   List<Tuple2<String, int>> _beacons = [];
   bool _scanningSignalMap = false;
   bool _gettingBeacons = false;
+  bool _stoppingScan = false;
   int _signalMapScans = 0;
+  double _progress = 0.0;
+  Timer _progressTimer;
   // SignalMap _signalMap;
   String _currentlyConfirming = "";
   int _visibleIndex = 0;
   String _title = "Manage rooms";
   final _adminController = TextEditingController();
-  final _questionNameController = TextEditingController();
-  final _questionAnswerOptionsController = TextEditingController();
   List<TextEditingController> controllerList = [];
   bool _scanningBeacons = false;
   List<String> _blacklist = [];
@@ -241,10 +242,18 @@ class _BuildingManagerState extends State<BuildingManager> {
           setScanning: (b) => setState(() {
             _scanningSignalMap = b;
           }),
+          getScanning: () => _scanningSignalMap,
+          setStopping: (b) => setState(() {
+            _stoppingScan = b;
+          }),
+          getStopping: () => _stoppingScan,
+          setProgress: (d) => setState(() {
+            _progress = d;
+          }),
+          getProgress: () => _progress,
           incrementScans: () => setState(() {
             _signalMapScans++;
           }),
-          getScanning: () => _scanningSignalMap,
           getNumberOfScans: () => _signalMapScans,
           blacklist: _blacklist,
         ).dialog;

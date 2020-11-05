@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/roomModel.dart';
@@ -5,10 +7,9 @@ import 'package:climify/models/signalMap.dart';
 import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
-import 'package:climify/widgets/submitButton.dart';
+import 'package:climify/widgets/progressButton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
 
 class ScanRoom {
   final BuildContext context;
@@ -16,8 +17,12 @@ class ScanRoom {
   final BuildingModel building;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final Function(bool) setScanning;
-  final Function incrementScans;
   final bool Function() getScanning;
+  final Function(bool) setStopping;
+  final bool Function() getStopping;
+  final Function(double) setProgress;
+  final double Function() getProgress;
+  final Function incrementScans;
   final int Function() getNumberOfScans;
   final List<String> blacklist;
   StatefulBuilder scanRoomDialog;
@@ -32,8 +37,12 @@ class ScanRoom {
     @required this.building,
     @required this.scaffoldKey,
     @required this.setScanning,
-    @required this.incrementScans,
     @required this.getScanning,
+    @required this.setStopping,
+    @required this.getStopping,
+    @required this.setProgress,
+    @required this.getProgress,
+    @required this.incrementScans,
     @required this.getNumberOfScans,
     @required this.blacklist,
   }) {
@@ -42,9 +51,11 @@ class ScanRoom {
     scanRoomDialog = StatefulBuilder(
       key: _dialogKey,
       builder: (context, setState) {
+        final int _scanMilliseconds = 3000;
         bool _dialogMounted() => _dialogKey?.currentState?.mounted ?? false;
+        Timer _scanTimer;
 
-        void _scan() async {
+        Future<void> _scan() async {
           if (!_dialogMounted()) {
             return;
           }
@@ -52,11 +63,9 @@ class ScanRoom {
           if (await _bluetooth.isOn == false) {
             SnackBarError.showErrorSnackBar("Bluetooth is not on", scaffoldKey);
             setScanning(false);
+            setState(() {});
             return;
           }
-
-          setScanning(true);
-          setState(() {});
 
           // SignalMap signalMap =
           //     SignalMap.withInitBeacons(beacons, buildingId: building.id);
@@ -68,9 +77,28 @@ class ScanRoom {
             return;
           }
 
+          setProgress(0);
+          setState(() {});
+
+          if (_scanTimer != null) {
+            _scanTimer.cancel();
+          }
+          _scanTimer = Timer.periodic(
+              Duration(milliseconds: _scanMilliseconds ~/ 9), (timer) {
+            if (_dialogMounted() && getProgress() < 0.99) {
+              setProgress(getProgress() + 1 / 9);
+              setState(() {});
+            } else {
+              setProgress(0);
+              timer.cancel();
+              if (_dialogMounted()) {
+                setState(() {});
+              }
+            }
+          });
           signalMap = await _bluetooth.addStreamReadingsToSignalMap(
             signalMap,
-            3000,
+            _scanMilliseconds,
             blacklist: blacklist,
           );
 
@@ -81,8 +109,7 @@ class ScanRoom {
                 await _restService.postSignalMap(signalMap, room.id);
             if (!apiResponse.error) {
               incrementScans();
-              SnackBarError.showErrorSnackBar(
-                  "Added scan to ${room.name}", scaffoldKey);
+              print(signalMap.avgBeaconSignals);
             } else {
               SnackBarError.showErrorSnackBar(
                   apiResponse.errorMessage, scaffoldKey);
@@ -90,8 +117,34 @@ class ScanRoom {
           } else {
             SnackBarError.showErrorSnackBar("No beacons scanned", scaffoldKey);
           }
+        }
 
-          if (_dialogMounted()) {
+        void _toggleScan() async {
+          if (!_dialogMounted()) {
+            return;
+          }
+          if (getStopping()) {
+            return;
+          }
+          if (getScanning()) {
+            setStopping(true);
+            setState(() {});
+          } else {
+            setScanning(true);
+            setState(() {});
+            while (_dialogMounted() && !getStopping()) {
+              await _scan();
+              if (_dialogMounted() && !getStopping()) {
+                await Future.delayed(
+                    Duration(milliseconds: _scanMilliseconds ~/ 2));
+              } else {
+                break;
+              }
+            }
+            if (!_dialogMounted()) {
+              return;
+            }
+            setStopping(false);
             setScanning(false);
             setState(() {});
           }
@@ -113,10 +166,15 @@ class ScanRoom {
             Text(
               "Add bluetooth location data from the bluetooth beacons",
             ),
-            SubmitButton(
-              text:
-                  getScanning() ? "Adding location data" : "Add location data",
-              onPressed: () async => getScanning() ? print("already") : _scan(),
+            ProgressButton(
+              text: getScanning()
+                  ? getStopping()
+                      ? "Stopping scan..."
+                      : "Stop scanning"
+                  : "Start Scanning",
+              onPressed: () async => _toggleScan(),
+              showBar: getScanning(),
+              progress: getProgress(),
             ),
             Text(
               "Additional scans completed: ${getNumberOfScans()}",

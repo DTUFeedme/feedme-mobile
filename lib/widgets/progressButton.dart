@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
-class SubmitButton extends StatefulWidget {
+class ProgressButton extends StatefulWidget {
   final bool enabled;
+  final bool showBar;
+  final double progress;
   final Future<void> Function() onPressed;
   final String text;
   final double textSize;
 
-  const SubmitButton({
+  const ProgressButton({
     this.enabled = true,
+    this.showBar = false,
+    this.progress,
     @required this.onPressed,
     this.text = "Submit",
     this.textSize = 16,
@@ -15,10 +19,10 @@ class SubmitButton extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _SubmitButtonState createState() => _SubmitButtonState();
+  _ProgressButtonState createState() => _ProgressButtonState();
 }
 
-class _SubmitButtonState extends State<SubmitButton> {
+class _ProgressButtonState extends State<ProgressButton> {
   bool waitingForResponse = false;
 
   @override
@@ -46,11 +50,12 @@ class _SubmitButtonState extends State<SubmitButton> {
               ),
             ),
             Visibility(
-              visible: waitingForResponse,
+              visible: widget.showBar,
               maintainSize: true,
               maintainAnimation: true,
               maintainState: true,
               child: LinearProgressIndicator(
+                value: widget.progress,
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
               ),
             ),
@@ -59,13 +64,7 @@ class _SubmitButtonState extends State<SubmitButton> {
         ),
         onPressed: () async {
           if (widget.enabled && !waitingForResponse) {
-            setState(() {
-              waitingForResponse = true;
-            });
-            await widget.onPressed();
-            setState(() {
-              waitingForResponse = false;
-            });
+            widget.onPressed();
           }
         });
   }

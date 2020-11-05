@@ -102,8 +102,7 @@ class BluetoothServices {
       Stream<List<Tuple2<String, int>>> stream;
       flutterBlue
           .startScan(timeout: Duration(milliseconds: 3750))
-          .then((_) => print("stop the stream"));
-      flutterBlue.stopScan();
+          .then((_) => flutterBlue.stopScan());
       stream = flutterBlue.scanResults.transform(StreamTransformer<
           List<ScanResult>, List<Tuple2<String, int>>>.fromHandlers(
         handleData: (data, sink) {
