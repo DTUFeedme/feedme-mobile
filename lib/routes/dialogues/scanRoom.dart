@@ -85,11 +85,12 @@ class ScanRoom {
           }
           _scanTimer = Timer.periodic(
               Duration(milliseconds: _scanMilliseconds ~/ 9), (timer) {
-            if (_dialogMounted() && getProgress() < 0.99) {
-              setProgress(getProgress() + 1 / 9);
+            double progress = getProgress() ?? 0;
+            if (_dialogMounted() && progress < 0.99) {
+              setProgress(progress + 1 / 9);
               setState(() {});
             } else {
-              setProgress(0);
+              setProgress(null);
               timer.cancel();
               if (_dialogMounted()) {
                 setState(() {});

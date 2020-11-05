@@ -231,32 +231,36 @@ class _BuildingManagerState extends State<BuildingManager> {
       return;
     }
     await showDialogModified(
+      barrierDismissible: false,
       barrierColor: Colors.black12,
       context: context,
       builder: (_) {
-        return ScanRoom(
-          context,
-          room: room,
-          building: _building,
-          scaffoldKey: _scaffoldKey,
-          setScanning: (b) => setState(() {
-            _scanningSignalMap = b;
-          }),
-          getScanning: () => _scanningSignalMap,
-          setStopping: (b) => setState(() {
-            _stoppingScan = b;
-          }),
-          getStopping: () => _stoppingScan,
-          setProgress: (d) => setState(() {
-            _progress = d;
-          }),
-          getProgress: () => _progress,
-          incrementScans: () => setState(() {
-            _signalMapScans++;
-          }),
-          getNumberOfScans: () => _signalMapScans,
-          blacklist: _blacklist,
-        ).dialog;
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: ScanRoom(
+            context,
+            room: room,
+            building: _building,
+            scaffoldKey: _scaffoldKey,
+            setScanning: (b) => setState(() {
+              _scanningSignalMap = b;
+            }),
+            getScanning: () => _scanningSignalMap,
+            setStopping: (b) => setState(() {
+              _stoppingScan = b;
+            }),
+            getStopping: () => _stoppingScan,
+            setProgress: (d) => setState(() {
+              _progress = d;
+            }),
+            getProgress: () => _progress,
+            incrementScans: () => setState(() {
+              _signalMapScans++;
+            }),
+            getNumberOfScans: () => _signalMapScans,
+            blacklist: _blacklist,
+          ).dialog,
+        );
       },
     );
   }
