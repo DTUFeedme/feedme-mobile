@@ -21,8 +21,8 @@ class UpdateLocation extends ChangeNotifier {
   int retries = 0;
   final List<FeedbackQuestion> _questions = [];
 
-  final int retrySeconds = 10;
-  final int retryLimit = 15;
+  final int retrySeconds = 13; // total 15, 2 sec scan
+  final int retryLimit = 40; // scan for 10 minutes
   // DateTime _dateTime = DateTime.now();
 
   RestService _restService = RestService();
@@ -37,6 +37,8 @@ class UpdateLocation extends ChangeNotifier {
   UnmodifiableListView get questions => UnmodifiableListView(_questions);
 
   Future<void> sendReceiveLocation({bool fromAuto = false}) async {
+    // The following has been disabled to enable rescanning
+
     // If the background trigger attempts to scan within two minutes of a manual one, dont run it
     // This prevents interrupting a user who could actively be looking at the question list
 
