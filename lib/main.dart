@@ -1,6 +1,7 @@
 import 'package:background_fetch/background_fetch.dart';
 import 'package:climify/routes/addQuestion/addQuestionFlow.dart';
 import 'package:climify/routes/buildingManager.dart';
+import 'package:climify/routes/scanRoom/scanRoom.dart';
 import 'package:climify/routes/splashScreen.dart';
 import 'package:climify/routes/userLogin.dart';
 import 'package:climify/routes/userRoutes/registeredUserRoute.dart';
@@ -143,6 +144,9 @@ class _ClimifyAppState extends State<ClimifyApp> {
           "addQuestion": (context) => AddQuestionFlow(
                 arguments: settings.arguments,
               ),
+          "scanRoom": (context) => ScanRoomFlow(
+            arguments: settings.arguments,
+          ),
         };
         WidgetBuilder builder = routes[settings.name];
         return MaterialPageRoute(builder: (context) => builder(context));
