@@ -106,6 +106,7 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
           _title = "Give feedback";
           break;
         case 1:
+          
           _title = "View your feedback";
           break;
         default:
@@ -175,7 +176,6 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
                 ),
               ),
               Visibility(
-                maintainState: true,
                 visible: _visibleIndex == 1,
                 child: Container(
                   child: _fetchingTokens
