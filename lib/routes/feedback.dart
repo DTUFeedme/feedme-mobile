@@ -97,39 +97,6 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
                       ),
                     ),
                   );
-                  // return widget.question.answerOptions
-                  //     .asMap()
-                  //     .map(
-                  //       (int i, dynamic option) {
-                  //         return MapEntry(
-                  //           i,
-                  //           Container(
-                  //             margin: EdgeInsets.symmetric(
-                  //               vertical: 6,
-                  //               horizontal: 40,
-                  //             ),
-                  //             child: RoundedBox(
-                  //               onTap: () => _setChosenOption(i),
-                  //               decoration: BoxDecoration(
-                  //                 color: i == _chosenOption
-                  //                     ? Colors.grey
-                  //                     : Colors.transparent,
-                  //               ),
-                  //               child: Container(
-                  //                 child: Center(
-                  //                   child: Text(
-                  //                     option.value,
-                  //                     style: TextStyles.optionStyle,
-                  //                   ),
-                  //                 ),
-                  //               ),
-                  //             ),
-                  //           ),
-                  //         );
-                  //       },
-                  //     )
-                  //     .values
-                  //     .toList();
                 },
               ),
             ),
