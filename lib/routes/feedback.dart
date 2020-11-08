@@ -60,62 +60,64 @@ class _FeedbackWidgetState extends State<FeedbackWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: <Widget>[
-            Container(
-              child: Text(
-                widget.question.value,
-                style: TextStyles.titleStyle,
+            Flexible(
+              flex: 2,
+              child: Container(
+                child: Text(
+                  widget.question.value,
+                  style: TextStyles.titleStyle,
+                ),
+                margin: EdgeInsets.only(bottom: 8),
               ),
-              margin: EdgeInsets.only(bottom: 8),
             ),
-            Column(
-              children: widget.question.answerOptions
-                  .asMap()
-                  .map(
-                    (int i, dynamic option) {
-                      return MapEntry(
-                        i,
-                        Container(
-                          margin: EdgeInsets.symmetric(
-                            vertical: 6,
-                            horizontal: 40,
-                          ),
-                          child: RoundedBox(
-                            onTap: () => _setChosenOption(i),
-                            decoration: BoxDecoration(
-                              color: i == _chosenOption
-                                  ? Colors.grey
-                                  : Colors.transparent,
-                            ),
-                            child: Container(
-                              child: Center(
-                                child: Text(
-                                  option.value,
-                                  style: TextStyles.optionStyle,
-                                ),
-                              ),
-                            ),
+            Flexible(
+              flex: 10,
+              child: ListView.builder(
+                itemCount: widget.question.answerOptions.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 40,
+                    ),
+                    child: RoundedBox(
+                      onTap: () => _setChosenOption(index),
+                      decoration: BoxDecoration(
+                        color: index == _chosenOption
+                            ? Colors.grey
+                            : Colors.transparent,
+                      ),
+                      child: Container(
+                        child: Center(
+                          child: Text(
+                            widget.question.answerOptions[index].value,
+                            style: TextStyles.optionStyle,
                           ),
                         ),
-                      );
-                    },
-                  )
-                  .values
-                  .toList(),
-            ),
-            Container(
-              margin: EdgeInsets.symmetric(
-                vertical: 10,
-                horizontal: 96,
+                      ),
+                    ),
+                  );
+                },
               ),
-              child: RoundedBox(
-                onTap: _sendFeedback,
-                decoration: BoxDecoration(
-                  color: _chosenOption == null ? Colors.blue : Colors.lightBlue,
+            ),
+            Flexible(
+              flex: 2,
+              child: Container(
+                margin: EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 96,
                 ),
-                child: Center(
-                  child: Text(
-                    "Send feedback",
-                    style: TextStyles.bodyStyle.copyWith(color: Colors.white),
+                child: RoundedBox(
+                  onTap: _sendFeedback,
+                  decoration: BoxDecoration(
+                    color:
+                        _chosenOption == null ? Colors.blue : Colors.lightBlue,
+                  ),
+                  child: Center(
+                    child: Text(
+                      "Send feedback",
+                      style: TextStyles.bodyStyle.copyWith(color: Colors.white),
+                    ),
                   ),
                 ),
               ),
