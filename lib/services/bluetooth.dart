@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
@@ -19,6 +20,14 @@ class BluetoothServices {
   final FlutterBlue flutterBlue = FlutterBlue.instance;
   bool _gettingRoom = false;
   bool _scanning = false;
+
+  Future<void> stopScan() async {
+    await flutterBlue.stopScan();
+  }
+
+  Future<void> startScan() async {
+    await flutterBlue.startScan();
+  }
 
   Future<SignalMap> addStreamReadingsToSignalMap(
     SignalMap signalMap,
@@ -54,6 +63,42 @@ class BluetoothServices {
       return Stream.empty();
     }
     return flutterBlue.scanResults;
+  }
+
+  Future<Stream<SignalMap>> continousScanStream({blacklist = const []}) async {
+    if (await flutterBlue.isOn == false || _scanning) {
+      return Stream.empty();
+    }
+
+    try {
+      flutterBlue.startScan(scanMode: ScanMode.lowPower);
+      List<ScanResult> results = [];
+      var sub = flutterBlue.scanResults.listen(
+        (event) {
+          results = event;
+        },
+      );
+      Stream<SignalMap> stream =
+          Stream.periodic(Duration(milliseconds: 2650), (x) {
+        SignalMap signalMap = SignalMap();
+        List<ScanResult> currentResults = results;
+        results = [];
+        sub.cancel();
+        sub = flutterBlue.scanResults.listen(
+          (event) {
+            results = event;
+          },
+        );
+        currentResults.forEach((element) {
+          signalMap.addBeaconReading(getBeaconName(element), getRSSI(element));
+        });
+        return signalMap;
+      });
+      return stream;
+    } catch (e) {
+      print(e);
+      return Stream.empty();
+    }
   }
 
   Future<APIResponse<RoomModel>> getRoomFromScan({

@@ -95,7 +95,7 @@ class UpdateLocation extends ChangeNotifier {
     bool _rescan = false;
     _error = apiResponse.error;
     if (_error) {
-      print(retries);
+      print("retry number: $retries");
       _errorMessageRoom = apiResponse.errorMessage;
       _rescan = await isLockScreen() && (retries < retryLimit);
       if (_rescan) {

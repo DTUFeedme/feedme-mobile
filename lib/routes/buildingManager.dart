@@ -47,12 +47,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   List<FeedbackQuestion> _questions = [];
   TextEditingController _newRoomNameController = TextEditingController();
   List<Tuple2<String, int>> _beacons = [];
-  bool _scanningSignalMap = false;
   bool _gettingBeacons = false;
-  bool _stoppingScan = false;
-  int _signalMapScans = 0;
-  double _progress = 0.0;
-  Timer _progressTimer;
   // SignalMap _signalMap;
   String _currentlyConfirming = "";
   int _visibleIndex = 0;
@@ -63,6 +58,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   List<String> _blacklist = [];
   bool _blacklistingBeacon = false;
   OldStateQuestionFlow _addQuestionOldState;
+  StreamSubscription _sub;
 
   @override
   void initState() {
@@ -134,7 +130,12 @@ class _BuildingManagerState extends State<BuildingManager> {
       _beacons = [];
     });
 
-    _bluetooth.getNearbyBeaconData().listen((event) {
+    var now = DateTime.now();
+
+    _sub = _bluetooth.getNearbyBeaconData().listen((event) {
+      if (now.add(Duration(milliseconds: 1000)).isBefore(DateTime.now())) {
+        now = DateTime.now();
+      }
       setState(() {
         _beacons = event;
       });
@@ -147,6 +148,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     setState(() {
       _gettingBeacons = false;
     });
+    _sub.cancel();
     return;
   }
 
@@ -221,10 +223,6 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _addScans(RoomModel room) async {
-    setState(() {
-      _scanningSignalMap = false;
-      _signalMapScans = 0;
-    });
     if (!await _bluetooth.isOn) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
       return;
@@ -361,7 +359,7 @@ class _BuildingManagerState extends State<BuildingManager> {
       //_setSubtitle();
       switch (index) {
         case 0:
-          _title = "Managing rooms";
+          _title = "Manage rooms";
           break;
         case 1:
           _title = "Manage questions";
@@ -372,10 +370,10 @@ class _BuildingManagerState extends State<BuildingManager> {
             // this method shows the indicator the first time for UX
             _refreshBeaconKey?.currentState?.show();
           }
-          _title = "View nearby beacons";
+          _title = "Manage beacons";
           break;
         case 3:
-          _title = "Make user admin";
+          _title = "Make users admin";
           break;
         default:
       }
