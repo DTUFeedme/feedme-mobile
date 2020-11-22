@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:climify/services/jwtDecoder.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:flutter/material.dart';
+import 'package:in_app_update/in_app_update.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -21,6 +24,19 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _nextScreen() async {
+    // Check version:
+
+    if (Platform.isAndroid){
+      try{
+        AppUpdateInfo info = await InAppUpdate.checkForUpdate();
+        if (info.updateAvailable){
+          await InAppUpdate.performImmediateUpdate();
+        }
+      } catch (e) {
+
+      }
+    }
+
     bool alreadyUser = await _sharedPrefsHelper.getStartOnLogin();
     // await Future.delayed(Duration(milliseconds: 1250));
 

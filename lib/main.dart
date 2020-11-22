@@ -6,8 +6,6 @@ import 'package:climify/routes/userLogin.dart';
 import 'package:climify/routes/userRoutes/registeredUserRoute.dart';
 import 'package:climify/routes/userRoutes/unregisteredUserRoute.dart';
 import 'package:climify/services/updateLocation.dart';
-
-//import 'package:climify/test/testQuestion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -42,6 +40,7 @@ void main() async {
   });
   InitializationSettings initializationSettings = InitializationSettings(
       initializationSettingsAndroid, initializationSettingsIOS);
+
   await LocalNotifications.flutterLocalNotificationsPlugin.initialize(
     initializationSettings,
     onSelectNotification: (payload) => selectNotification(
@@ -94,20 +93,6 @@ Future selectNotification(String payload, UpdateLocation updateLocation) async {
   }
   return;
 }
-
-// class MyApp extends StatelessWidget {
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Climify Demo',
-//       theme: ThemeData(
-//         primarySwatch: Colors.blue,
-//       ),
-//       home: MyHomePage(title: 'Climify Feedback Tech Demo'),
-//     );
-//   }
-// }
 
 class ClimifyApp extends StatefulWidget {
   ClimifyApp({Key key, this.title}) : super(key: key);
