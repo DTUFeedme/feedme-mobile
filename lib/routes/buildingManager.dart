@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:climify/models/api_response.dart';
+import 'package:climify/models/beaconModel.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/questionModel.dart';
@@ -10,7 +11,7 @@ import 'package:climify/routes/buildingManagerComponents/blacklistedDevices.dart
 import 'package:climify/routes/buildingManagerComponents/scannedDevices.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
 import 'package:climify/routes/dialogues/roomMenu.dart';
-import 'package:climify/services/bluetooth.dart';
+import 'package:climify/services/bluetoothBeacons.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
@@ -46,7 +47,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   List<FeedbackQuestion> _questionsRealList = [];
   List<FeedbackQuestion> _questions = [];
   TextEditingController _newRoomNameController = TextEditingController();
-  List<Tuple2<String, int>> _beacons = [];
+  List<BeaconModel> _beacons = [];
   bool _gettingBeacons = false;
   // SignalMap _signalMap;
   String _currentlyConfirming = "";
@@ -64,6 +65,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   void initState() {
     super.initState();
     _bluetooth = BluetoothServices();
+    _initBeaconScan();
     _restService = RestService();
     _setBuildingState();
   }
@@ -73,6 +75,7 @@ class _BuildingManagerState extends State<BuildingManager> {
     // Clean up the controller when the widget is disposed.
     _adminController.dispose();
     _newRoomNameController.dispose();
+    _bluetooth.dispose();
     super.dispose();
   }
 
@@ -122,33 +125,15 @@ class _BuildingManagerState extends State<BuildingManager> {
     return;
   }
 
-  Future<void> _updateBeacons() async {
-    if (_gettingBeacons) return;
-
-    setState(() {
-      _gettingBeacons = true;
-      _beacons = [];
-    });
-
-    var now = DateTime.now();
-
-    _sub = _bluetooth.getNearbyBeaconData().listen((event) {
-      if (now.add(Duration(milliseconds: 1000)).isBefore(DateTime.now())) {
-        now = DateTime.now();
-      }
-      setState(() {
-        _beacons = event;
-      });
-    });
-
-    // FlutterBlue does not properly close streams, so this duration will have to match the timeout
-    // found in the bluetooth.dart function getNearbyBeaconData
-    await Future.delayed(Duration(milliseconds: 3750));
-
-    setState(() {
-      _gettingBeacons = false;
-    });
-    _sub.cancel();
+  Future<void> _initBeaconScan() async {
+    Stream<List<BeaconModel>> stream = await _bluetooth.scanForBeacons();
+    stream.listen(
+      (event) {
+        setState(() {
+          _beacons = event;
+        });
+      },
+    );
     return;
   }
 
@@ -223,7 +208,7 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _addScans(RoomModel room) async {
-    if (!await _bluetooth.isOn) {
+    if (!true) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
       return;
     }
@@ -499,20 +484,16 @@ class _BuildingManagerState extends State<BuildingManager> {
                   children: <Widget>[
                     Expanded(
                       flex: 6,
-                      child: RefreshIndicator(
-                        key: _refreshBeaconKey,
-                        onRefresh: _updateBeacons,
-                        child: _beacons.isNotEmpty
-                            ? ScannedDevices(
-                                _beacons,
-                                _blacklist,
-                                _getSignalStrengthString,
-                                _toggleBlacklistBeacon,
-                              )
-                            : EmptyListText(
-                                text: 'No beacons scanned',
-                              ),
-                      ),
+                      child: _beacons.isNotEmpty
+                          ? ScannedDevices(
+                              _beacons,
+                              _blacklist,
+                              _getSignalStrengthString,
+                              _toggleBlacklistBeacon,
+                            )
+                          : EmptyListText(
+                              text: 'No beacons scanned',
+                            ),
                     ),
                     _blacklist.isNotEmpty
                         ? Expanded(
@@ -530,7 +511,6 @@ class _BuildingManagerState extends State<BuildingManager> {
                         ? Expanded(
                             flex: 3,
                             child: BlacklistedDevices(
-                              _beacons,
                               _blacklist,
                               _toggleBlacklistBeacon,
                             ),

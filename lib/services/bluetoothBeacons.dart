@@ -1,196 +1,127 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:beacons_plugin/beacons_plugin.dart';
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/beaconModel.dart';
 import 'package:climify/models/roomModel.dart';
 import 'package:climify/models/signalMap.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:tuple/tuple.dart';
 
 class BluetoothServices {
-  BluetoothServices() {
-    flutterBlue.isScanning.listen((event) {
-      _scanning = event;
-    });
+  final StreamController<String> beaconEventsController =
+      StreamController<String>.broadcast();
+  final List<BeaconModel> beacons = [];
+
+  Future<void> dispose() async {
+    await BeaconsPlugin.stopMonitoring;
+    await beaconEventsController.close();
+    return;
   }
 
-  final FlutterBlue flutterBlue = FlutterBlue.instance;
-  bool _gettingRoom = false;
-  bool _scanning = false;
+  Future<void> startScanner() async {
+    BeaconsPlugin.listenToBeacons(beaconEventsController);
+    // if you need to monitor also major and minor use the original version and not this fork
+    // BeaconsPlugin.addRegion("kontakt", "01022022-f88f-0000-00ae-9605fd9bb620")
+    //     .then((result) {
+    //   print(result);
+    // });
 
-  Future<void> stopScan() async {
-    await flutterBlue.stopScan();
-  }
+    //Send 'true' to run in background [OPTIONAL]
+    await BeaconsPlugin.runInBackground(true);
 
-  Future<void> startScan() async {
-    await flutterBlue.startScan();
-  }
-
-  Future<SignalMap> addStreamReadingsToSignalMap(
-    SignalMap signalMap,
-    int timeoutms, {
-    List<String> blacklist = const [],
-  }) async {
-    Stream<List<ScanResult>> scanResultStream =
-        await scanForDevicesStream(2000);
-    scanResultStream.listen((List<ScanResult> scanResultList) {
-      scanResultList.forEach((ScanResult scanResult) {
-        String beaconName = getBeaconName(scanResult);
-        signalMap.addBeaconReading(
-          beaconName,
-          getRSSI(scanResult),
-          blacklist: blacklist,
-        );
+    //IMPORTANT: Start monitoring once scanner is setup & ready (only for Android)
+    if (Platform.isAndroid) {
+      BeaconsPlugin.channel.setMethodCallHandler((call) async {
+        if (call.method == 'scannerReady') {
+          await BeaconsPlugin.startMonitoring;
+        }
       });
-    });
-    await Future.delayed(Duration(milliseconds: timeoutms));
-    return signalMap;
+    } else if (Platform.isIOS) {
+      await BeaconsPlugin.startMonitoring;
+    }
+    return;
   }
 
-  Future<Stream<List<BeaconModel>>> scanForBeacons(){
-    
+  Future<Stream<List<BeaconModel>>> scanForBeacons() async {
+    await startScanner();
+    BeaconsPlugin.startMonitoring;
+    beacons.clear();
+
+    Stream<List<BeaconModel>> transformedStream =
+        beaconEventsController.stream.transform(StreamTransformer.fromHandlers(
+      handleData: (data, sink) {
+        try {
+          Map<String, dynamic> beaconJson = json.decode(data);
+          BeaconModel newBeacon = BeaconModel(
+              "${beaconJson['major']} - ${beaconJson['minor']}",
+              int.parse(beaconJson['rssi']));
+          int foundIndex =
+              beacons.indexWhere((element) => element.name == newBeacon.name);
+          if (foundIndex != -1) {
+            beacons[foundIndex] = newBeacon;
+          } else {
+            beacons.add(newBeacon);
+          }
+          sink.add(beacons);
+        } catch (e) {
+          sink.addError(e);
+        }
+      },
+      handleDone: (sink) => sink.close(),
+      handleError: (error, stackTrace, sink) => sink.addError(error),
+    ));
+    return transformedStream;
   }
 
-  Future<Stream<List<ScanResult>>> scanForDevicesStream(int timeoutms) async {
-    if (await flutterBlue.isOn == false || _scanning) {
-      return Stream.empty();
-    }
-    try {
-      flutterBlue
-          .startScan(timeout: Duration(milliseconds: timeoutms))
-          .then((_) => flutterBlue.stopScan());
-    } catch (e) {
-      print(e);
-      return Stream.empty();
-    }
-    return flutterBlue.scanResults;
-  }
-
-  Future<Stream<SignalMap>> continousScanStream({blacklist = const []}) async {
-    if (await flutterBlue.isOn == false || _scanning) {
-      return Stream.empty();
-    }
-
-    try {
-      flutterBlue.startScan(scanMode: ScanMode.lowPower);
-      List<ScanResult> results = [];
-      var sub = flutterBlue.scanResults.listen(
-        (event) {
-          results = event;
-        },
-      );
-      Stream<SignalMap> stream =
-          Stream.periodic(Duration(milliseconds: 2650), (x) {
-        SignalMap signalMap = SignalMap();
-        List<ScanResult> currentResults = results;
-        results = [];
-        sub.cancel();
-        sub = flutterBlue.scanResults.listen(
-          (event) {
-            results = event;
-          },
-        );
-        currentResults.forEach((element) {
-          signalMap.addBeaconReading(getBeaconName(element), getRSSI(element));
+  Future<Stream<SignalMap>> scanForSignalMaps(int intervalMS, {List<String> blacklist = const []}) async {
+    Stream<List<BeaconModel>> beaconStream = await scanForBeacons();
+    SignalMap signalMap = SignalMap();
+    beaconStream.listen(
+      (data) {
+        data.forEach((element) {
+          signalMap.addBeaconReading(element.name, element.rssi, blacklist: blacklist);
         });
-        return signalMap;
-      });
-      return stream;
-    } catch (e) {
-      print(e);
-      return Stream.empty();
-    }
+      },
+    );
+    return Stream.periodic(Duration(milliseconds: intervalMS), (_) {
+      SignalMap currentSignalMap = signalMap;
+      signalMap = SignalMap();
+      return currentSignalMap;
+    });
   }
 
-  Future<APIResponse<RoomModel>> getRoomFromScan({
-    List<ScanResult> scanResults,
-  }) async {
+  Future<void> stopScanning() async {
+    await BeaconsPlugin.stopMonitoring;
+    return;
+  }
+
+  Future<void> resumeScanning() async {
+    await BeaconsPlugin.startMonitoring;
+    return;
+  }
+
+  Future<APIResponse<RoomModel>> getRoomFromScan() async {
+    final int ms = 1250;
     RestService restService = RestService();
-    // SignalMap signalMap = SignalMap(buildingId: building.id);
     SignalMap signalMap = SignalMap();
 
-    if (_gettingRoom)
-      return APIResponse<RoomModel>(
-        error: true,
-        errorMessage: "Already getting room",
-      );
-
-    _gettingRoom = true;
-
-    if (!await isOn) {
-      return APIResponse<RoomModel>(
-        error: true,
-        errorMessage: "Bluetooth is not on",
-      );
-    }
-
-    if (scanResults == null) {
-      signalMap = await addStreamReadingsToSignalMap(signalMap, 2000);
-    }
+    Stream<SignalMap> signalMapStream = await scanForSignalMaps(ms);
+    await Future.delayed(Duration(milliseconds: (ms * 1.1).round()));
+    signalMap = await signalMapStream.firstWhere((element) => element != null,
+        orElse: () => SignalMap());
+    await BeaconsPlugin.stopMonitoring;
 
     APIResponse<RoomModel> apiResponseRoom =
         await restService.getRoomFromSignalMap(signalMap);
     if (apiResponseRoom.error == false) {
       RoomModel room = apiResponseRoom.data;
-      _gettingRoom = false;
       return APIResponse<RoomModel>(data: room);
     } else {
-      _gettingRoom = false;
       return APIResponse<RoomModel>(
           error: true, errorMessage: "Failed to assess room based on readings");
     }
   }
-
-  Stream<List<Tuple2<String, int>>> getNearbyBeaconData() {
-    try {
-      // FlutterBlue does not properly close streams, so this timeout will have to match the await
-      // duration found in the buildingManager.dart function _updateBeacons
-      Stream<List<Tuple2<String, int>>> stream;
-      flutterBlue
-          .startScan(timeout: Duration(milliseconds: 3750))
-          .then((_) => flutterBlue.stopScan());
-      stream = flutterBlue.scanResults.transform(StreamTransformer<
-          List<ScanResult>, List<Tuple2<String, int>>>.fromHandlers(
-        handleData: (data, sink) {
-          try {
-            List<Tuple2<String, int>> resultingList = [];
-            data.forEach((scanResult) {
-              String name = getBeaconName(scanResult) ?? "";
-              if (name != null && name.isNotEmpty) {
-                resultingList.add(Tuple2(name, getRSSI(scanResult)));
-              }
-            });
-            sink.add(resultingList);
-          } catch (e) {
-            sink.addError(e);
-          }
-        },
-      ));
-      return stream;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<bool> get isOn async => await flutterBlue.isOn;
-
-  String getBeaconName(ScanResult scanResult) {
-    RegExp regex = RegExp("[a-zA-Z0-9]");
-    try {
-      String name = "";
-      String firstKey = scanResult.advertisementData.serviceData.keys.first;
-      for (int i = 0; i < 4; i++) {
-        String character = String.fromCharCode(
-            scanResult.advertisementData.serviceData[firstKey][i]);
-        if (!regex.hasMatch(character)) return "";
-        name = name + character;
-      }
-      return name;
-    } catch (e) {
-      return "";
-    }
-  }
-
-  int getRSSI(ScanResult scanResult) => scanResult.rssi;
 }

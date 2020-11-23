@@ -1,14 +1,11 @@
 import 'package:climify/widgets/listButton.dart';
 import 'package:flutter/material.dart';
-import 'package:tuple/tuple.dart';
 
 class BlacklistedDevices extends StatelessWidget {
-  final List<Tuple2<String, int>> _beacons;
   final List<String> _blacklist;
   final void Function(String) _toggleBlacklistBeacon;
 
   const BlacklistedDevices(
-    this._beacons,
     this._blacklist,
     this._toggleBlacklistBeacon, {
     Key key,

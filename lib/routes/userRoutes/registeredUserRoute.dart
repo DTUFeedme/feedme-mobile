@@ -5,19 +5,17 @@ import 'package:climify/models/roomModel.dart';
 import 'package:climify/routes/dialogues/addBuilding.dart';
 import 'package:climify/routes/userRoutes/buildingList.dart';
 import 'package:climify/routes/userRoutes/viewRoomFeedback.dart';
-import 'package:climify/services/bluetooth.dart';
+import 'package:climify/services/bluetoothBeacons.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/updateLocation.dart';
 import 'package:climify/services/sharedPreferences.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
-import 'package:climify/widgets/listButton.dart';
 import 'package:climify/widgets/questionList.dart';
 import 'package:climify/widgets/scanAppBar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../feedback.dart';
 import '../viewAnsweredQuestions.dart';
 
 class RegisteredUserScreen extends StatefulWidget {
@@ -65,9 +63,9 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
     setState(() {
       _loadingState = true;
     });
-    if (!await _bluetooth.isOn) {
-      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
-    }
+    // if (!await _bluetooth.isOn) {
+    //   SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
+    // }
     await _getAndSetRoom();
   }
 
@@ -78,10 +76,10 @@ class _RegisteredUserScreenState extends State<RegisteredUserScreen> {
       return;
     }
 
-    if (!await _bluetooth.isOn) {
-      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
-      return;
-    }
+    // if (!await _bluetooth.isOn) {
+    //   SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
+    //   return;
+    // }
 
     setState(() {
       _roomQuestionStatistics = [];
