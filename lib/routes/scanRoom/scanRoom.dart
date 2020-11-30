@@ -24,6 +24,7 @@ class ScanRoomFlow extends StatefulWidget {
 class _ScanRoomFlowState extends State<ScanRoomFlow> {
   bool _scanning = false;
   bool _stopping = false;
+  bool _exitLock = false;
   double _progress = 0.0;
   int _numberOfScans = 0;
   RoomModel _room;
@@ -72,7 +73,6 @@ class _ScanRoomFlowState extends State<ScanRoomFlow> {
     if (_sub != null) {
       _sub.cancel();
     }
-    _bluetooth.dispose();
     super.dispose();
   }
 
@@ -109,6 +109,9 @@ class _ScanRoomFlowState extends State<ScanRoomFlow> {
 
   Future<void> _startScan() async {
     if (!mounted) {
+      return;
+    }
+    if (_exitLock) {
       return;
     }
     _setScanning(true);
@@ -206,9 +209,14 @@ class _ScanRoomFlowState extends State<ScanRoomFlow> {
     return;
   }
 
-  void _finishScanning() async {
+  Future<void> _finishScanning() async {
     if (!_scanning) {
+      setState(() {
+        _exitLock = true;
+      });
+      await _bluetooth.dispose();
       Navigator.of(context).pop();
+      return;
     }
   }
 

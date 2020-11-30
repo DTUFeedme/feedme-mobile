@@ -5,7 +5,7 @@ Future<APIResponse<RoomModel>> getRoomFromSignalMapRequest(
 ) {
   String body;
   body = json.encode({
-    'beacons': signalMap.beacons,
+    'beacons': signalMap.avgBeaconSignals,
   });
   return RestService.requestServer(
     body: body,

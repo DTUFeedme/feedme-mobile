@@ -78,8 +78,8 @@ enum RequestType {
 
 class RestService {
   static const api = kReleaseMode
-      ? 'http://feedme.compute.dtu.dk/api'
-      : 'http://feedme.compute.dtu.dk/api-dev';
+      ? 'https://feedme.compute.dtu.dk/api'
+      : 'https://feedme.compute.dtu.dk/api-dev';
   static Future<Null> mLock;
 
   static Future<Map<String, String>> headers({
