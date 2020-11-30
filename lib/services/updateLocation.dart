@@ -4,7 +4,8 @@ import 'package:climify/models/api_response.dart';
 import 'package:climify/main.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/roomModel.dart';
-import 'package:climify/services/bluetooth.dart';
+// import 'package:climify/services/bluetooth.dart';
+import 'package:climify/services/bluetoothBeacons.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -91,11 +92,13 @@ class UpdateLocation extends ChangeNotifier {
     APIResponse<RoomModel> apiResponse =
         await _bluetoothServices.getRoomFromScan();
 
+    // _bluetoothServices.dispose();
+
     LocalNotifications.preventSelectNotification = false;
     bool _rescan = false;
     _error = apiResponse.error;
     if (_error) {
-      print(retries);
+      print("retry number: $retries");
       _errorMessageRoom = apiResponse.errorMessage;
       _rescan = await isLockScreen() && (retries < retryLimit);
       if (_rescan) {

@@ -14,4 +14,9 @@ class SnackBarError {
     scaffoldKey.currentState.removeCurrentSnackBar();
     scaffoldKey.currentState.showSnackBar(snackBar);
   }
+
+  static void hideSnackBar(GlobalKey<ScaffoldState> scaffoldKey) {
+    if (!(scaffoldKey?.currentState?.mounted ?? false)) return;
+    scaffoldKey.currentState.hideCurrentSnackBar();
+  }
 }

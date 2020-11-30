@@ -51,6 +51,7 @@ class AddRoom {
               "Room Name",
             ),
             TextField(
+              maxLength: 255,
               controller: textEditingController,
               onChanged: (value) => setState(() {}),
             ),

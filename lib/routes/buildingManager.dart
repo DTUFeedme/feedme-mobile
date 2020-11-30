@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:climify/models/api_response.dart';
+import 'package:climify/models/beaconModel.dart';
 import 'package:climify/models/buildingModel.dart';
 import 'package:climify/models/feedbackQuestion.dart';
 import 'package:climify/models/questionModel.dart';
@@ -10,7 +11,7 @@ import 'package:climify/routes/buildingManagerComponents/blacklistedDevices.dart
 import 'package:climify/routes/buildingManagerComponents/scannedDevices.dart';
 import 'package:climify/routes/dialogues/addRoom.dart';
 import 'package:climify/routes/dialogues/roomMenu.dart';
-import 'package:climify/services/bluetooth.dart';
+import 'package:climify/services/bluetoothBeacons.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/widgets/customDialog.dart';
@@ -20,7 +21,6 @@ import 'package:climify/widgets/submitButton.dart';
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 
-import 'dialogues/scanRoom.dart';
 import 'dialogues/questionMenu.dart';
 
 class BuildingManager extends StatefulWidget {
@@ -47,27 +47,25 @@ class _BuildingManagerState extends State<BuildingManager> {
   List<FeedbackQuestion> _questionsRealList = [];
   List<FeedbackQuestion> _questions = [];
   TextEditingController _newRoomNameController = TextEditingController();
-  List<Tuple2<String, int>> _beacons = [];
-  bool _scanningSignalMap = false;
+  List<BeaconModel> _beacons = [];
   bool _gettingBeacons = false;
-  int _signalMapScans = 0;
   // SignalMap _signalMap;
   String _currentlyConfirming = "";
   int _visibleIndex = 0;
   String _title = "Manage rooms";
   final _adminController = TextEditingController();
-  final _questionNameController = TextEditingController();
-  final _questionAnswerOptionsController = TextEditingController();
   List<TextEditingController> controllerList = [];
   bool _scanningBeacons = false;
   List<String> _blacklist = [];
   bool _blacklistingBeacon = false;
   OldStateQuestionFlow _addQuestionOldState;
+  StreamSubscription _sub;
 
   @override
   void initState() {
     super.initState();
     _bluetooth = BluetoothServices();
+    _initBeaconScan();
     _restService = RestService();
     _setBuildingState();
   }
@@ -126,27 +124,15 @@ class _BuildingManagerState extends State<BuildingManager> {
     return;
   }
 
-  Future<void> _updateBeacons() async {
-    if (_gettingBeacons) return;
-
-    setState(() {
-      _gettingBeacons = true;
-      _beacons = [];
-    });
-
-    _bluetooth.getNearbyBeaconData().listen((event) {
-      setState(() {
-        _beacons = event;
-      });
-    });
-
-    // FlutterBlue does not properly close streams, so this duration will have to match the timeout
-    // found in the bluetooth.dart function getNearbyBeaconData
-    await Future.delayed(Duration(milliseconds: 3750));
-
-    setState(() {
-      _gettingBeacons = false;
-    });
+  Future<void> _initBeaconScan() async {
+    Stream<List<BeaconModel>> stream = await _bluetooth.scanForBeacons();
+    stream.listen(
+      (event) {
+        setState(() {
+          _beacons = event;
+        });
+      },
+    );
     return;
   }
 
@@ -221,35 +207,19 @@ class _BuildingManagerState extends State<BuildingManager> {
   }
 
   void _addScans(RoomModel room) async {
-    setState(() {
-      _scanningSignalMap = false;
-      _signalMapScans = 0;
-    });
-    if (!await _bluetooth.isOn) {
+    if (!true) {
       SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
       return;
     }
-    await showDialogModified(
-      barrierColor: Colors.black12,
-      context: context,
-      builder: (_) {
-        return ScanRoom(
-          context,
-          room: room,
-          building: _building,
-          scaffoldKey: _scaffoldKey,
-          setScanning: (b) => setState(() {
-            _scanningSignalMap = b;
-          }),
-          incrementScans: () => setState(() {
-            _signalMapScans++;
-          }),
-          getScanning: () => _scanningSignalMap,
-          getNumberOfScans: () => _signalMapScans,
-          blacklist: _blacklist,
-        ).dialog;
-      },
-    );
+    await _bluetooth.dispose();
+    await Navigator.of(context).pushNamed('scanRoom', arguments: {
+      'room': room,
+      'blacklist': _blacklist,
+    }).then((_) async {
+      _bluetooth = BluetoothServices();
+      await _initBeaconScan();
+      return true;
+    });
   }
 
   void _roomMenu(RoomModel room) async {
@@ -378,7 +348,7 @@ class _BuildingManagerState extends State<BuildingManager> {
       //_setSubtitle();
       switch (index) {
         case 0:
-          _title = "Managing rooms";
+          _title = "Manage rooms";
           break;
         case 1:
           _title = "Manage questions";
@@ -389,10 +359,10 @@ class _BuildingManagerState extends State<BuildingManager> {
             // this method shows the indicator the first time for UX
             _refreshBeaconKey?.currentState?.show();
           }
-          _title = "View nearby beacons";
+          _title = "Manage beacons";
           break;
         case 3:
-          _title = "Make user admin";
+          _title = "Make users admin";
           break;
         default:
       }
@@ -445,82 +415,85 @@ class _BuildingManagerState extends State<BuildingManager> {
         onTap: (int index) => _changeWindow(index),
         currentIndex: _visibleIndex,
       ),
-      body: Center(
-        child: Container(
-          child: Stack(
-            children: [
-              Visibility(
-                visible: _visibleIndex == 0,
-                child: RefreshIndicator(
-                  onRefresh: () => _updateBuilding(),
-                  child: Container(
-                    child: _building.rooms.isNotEmpty
-                        ? ListView.builder(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            itemCount: _building.rooms.length,
-                            itemBuilder: (_, index) => ListButton(
-                              onTap: () => _roomMenu(_building.rooms[index]),
-                              child: Text(
-                                _building.rooms[index].name,
-                                style: TextStyle(
-                                  fontSize: 24,
+      body: WillPopScope(
+        onWillPop: () async {
+          await _bluetooth.dispose();
+          return true;
+        },
+        child: Center(
+          child: Container(
+            child: Stack(
+              children: [
+                Visibility(
+                  visible: _visibleIndex == 0,
+                  child: RefreshIndicator(
+                    onRefresh: () => _updateBuilding(),
+                    child: Container(
+                      child: _building.rooms.isNotEmpty
+                          ? ListView.builder(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              itemCount: _building.rooms.length,
+                              itemBuilder: (_, index) => ListButton(
+                                onTap: () => _roomMenu(_building.rooms[index]),
+                                child: Text(
+                                  _building.rooms[index].name,
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                  ),
                                 ),
                               ),
+                            )
+                          : EmptyListText(
+                              text: 'There are no rooms in this building yet',
                             ),
-                          )
-                        : EmptyListText(
-                            text: 'There are no rooms in this building yet',
-                          ),
+                    ),
                   ),
                 ),
-              ),
-              Visibility(
-                visible: _visibleIndex == 1,
-                child: RefreshIndicator(
-                  onRefresh: () => _updateQuestions(),
-                  child: Container(
-                    child: _questionsRealList.isNotEmpty
-                        ? ListView.builder(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            itemCount: _questionsRealList.length,
-                            itemBuilder: (_, index) => ListButton(
-                              onTap: () =>
-                                  _questionMenu(_questionsRealList[index]),
-                              child: Text(
-                                _questionsRealList[index].value,
-                                style: TextStyle(
-                                  color: (_questionsRealList.any((question) =>
-                                          _questionsRealList[index].isActive ==
-                                          false)
-                                      ? Colors.red[800]
-                                      : Colors.green[800]),
-                                  fontSize: 24,
+                Visibility(
+                  visible: _visibleIndex == 1,
+                  child: RefreshIndicator(
+                    onRefresh: () => _updateQuestions(),
+                    child: Container(
+                      child: _questionsRealList.isNotEmpty
+                          ? ListView.builder(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              itemCount: _questionsRealList.length,
+                              itemBuilder: (_, index) => ListButton(
+                                onTap: () =>
+                                    _questionMenu(_questionsRealList[index]),
+                                child: Text(
+                                  _questionsRealList[index].value,
+                                  style: TextStyle(
+                                    color: (_questionsRealList.any((question) =>
+                                            _questionsRealList[index]
+                                                .isActive ==
+                                            false)
+                                        ? Colors.red[800]
+                                        : Colors.green[800]),
+                                    fontSize: 24,
+                                  ),
                                 ),
                               ),
+                            )
+                          : EmptyListText(
+                              text: 'There are no questions yet',
                             ),
-                          )
-                        : EmptyListText(
-                            text: 'There are no questions yet',
-                          ),
+                    ),
                   ),
                 ),
-              ),
-              Visibility(
-                maintainState: true,
-                visible: _visibleIndex == 2,
-                child: Column(
-                  children: <Widget>[
-                    Expanded(
-                      flex: 6,
-                      child: RefreshIndicator(
-                        key: _refreshBeaconKey,
-                        onRefresh: _updateBeacons,
+                Visibility(
+                  maintainState: true,
+                  visible: _visibleIndex == 2,
+                  child: Column(
+                    children: <Widget>[
+                      Expanded(
+                        flex: 6,
                         child: _beacons.isNotEmpty
                             ? ScannedDevices(
                                 _beacons,
@@ -532,62 +505,63 @@ class _BuildingManagerState extends State<BuildingManager> {
                                 text: 'No beacons scanned',
                               ),
                       ),
-                    ),
-                    _blacklist.isNotEmpty
-                        ? Expanded(
-                            flex: 1,
-                            child: Text(
-                              "Blacklisted beacons",
-                              style: TextStyle(
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
+                      _blacklist.isNotEmpty
+                          ? Expanded(
+                              flex: 1,
+                              child: Text(
+                                "Blacklisted beacons",
+                                style: TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          )
-                        : Container(),
-                    _blacklist.isNotEmpty
-                        ? Expanded(
-                            flex: 3,
-                            child: BlacklistedDevices(
-                              _beacons,
-                              _blacklist,
-                              _toggleBlacklistBeacon,
-                            ),
-                          )
-                        : Container(),
-                  ],
-                ),
-              ),
-              Visibility(
-                visible: _visibleIndex == 3,
-                child: Container(
-                  margin: EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Column(
-                    children: <Widget>[
-                      TextFormField(
-                        keyboardType: TextInputType.emailAddress,
-                        controller: _adminController,
-                        decoration:
-                            InputDecoration(labelText: 'Enter user email'),
-                      ),
-                      // RaisedButton(
-                      //   onPressed: () =>
-                      //       _getUserIdFromEmailFunc(myController.text),
-                      //   child: Text(
-                      //       'Make user admin for building: ' + _building.name),
-                      // ),
-                      SubmitButton(
-                        text: 'Make user admin for building: ' + _building.name,
-                        onPressed: () => _makeUserAdmin(_adminController.text),
-                      ),
+                            )
+                          : Container(),
+                      _blacklist.isNotEmpty
+                          ? Expanded(
+                              flex: 3,
+                              child: BlacklistedDevices(
+                                _blacklist,
+                                _toggleBlacklistBeacon,
+                              ),
+                            )
+                          : Container(),
                     ],
                   ),
                 ),
-              ),
-            ],
+                Visibility(
+                  visible: _visibleIndex == 3,
+                  child: Container(
+                    margin: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Column(
+                      children: <Widget>[
+                        TextFormField(
+                          keyboardType: TextInputType.emailAddress,
+                          controller: _adminController,
+                          decoration:
+                              InputDecoration(labelText: 'Enter user email'),
+                        ),
+                        // RaisedButton(
+                        //   onPressed: () =>
+                        //       _getUserIdFromEmailFunc(myController.text),
+                        //   child: Text(
+                        //       'Make user admin for building: ' + _building.name),
+                        // ),
+                        SubmitButton(
+                          text:
+                              'Make user admin for building: ' + _building.name,
+                          onPressed: () =>
+                              _makeUserAdmin(_adminController.text),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

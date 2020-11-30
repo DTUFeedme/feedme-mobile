@@ -1,6 +1,5 @@
 import 'package:climify/models/api_response.dart';
 import 'package:climify/models/buildingModel.dart';
-import 'package:climify/services/bluetooth.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
 import 'package:climify/services/updateLocation.dart';

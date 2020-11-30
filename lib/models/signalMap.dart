@@ -5,6 +5,20 @@ class SignalMap {
     beacons = [];
   }
 
+  List<Map<String, dynamic>> get avgBeaconSignals {
+    List<Map<String, dynamic>> avgBeaconSignals = beacons.map((beacon) {
+      List<int> signals = beacon["signals"];
+      int total =
+          signals.fold(0, (previousValue, element) => previousValue + element);
+      int len = signals.length;
+      return {
+        "name": beacon["name"],
+        "signal": total ~/ len,
+      };
+    }).toList();
+    return avgBeaconSignals;
+  }
+
   void addBeaconReading(
     String name,
     int signalStrength, {

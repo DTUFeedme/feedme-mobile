@@ -1,5 +1,5 @@
 import 'package:climify/routes/viewAnsweredQuestions.dart';
-import 'package:climify/services/bluetooth.dart';
+import 'package:climify/services/bluetoothBeacons.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/updateLocation.dart';
 import 'package:climify/services/sharedPreferences.dart';
@@ -77,10 +77,10 @@ class _UnregisteredUserScreenState extends State<UnregisteredUserScreen> {
       return;
     }
 
-    if (!await _bluetooth.isOn) {
-      SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
-      return;
-    }
+    // if (!await _bluetooth.isOn) {
+    //   SnackBarError.showErrorSnackBar("Bluetooth is not on", _scaffoldKey);
+    //   return;
+    // }
 
     await updateLocation.sendReceiveLocation();
     // _getActiveQuestions();
