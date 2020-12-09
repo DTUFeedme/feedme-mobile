@@ -13,6 +13,7 @@ import 'package:is_lock_screen/is_lock_screen.dart';
 
 class UpdateLocation extends ChangeNotifier {
   bool _scanningLocation = false;
+  bool _disableBackgroundScans = false;
   bool _error = false;
   RoomModel _room;
   String _message = '';
@@ -37,7 +38,14 @@ class UpdateLocation extends ChangeNotifier {
   String get errorMessageQuestion => _errorMessageQuestion;
   UnmodifiableListView get questions => UnmodifiableListView(_questions);
 
+  void enableBackgroundScans({bool b = true}){
+    this._disableBackgroundScans = b;
+  }
+
   Future<void> sendReceiveLocation({bool fromAuto = false}) async {
+    if(fromAuto && !_disableBackgroundScans){
+      return;
+    }
     // The following has been disabled to enable rescanning
 
     // If the background trigger attempts to scan within two minutes of a manual one, dont run it

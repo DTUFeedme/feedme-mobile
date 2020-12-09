@@ -7,7 +7,10 @@ import 'package:climify/routes/scanRoom/scanRoomButton.dart';
 import 'package:climify/services/bluetoothBeacons.dart';
 import 'package:climify/services/rest_service.dart';
 import 'package:climify/services/snackbarError.dart';
+import 'package:climify/services/updateLocation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:wakelock/wakelock.dart';
 
 class ScanRoomFlow extends StatefulWidget {
   final Map<String, dynamic> arguments;
@@ -29,8 +32,9 @@ class _ScanRoomFlowState extends State<ScanRoomFlow> {
   int _numberOfScans = 0;
   RoomModel _room;
   List<String> _blacklist;
-  StreamSubscription _sub;
+  StreamSubscription _streamSubscription;
   Stream<SignalMap> _signalMapStream;
+  UpdateLocation _updateLocation;
 
   final int _scanMilliseconds = 1250;
   final RestService _restService = RestService();
@@ -43,14 +47,16 @@ class _ScanRoomFlowState extends State<ScanRoomFlow> {
     _room = widget.arguments['room'];
     _blacklist = widget.arguments['blacklist'];
     setupSignalMapStream();
+    Wakelock.enable();
+    _updateLocation = Provider.of<UpdateLocation>(context, listen: false);
+    _updateLocation.enableBackgroundScans(b: false);
   }
 
   Future<void> setupSignalMapStream() async {
     _signalMapStream = await _bluetooth.scanForSignalMaps(_scanMilliseconds,
         blacklist: _blacklist);
-    _signalMapStream.listen((signalMap) async {
+    _streamSubscription = _signalMapStream.listen((signalMap) async {
       if (_stopping) {
-        await _bluetooth.stopScanning();
         _setProgress(0);
         _setScanning(false);
         _setStopping(false);
@@ -59,21 +65,12 @@ class _ScanRoomFlowState extends State<ScanRoomFlow> {
         if (signalMap.beacons.length > 0) {
           APIResponse<String> apiResponse =
               await _restService.postSignalMap(signalMap, _room.id);
-          print(signalMap.avgBeaconSignals);
           if (!apiResponse.error) {
             _incrementScans();
           }
         }
       }
     });
-  }
-
-  @override
-  void dispose() {
-    if (_sub != null) {
-      _sub.cancel();
-    }
-    super.dispose();
   }
 
   @override
@@ -128,62 +125,6 @@ class _ScanRoomFlowState extends State<ScanRoomFlow> {
     return;
   }
 
-  // Future<void> _scan() async {
-  //   if (!mounted) {
-  //     return;
-  //   }
-
-  //   // if (await _bluetooth.isOn == false) {
-  //   //   SnackBarError.showErrorSnackBar("Bluetooth is not on", scaffoldKey);
-  //   //   _setScanning(false);
-  //   //   setState(() {});
-  //   //   return;
-  //   // }
-
-  //   // SignalMap signalMap =
-  //   //     SignalMap.withInitBeacons(beacons, buildingId: building.id);
-  //   SignalMap signalMap = SignalMap();
-  //   int beaconsScanned = 0;
-  //   // List<ScanResult> scanResults = await _bluetooth.scanForDevices(3000);
-
-  //   if (!mounted) {
-  //     return;
-  //   }
-
-  //   _setProgress(0);
-  //   setState(() {});
-
-  //   _stopTimer();
-  //   _scanTimer =
-  //       Timer.periodic(Duration(milliseconds: _scanMilliseconds ~/ 9), (timer) {
-  //     double progress = _progress ?? 0;
-  //     if (mounted && progress < 0.99) {
-  //       _setProgress(progress + 1 / 9);
-  //     }
-  //   });
-  //   signalMap = await _bluetooth.addStreamReadingsToSignalMap(
-  //     signalMap,
-  //     _scanMilliseconds,
-  //     blacklist: _blacklist,
-  //   );
-
-  //   beaconsScanned = signalMap.beacons.length;
-
-  //   if (beaconsScanned > 0) {
-  //     APIResponse<String> apiResponse =
-  //         await _restService.postSignalMap(signalMap, _room.id);
-  //     if (!apiResponse.error) {
-  //       _incrementScans();
-  //       print(signalMap.avgBeaconSignals);
-  //     } else {
-  //       SnackBarError.showErrorSnackBar(apiResponse.errorMessage, scaffoldKey);
-  //     }
-  //   } else {
-  //     SnackBarError.showErrorSnackBar("No beacons scanned", scaffoldKey);
-  //   }
-  //   _stopTimer();
-  // }
-
   Future<void> _toggleScan() async {
     if (!mounted) {
       return;
@@ -215,7 +156,9 @@ class _ScanRoomFlowState extends State<ScanRoomFlow> {
         _exitLock = true;
       });
       await _bluetooth.dispose();
-      Navigator.of(context).pop();
+      _streamSubscription.cancel();
+      _updateLocation.enableBackgroundScans(b: true);
+      Wakelock.disable();
       return;
     }
   }
@@ -248,6 +191,7 @@ class _ScanRoomFlowState extends State<ScanRoomFlow> {
           } else if (_scanning) {
             return false;
           } else {
+            await _finishScanning();
             return true;
           }
         },
@@ -296,7 +240,7 @@ class _ScanRoomFlowState extends State<ScanRoomFlow> {
                 child: RaisedButton(
                   color: !_scanning ? Colors.green : Colors.red,
                   child: Text(exitButtonText),
-                  onPressed: () => _scanning ? null : _finishScanning(),
+                  onPressed: () => Navigator.of(context).maybePop(),
                 ),
               ),
             ],
