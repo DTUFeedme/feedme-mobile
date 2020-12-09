@@ -35,6 +35,7 @@ dependencies:
   scrollable_positioned_list: ^0.1.8
   is_lock_screen: ^1.0.0
   beacons_plugin: ^1.0.17
+  wakelock: ^0.2.1+1
 
 dev_dependencies:
   flutter_test:

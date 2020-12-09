@@ -46,6 +46,7 @@ class BluetoothServices {
   }
 
   Future<Stream<List<BeaconModel>>> scanForBeacons() async {
+    // await dispose();
     await startScanner();
     BeaconsPlugin.startMonitoring;
     beacons.clear();
@@ -76,18 +77,33 @@ class BluetoothServices {
     return transformedStream;
   }
 
-  Future<Stream<SignalMap>> scanForSignalMaps(int intervalMS, {List<String> blacklist = const []}) async {
+  Future<Stream<SignalMap>> scanForSignalMaps(
+    int intervalMS, {
+    List<String> blacklist = const [],
+  }) async {
     Stream<List<BeaconModel>> beaconStream = await scanForBeacons();
     SignalMap signalMap = SignalMap();
     beaconStream.listen(
       (data) {
         data.forEach((element) {
-          signalMap.addBeaconReading(element.name, element.rssi, blacklist: blacklist);
+          signalMap.addBeaconReading(element.name, element.rssi,
+              blacklist: blacklist);
         });
       },
     );
     return Stream.periodic(Duration(milliseconds: intervalMS), (_) {
       SignalMap currentSignalMap = signalMap;
+      // print(signalMap.beacons);
+      // print(signalMap.avgBeaconSignals);
+      // print("avg signal list length");
+      // List<int> lengths = [];
+      // signalMap.beacons.forEach((element) {
+      //   lengths.add(element['signals'].length);
+      // });
+      // double avgLength =
+      //     lengths.fold(0, (previousValue, element) => previousValue + element) /
+      //         lengths.length;
+      // print(avgLength);
       signalMap = SignalMap();
       return currentSignalMap;
     });
